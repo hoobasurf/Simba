@@ -2,429 +2,49 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Simba le Lionceau</title>
-<style>
-  html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#0a1a2a;font-family:-apple-system,'Baloo 2',sans-serif;-webkit-user-select:none;user-select:none;touch-action:none;}
-  #renderCanvas{width:100%;height:100%;touch-action:none;display:block;}
-  #hud{position:fixed;top:0;left:0;width:100%;pointer-events:none;z-index:10;padding:14px;box-sizing:border-box;}
-  #title{color:#fff;font-size:20px;font-weight:800;text-shadow:0 2px 4px rgba(0,0,0,.4);}
-  #prompt{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);
-    background:#ffb703;color:#3a2200;font-weight:800;font-size:20px;padding:14px 26px;
-    border-radius:30px;box-shadow:0 6px 0 #c07d00;display:none;z-index:20;}
-  .overlay{position:fixed;inset:0;background:linear-gradient(180deg,#fff3d6,#ffe0a3);
-    display:none;flex-direction:column;align-items:center;justify-content:center;z-index:100;}
-  .overlay.show{display:flex;}
-  .bigbtn{background:#ff6b35;color:#fff;font-size:26px;font-weight:800;padding:18px 40px;
-    border:none;border-radius:40px;box-shadow:0 6px 0 #c94a1c;margin:10px;}
-  .bigbtn:active{transform:translateY(4px);box-shadow:0 2px 0 #c94a1c;}
-  #score{font-size:34px;font-weight:900;color:#3a2200;margin-bottom:10px;}
-  #gameArea{position:relative;width:90%;height:65%;background:#bfe6ff;border-radius:20px;overflow:hidden;
-    border:6px solid #fff;box-shadow:0 8px 20px rgba(0,0,0,.2);}
-  .fruit{position:absolute;font-size:44px;user-select:none;}
-  .rock{position:absolute;font-size:50px;bottom:10px;}
-  #runner{position:absolute;bottom:10px;left:60px;font-size:60px;transition:transform .01s;}
-  #timer{font-size:20px;font-weight:700;color:#5b3a00;margin-top:6px;}
-  h2{color:#3a2200;font-size:30px;margin:6px 0;}
-</style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Simba & Toutou</title>
+
+<link rel="stylesheet" href="style.css">
+
 </head>
+
 <body>
-<canvas id="renderCanvas"></canvas>
-<div id="hud"><div id="title">🦁 Simba le Lionceau</div></div>
-<div id="prompt">👉 Touche pour entrer !</div>
 
-<!-- Overlay mini-jeu 1 : cueillette de fruits -->
-<div class="overlay" id="fruitGame">
-  <h2>🍎 Cueille les fruits !</h2>
-  <div id="score">0</div>
-  <div id="timer">30 s</div>
-  <div id="gameArea"></div>
-  <button class="bigbtn" id="closeFruit">Retour à Simba</button>
+<div id="menu">
+
+<h1>🦁 Simba & 🐶 Toutou</h1>
+
+<p>Les Grandes Aventures</p>
+
+<button onclick="jouer()">
+🎮 JOUER
+</button>
+
 </div>
 
-<!-- Overlay mini-jeu 2 : saute-rochers -->
-<div class="overlay" id="jumpGame">
-  <h2>🪨 Saute par-dessus les rochers !</h2>
-  <div id="score2">0</div>
-  <div id="timer2">30 s</div>
-  <div id="gameArea" style="background:#ffe9c2;" onclick="doJump()">
-    <div id="runner">🦁</div>
-  </div>
-  <button class="bigbtn" id="closeJump">Retour à Simba</button>
+<div id="carte" class="cache">
+
+<h2>Choisis un monde</h2>
+
+<div class="mondes">
+
+<button onclick="ouvrir('savane')">🦁 Savane</button>
+
+<button onclick="ouvrir('foret')">🌳 Forêt</button>
+
+<button onclick="ouvrir('ferme')">🚜 Ferme</button>
+
+<button onclick="ouvrir('ocean')">🌊 Océan</button>
+
+<button onclick="ouvrir('espace')">🚀 Espace</button>
+
 </div>
 
-<!-- Ecran de fin -->
-<div class="overlay" id="endScreen">
-  <h2 id="endTitle">🎉 Bravo !</h2>
-  <div id="endScore" style="font-size:28px;font-weight:800;margin-bottom:20px;"></div>
-  <button class="bigbtn" id="endReplay">Rejouer</button>
-  <button class="bigbtn" id="endBack" style="background:#4caf50;box-shadow:0 6px 0 #2e7d32;">Retour à Simba</button>
 </div>
 
-<div id="loadError" style="display:none;position:fixed;inset:0;background:#fff3d6;z-index:999;
-  flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center;font-size:18px;color:#3a2200;">
-  <div style="font-size:50px;">⚠️</div>
-  <p><b>Le jeu 3D n'a pas pu se charger.</b><br>Vérifie que tu es bien connecté à internet, et que ce fichier est ouvert
-  via une vraie adresse web (GitHub Pages), pas en aperçu local depuis l'app Fichiers.</p>
-</div>
-<script src="https://cdn.babylonjs.com/babylon.js" crossorigin="anonymous"
-  onerror="document.getElementById('loadError').style.display='flex'"></script>
-<script>
-if(typeof BABYLON === "undefined"){
-  document.getElementById('loadError').style.display='flex';
-} else {
-/* ========================= SCENE 3D ========================= */
-const canvas = document.getElementById("renderCanvas");
-const engine = new BABYLON.Engine(canvas, true, {preserveDrawingBuffer:true, stencil:true});
-const scene = new BABYLON.Scene(engine);
-scene.clearColor = new BABYLON.Color3(0.55, 0.82, 0.95);
+<script src="app.js"></script>
 
-// Lumières
-const hemi = new BABYLON.HemisphericLight("hemi", new BABYLON.Vector3(0,1,0.3), scene);
-hemi.intensity = 1.0;
-const sun = new BABYLON.DirectionalLight("sun", new BABYLON.Vector3(-0.5,-1,-0.3), scene);
-sun.intensity = 0.5;
-
-// Sol savane (texture procédurale, pas de fichiers -> compatible Safari iOS)
-const groundTex = new BABYLON.DynamicTexture("groundTex", {width:512, height:512}, scene);
-const gctx = groundTex.getContext();
-gctx.fillStyle = "#8bc34a";
-gctx.fillRect(0,0,512,512);
-for(let i=0;i<250;i++){
-  gctx.fillStyle = Math.random()>0.5 ? "#7cb342" : "#9ccc65";
-  const x=Math.random()*512, y=Math.random()*512, s=6+Math.random()*10;
-  gctx.beginPath(); gctx.ellipse(x,y,s,s*0.4,Math.random()*Math.PI,0,Math.PI*2); gctx.fill();
-}
-groundTex.update();
-const ground = BABYLON.MeshBuilder.CreateGround("ground", {width:60,height:60}, scene);
-const groundMat = new BABYLON.StandardMaterial("groundMat", scene);
-groundMat.diffuseTexture = groundTex;
-groundMat.specularColor = new BABYLON.Color3(0,0,0);
-ground.material = groundMat;
-
-// Décor : quelques arbres/rochers simples
-function makeTree(x,z){
-  const trunk = BABYLON.MeshBuilder.CreateCylinder("trunk",{height:2,diameter:0.5},scene);
-  trunk.position.set(x,1,z);
-  const trunkMat = new BABYLON.StandardMaterial("tm",scene); trunkMat.diffuseColor = new BABYLON.Color3(0.45,0.3,0.15);
-  trunk.material = trunkMat;
-  const leaves = BABYLON.MeshBuilder.CreateSphere("leaves",{diameter:2.6},scene);
-  leaves.position.set(x,2.6,z);
-  const leavesMat = new BABYLON.StandardMaterial("lm",scene); leavesMat.diffuseColor = new BABYLON.Color3(0.3,0.6,0.25);
-  leaves.material = leavesMat;
-}
-function makeRock(x,z){
-  const rock = BABYLON.MeshBuilder.CreateSphere("rock",{diameter:1+Math.random()},scene);
-  rock.position.set(x,0.4,z);
-  rock.scaling.y = 0.6;
-  const rm = new BABYLON.StandardMaterial("rm",scene); rm.diffuseColor = new BABYLON.Color3(0.55,0.5,0.45);
-  rock.material = rm;
-}
-[[8,5],[-9,6],[10,-8],[-6,-10],[14,2],[-3,12]].forEach(p=>makeTree(p[0],p[1]));
-[[3,3],[-4,4],[6,-3],[-8,-4]].forEach(p=>makeRock(p[0],p[1]));
-
-/* ========================= SIMBA LE LIONCEAU (chibi tout mignon, style "flat cartoon") ========================= */
-const lion = new BABYLON.TransformNode("lion", scene);
-lion.position.set(0,0,0);
-
-// Matériaux "plats" façon dessin animé (couleurs vives, pas de dégradé réaliste)
-function flatMat(name, r,g,b){
-  const m = new BABYLON.StandardMaterial(name, scene);
-  m.diffuseColor = new BABYLON.Color3(r,g,b);
-  m.emissiveColor = new BABYLON.Color3(r,g,b).scale(0.35);
-  m.specularColor = new BABYLON.Color3(0,0,0);
-  return m;
-}
-const bodyMat      = flatMat("bodyMat",  1.0, 0.75, 0.28);  // doré chaud
-const bellyMat     = flatMat("bellyMat", 1.0, 0.93, 0.75);  // crème
-const maneMat      = flatMat("maneMat",  1.0, 0.5,  0.18);  // orange soutenu
-const noseMat      = flatMat("noseMat",  1.0, 0.45, 0.55);  // rose framboise
-const pupilMat     = flatMat("pupilMat", 0.08,0.06,0.08);
-const eyeWhiteMat  = flatMat("eyeWhiteMat", 1,1,1);
-
-// Contour noir façon BD, sur chaque morceau
-function outline(mesh, width){
-  mesh.renderOutline = true;
-  mesh.outlineWidth = width;
-  mesh.outlineColor = new BABYLON.Color3(0.2,0.1,0.05);
-}
-
-// Corps tout rond, petit (grosse tête + petit corps = look "bébé peluche")
-const body = BABYLON.MeshBuilder.CreateSphere("body",{diameterX:1.0,diameterY:0.85,diameterZ:1.05},scene);
-body.position.y = 0.5; body.material = bodyMat; body.parent = lion; outline(body,0.025);
-
-const belly = BABYLON.MeshBuilder.CreateSphere("belly",{diameter:0.75},scene);
-belly.position.set(0,0.42,0.32); belly.scaling.set(1,0.7,0.8); belly.material = bellyMat; belly.parent = lion;
-
-// Tête énorme et ronde (proportions bébé)
-const head = BABYLON.MeshBuilder.CreateSphere("head",{diameter:1.05},scene);
-head.position.set(0,1.1,0.7); head.material = bodyMat; head.parent = lion; outline(head,0.025);
-
-// Crinière : quelques grosses touffes rondes (pas 10 petites boules)
-const maneSpots = [
-  [0,0.55,-0.25,0.5],[0.4,0.4,-0.1,0.42],[-0.4,0.4,-0.1,0.42],
-  [0.5,0.05,0.05,0.4],[-0.5,0.05,0.05,0.4],
-  [0.32,-0.35,0.0,0.4],[-0.32,-0.35,0.0,0.4],[0,-0.5,-0.15,0.42]
-];
-maneSpots.forEach(([dx,dy,dz,d])=>{
-  const tuft = BABYLON.MeshBuilder.CreateSphere("tuft",{diameter:d},scene);
-  tuft.position.set(head.position.x+dx, head.position.y+dy, head.position.z+dz);
-  tuft.material = maneMat; tuft.parent = lion; outline(tuft,0.02);
-});
-
-const snout = BABYLON.MeshBuilder.CreateSphere("snout",{diameterX:0.5,diameterY:0.38,diameterZ:0.4},scene);
-snout.position.set(0,0.98,1.15); snout.material = bellyMat; snout.parent = lion; outline(snout,0.02);
-const nose = BABYLON.MeshBuilder.CreateSphere("nose",{diameterX:0.2,diameterY:0.14,diameterZ:0.14},scene);
-nose.position.set(0,1.08,1.36); nose.material = noseMat; nose.parent = lion;
-
-// Grands yeux tout mignons (blanc + pupille + reflet)
-[-0.24,0.24].forEach(dx=>{
-  const eyeWhite = BABYLON.MeshBuilder.CreateSphere("eyeWhite",{diameter:0.34},scene);
-  eyeWhite.position.set(dx,1.18,1.05); eyeWhite.material = eyeWhiteMat; eyeWhite.parent = lion; outline(eyeWhite,0.015);
-  const pupil = BABYLON.MeshBuilder.CreateSphere("pupil",{diameter:0.19},scene);
-  pupil.position.set(dx,1.16,1.2); pupil.material = pupilMat; pupil.parent = lion;
-  const shine = BABYLON.MeshBuilder.CreateSphere("shine",{diameter:0.06},scene);
-  shine.position.set(dx+0.05,1.22,1.28); shine.material = eyeWhiteMat; shine.parent = lion;
-});
-
-[[-0.4,1.55,0.15],[0.4,1.55,0.15]].forEach(p=>{
-  const ear = BABYLON.MeshBuilder.CreateSphere("ear",{diameter:0.4},scene);
-  ear.position.set(p[0],p[1],p[2]); ear.scaling.y=0.75; ear.material = bodyMat; ear.parent = lion; outline(ear,0.02);
-  const earInner = BABYLON.MeshBuilder.CreateSphere("earInner",{diameter:0.22},scene);
-  earInner.position.set(p[0]*0.85,p[1]-0.02,p[2]+0.12); earInner.scaling.y=0.75; earInner.material = noseMat; earInner.parent = lion;
-});
-
-// Petites pattes courtes et rondes (look peluche)
-const legs = [];
-[[-0.28,0.42],[0.28,0.42],[-0.28,-0.42],[0.28,-0.42]].forEach(p=>{
-  const leg = BABYLON.MeshBuilder.CreateCylinder("leg",{height:0.4,diameter:0.32,tessellation:12},scene);
-  leg.position.set(p[0],0.2,p[1]); leg.material = bodyMat; leg.parent = lion; outline(leg,0.02);
-  legs.push(leg);
-});
-
-const tail = BABYLON.MeshBuilder.CreateCylinder("tail",{height:0.6,diameter:0.13},scene);
-tail.position.set(0,0.55,-0.7); tail.rotation.x = Math.PI/2.4; tail.material = bodyMat; tail.parent = lion;
-const tailTip = BABYLON.MeshBuilder.CreateSphere("tailTip",{diameter:0.32},scene);
-tailTip.position.set(0,0.35,-0.98); tailTip.material = maneMat; tailTip.parent = lion; outline(tailTip,0.02);
-
-/* ========================= TOTEMS (portes de mini-jeux) ========================= */
-function makeTotem(x,z,color,name){
-  const totem = BABYLON.MeshBuilder.CreateCylinder(name,{height:2.2,diameterTop:0.3,diameterBottom:0.6},scene);
-  totem.position.set(x,1.1,z);
-  const mat = new BABYLON.StandardMaterial(name+"mat",scene);
-  mat.diffuseColor = color; mat.emissiveColor = color.scale(0.6);
-  totem.material = mat;
-  const glow = BABYLON.MeshBuilder.CreateTorus(name+"glow",{diameter:1.4,thickness:0.08},scene);
-  glow.position.set(x,0.05,z); glow.material = mat;
-  return totem;
-}
-const totemFruit = makeTotem(6,0,new BABYLON.Color3(1,0.3,0.2),"totemFruit");
-const totemJump = makeTotem(-6,4,new BABYLON.Color3(0.2,0.6,1),"totemJump");
-
-/* ========================= CAMERA SUIVI ========================= */
-const camera = new BABYLON.ArcRotateCamera("cam", -Math.PI/2, 1.1, 6, lion.position, scene);
-camera.lowerRadiusLimit = 4; camera.upperRadiusLimit = 8;
-camera.lowerBetaLimit = 0.6; camera.upperBetaLimit = 1.3;
-camera.inputs.clear(); // pas de contrôle manuel caméra, on suit juste le lion
-
-/* ========================= DEPLACEMENT TACTILE (tap pour aller) ========================= */
-let targetPos = lion.position.clone();
-let moving = false;
-let walkT = 0;
-
-scene.onPointerDown = function(evt, pickResult){
-  if(pickResult.hit && (pickResult.pickedMesh === ground)){
-    targetPos = pickResult.pickedPoint.clone();
-    targetPos.y = 0;
-    moving = true;
-  }
-};
-
-const SPEED = 3.5;
-scene.onBeforeRenderObservable.add(()=>{
-  const dt = engine.getDeltaTime()/1000;
-  const dir = targetPos.subtract(lion.position);
-  dir.y = 0;
-  const dist = dir.length();
-  if(dist > 0.15){
-    dir.normalize();
-    lion.position.addInPlace(dir.scale(SPEED*dt));
-    const targetAngle = Math.atan2(dir.x, dir.z);
-    let diff = targetAngle - lion.rotation.y;
-    while(diff > Math.PI) diff -= Math.PI*2;
-    while(diff < -Math.PI) diff += Math.PI*2;
-    lion.rotation.y += diff * Math.min(1, 10*dt);
-    walkT += dt*10;
-    legs.forEach((leg,i)=>{ leg.rotation.x = Math.sin(walkT + i*Math.PI/2)*0.5; });
-    lion.position.y = Math.abs(Math.sin(walkT*2))*0.05;
-  } else {
-    moving = false;
-    legs.forEach(leg=>{ leg.rotation.x *= 0.8; });
-    lion.position.y = Math.sin(performance.now()/500)*0.03; // respiration
-  }
-  // caméra suit derrière le lion
-  camera.target = BABYLON.Vector3.Lerp(camera.target, lion.position, 0.1);
-  camera.alpha = -lion.rotation.y - Math.PI/2;
-
-  // détection proximité totems
-  checkTotem(totemFruit, "fruit");
-  checkTotem(totemJump, "jump");
-});
-
-let nearTotem = null;
-function checkTotem(totem, type){
-  const d = BABYLON.Vector3.Distance(lion.position, totem.position);
-  if(d < 1.8){
-    nearTotem = type;
-    document.getElementById("prompt").style.display = "block";
-  } else if(nearTotem === type){
-    nearTotem = null;
-    document.getElementById("prompt").style.display = "none";
-  }
-}
-document.getElementById("prompt").addEventListener("click", ()=>{
-  if(nearTotem === "fruit") openFruitGame();
-  if(nearTotem === "jump") openJumpGame();
-});
-
-engine.runRenderLoop(()=> scene.render());
-window.addEventListener("resize", ()=> engine.resize());
-
-/* ========================= MINI-JEU 1 : CUEILLETTE DE FRUITS ========================= */
-let fruitScore=0, fruitTimer=30, fruitInterval, fruitCountdown;
-const fruits = ["🍎","🍌","🍇","🍊","🍉"];
-function openFruitGame(){
-  document.getElementById("prompt").style.display="none";
-  document.getElementById("fruitGame").classList.add("show");
-  fruitScore=0; fruitTimer=30;
-  document.getElementById("score").textContent=fruitScore;
-  document.getElementById("timer").textContent=fruitTimer+" s";
-  const area = document.querySelector("#fruitGame #gameArea");
-  area.innerHTML="";
-  fruitInterval = setInterval(spawnFruit, 700);
-  fruitCountdown = setInterval(()=>{
-    fruitTimer--;
-    document.getElementById("timer").textContent=fruitTimer+" s";
-    if(fruitTimer<=0) endFruitGame();
-  },1000);
-}
-function spawnFruit(){
-  const area = document.querySelector("#fruitGame #gameArea");
-  const f = document.createElement("div");
-  f.className="fruit";
-  f.textContent = fruits[Math.floor(Math.random()*fruits.length)];
-  f.style.left = (Math.random()*80)+"%";
-  f.style.top = "-50px";
-  area.appendChild(f);
-  const duration = 2500 + Math.random()*1500;
-  let start=null;
-  function fall(ts){
-    if(!start) start=ts;
-    const p = (ts-start)/duration;
-    if(p>=1){ f.remove(); return; }
-    f.style.top = (p*100)+"%";
-    requestAnimationFrame(fall);
-  }
-  requestAnimationFrame(fall);
-  f.addEventListener("touchstart", catchFruit);
-  f.addEventListener("click", catchFruit);
-  function catchFruit(e){
-    e.stopPropagation();
-    fruitScore++;
-    document.getElementById("score").textContent=fruitScore;
-    f.style.transform="scale(1.6)"; f.style.opacity="0";
-    setTimeout(()=>f.remove(),150);
-  }
-}
-function endFruitGame(){
-  clearInterval(fruitInterval); clearInterval(fruitCountdown);
-  document.getElementById("fruitGame").classList.remove("show");
-  showEnd("🍎 Bravo !", fruitScore+" fruits récoltés", openFruitGame);
-}
-document.getElementById("closeFruit").addEventListener("click", ()=>{
-  clearInterval(fruitInterval); clearInterval(fruitCountdown);
-  document.getElementById("fruitGame").classList.remove("show");
-});
-
-/* ========================= MINI-JEU 2 : SAUTE-ROCHERS ========================= */
-let jumpScore=0, jumpTimer=30, jumping=false, jumpInterval, jumpCountdown, rockInterval;
-function openJumpGame(){
-  document.getElementById("prompt").style.display="none";
-  document.getElementById("jumpGame").classList.add("show");
-  jumpScore=0; jumpTimer=30;
-  document.getElementById("score2").textContent=jumpScore;
-  document.getElementById("timer2").textContent=jumpTimer+" s";
-  document.querySelectorAll("#jumpGame .rock").forEach(r=>r.remove());
-  document.getElementById("runner").style.transform="translateY(0)";
-  rockInterval = setInterval(spawnRock, 1400);
-  jumpCountdown = setInterval(()=>{
-    jumpTimer--;
-    document.getElementById("timer2").textContent=jumpTimer+" s";
-    if(jumpTimer<=0) endJumpGame();
-  },1000);
-}
-function spawnRock(){
-  const area = document.querySelectorAll("#jumpGame #gameArea")[0];
-  const r = document.createElement("div");
-  r.className="rock";
-  r.textContent="🪨";
-  r.style.right = "-60px";
-  area.appendChild(r);
-  let pos = -60;
-  const runner = document.getElementById("runner");
-  const timer = setInterval(()=>{
-    pos += 6;
-    r.style.right = pos+"px";
-    // collision simple avec le coureur (zone ~60-120px depuis la gauche)
-    const areaWidth = area.offsetWidth;
-    const rockLeft = areaWidth - pos - 50;
-    if(rockLeft > 40 && rockLeft < 120){
-      if(!jumping){
-        // raté -> juste on continue, pas de fail, mais pas de point
-      } else if(!r.dataset.scored){
-        r.dataset.scored="1";
-        jumpScore++;
-        document.getElementById("score2").textContent=jumpScore;
-      }
-    }
-    if(pos > areaWidth+60){ clearInterval(timer); r.remove(); }
-  }, 16);
-}
-function doJump(){
-  if(jumping) return;
-  jumping=true;
-  const runner = document.getElementById("runner");
-  runner.style.transition="transform .35s ease-out";
-  runner.style.transform="translateY(-90px)";
-  setTimeout(()=>{
-    runner.style.transform="translateY(0)";
-    setTimeout(()=>{ jumping=false; }, 300);
-  }, 300);
-}
-function endJumpGame(){
-  clearInterval(rockInterval); clearInterval(jumpCountdown);
-  document.getElementById("jumpGame").classList.remove("show");
-  showEnd("🪨 Bravo !", jumpScore+" rochers sautés", openJumpGame);
-}
-document.getElementById("closeJump").addEventListener("click", ()=>{
-  clearInterval(rockInterval); clearInterval(jumpCountdown);
-  document.getElementById("jumpGame").classList.remove("show");
-});
-
-/* ========================= ECRAN DE FIN ========================= */
-function showEnd(title, scoreText, replayFn){
-  document.getElementById("endTitle").textContent = title;
-  document.getElementById("endScore").textContent = scoreText;
-  document.getElementById("endScreen").classList.add("show");
-  document.getElementById("endReplay").onclick = ()=>{
-    document.getElementById("endScreen").classList.remove("show");
-    replayFn();
-  };
-  document.getElementById("endBack").onclick = ()=>{
-    document.getElementById("endScreen").classList.remove("show");
-  };
-}
-} // fin du if(typeof BABYLON...)
-</script>
 </body>
 </html>
