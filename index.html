@@ -277,6 +277,23 @@
   .pz-toast{position:absolute; left:50%; top:8px; transform:translateX(-50%); background:rgba(0,0,0,.75); color:#fff; padding:8px 16px; border-radius:20px; font-weight:700; opacity:0; transition:opacity .3s; pointer-events:none; z-index:30;}
   .pz-toast.show{opacity:1;}
 
+.puzzle-choice{
+    width:180px;
+    border-radius:18px;
+    cursor:pointer;
+    transition:.25s;
+}
+
+.puzzle-choice:hover{
+    transform:scale(1.05);
+}
+
+.piece{
+    border-radius:6px;
+    cursor:pointer;
+    border:1px solid rgba(255,255,255,.2);
+}
+
 </style>
 </head>
 <body>
@@ -1176,6 +1193,169 @@ function toggleBathMute(){
   document.getElementById('bSoundToggle').textContent = muted ? '🔇' : '🔊';
   const kBtn = document.getElementById('soundToggle'); if(kBtn) kBtn.textContent = muted ? '🔇' : '🔊';
 }
+
+/* =======================
+   PUZZLE 24 PIECES
+======================= */
+
+const PUZZLE_IMAGES = [
+    "dent.png",
+    "fondmalo.png",
+    "malo-toutou.png"
+];
+
+const ROWS = 4;
+const COLS = 6;
+const TOTAL = ROWS * COLS;
+
+let currentPuzzle = 0;
+let pieces = [];
+let selected = null;
+
+const picker = document.getElementById("puzzlePickerGrid");
+const pickerBox = document.getElementById("puzzlePicker");
+const boardWrap = document.getElementById("puzzleBoardWrap");
+const board = document.getElementById("puzzleBoard");
+
+function startPuzzle(index=null){
+
+    if(index===null){
+        pickerBox.style.display="block";
+        boardWrap.style.display="none";
+        picker.innerHTML="";
+
+        PUZZLE_IMAGES.forEach((img,i)=>{
+
+            const c=document.createElement("img");
+            c.src=img;
+            c.className="puzzle-choice";
+            c.onclick=()=>startPuzzle(i);
+
+            picker.appendChild(c);
+
+        });
+
+        return;
+    }
+
+    currentPuzzle=index;
+
+    pickerBox.style.display="none";
+    boardWrap.style.display="block";
+
+    createPuzzle();
+
+}
+
+function stopPuzzle(){
+
+    boardWrap.style.display="none";
+    pickerBox.style.display="block";
+
+}
+
+function createPuzzle(){
+
+    board.innerHTML='';
+
+    pieces=[];
+
+    for(let i=0;i<TOTAL;i++) pieces.push(i);
+
+    shufflePuzzle();
+
+}
+
+function shufflePuzzle(){
+
+    for(let i=pieces.length-1;i>0;i--){
+
+        let j=Math.floor(Math.random()*(i+1));
+
+        [pieces[i],pieces[j]]=[pieces[j],pieces[i]];
+
+    }
+
+    drawPuzzle();
+
+}
+
+function drawPuzzle(){
+
+    board.innerHTML='';
+
+    board.style.display='grid';
+    board.style.gridTemplateColumns='repeat(6,100px)';
+    board.style.gridTemplateRows='repeat(4,100px)';
+    board.style.gap='2px';
+
+    pieces.forEach((piece,index)=>{
+
+        const div=document.createElement("div");
+
+        div.className="piece";
+
+        div.style.width="100px";
+        div.style.height="100px";
+
+        div.style.backgroundImage=`url(${PUZZLE_IMAGES[currentPuzzle]})`;
+
+        div.style.backgroundSize=`600px 400px`;
+
+        const x=(piece%COLS)*100;
+        const y=Math.floor(piece/COLS)*100;
+
+        div.style.backgroundPosition=`-${x}px -${y}px`;
+
+        div.onclick=()=>selectPiece(index,div);
+
+        board.appendChild(div);
+
+    });
+
+    updateScore();
+
+}
+
+function selectPiece(index,div){
+
+    if(selected===null){
+
+        selected=index;
+        div.style.outline="4px solid #00e5ff";
+        return;
+
+    }
+
+    [pieces[selected],pieces[index]]=[pieces[index],pieces[selected]];
+
+    selected=null;
+
+    drawPuzzle();
+
+}
+
+function updateScore(){
+
+    let ok=0;
+
+    for(let i=0;i<TOTAL;i++)
+        if(pieces[i]===i) ok++;
+
+    document.getElementById("pzScore").textContent=ok;
+
+    if(ok===TOTAL){
+
+        document.getElementById("puzzleWinBanner").style.display="flex";
+
+    }else{
+
+        document.getElementById("puzzleWinBanner").style.display="none";
+
+    }
+
+}
+
 
 refreshButtons();
 </script>
