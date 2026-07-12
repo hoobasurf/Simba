@@ -1214,15 +1214,11 @@ let currentPuzzle = 0;
 let pieces = [];
 let selected = null;
 
-const picker = document.getElementById("puzzlePickerGrid");
-const pickerBox = document.getElementById("puzzlePicker");
-const boardWrap = document.getElementById("puzzleBoardWrap");
-const board = document.getElementById("puzzleBoard");
 
 function startPuzzle(index = null) {
 
     // Ouvre l'écran Puzzle
-    goTo('puzzleScreen');
+    goTo("puzzleScreen");
 
     if (index === null) {
 
@@ -1233,15 +1229,16 @@ function startPuzzle(index = null) {
         PUZZLE_IMAGES.forEach((img, i) => {
 
             const c = document.createElement("img");
-
             c.src = img;
             c.className = "puzzle-choice";
-
             c.onclick = () => startPuzzle(i);
 
             picker.appendChild(c);
 
         });
+
+        document.getElementById("pzResetBtn").style.display = "none";
+        document.getElementById("pzScorePill").style.display = "none";
 
         return;
     }
@@ -1251,11 +1248,12 @@ function startPuzzle(index = null) {
     pickerBox.style.display = "none";
     boardWrap.style.display = "block";
 
-    document.getElementById("pzResetBtn").style.display = "";
-    document.getElementById("pzScorePill").style.display = "";
+    document.getElementById("pzResetBtn").style.display = "inline-flex";
+    document.getElementById("pzScorePill").style.display = "inline-flex";
 
     createPuzzle();
 
+}
 function stopPuzzle(){
 
     goTo('home');
@@ -1290,41 +1288,60 @@ function shufflePuzzle(){
 
 function drawPuzzle(){
 
-    board.innerHTML='';
+    while (board.firstChild) {
+        board.removeChild(board.firstChild);
+    }
 
-    board.style.display='grid';
-    board.style.gridTemplateColumns='repeat(6,100px)';
-    board.style.gridTemplateRows='repeat(4,100px)';
-    board.style.gap='2px';
+    board.style.display = 'grid';
+    board.style.gridTemplateColumns = 'repeat(6,100px)';
+    board.style.gridTemplateRows = 'repeat(4,100px)';
+    board.style.gap = '2px';
 
     pieces.forEach((piece,index)=>{
 
-        const div=document.createElement("div");
+        const div = document.createElement("div");
 
-        div.className="piece";
+        div.className = "piece";
 
-        div.style.width="100px";
-        div.style.height="100px";
+        div.style.width = "100px";
+        div.style.height = "100px";
 
-        div.style.backgroundImage=`url(${PUZZLE_IMAGES[currentPuzzle]})`;
+        div.style.backgroundImage = `url(${PUZZLE_IMAGES[currentPuzzle]})`;
 
-        div.style.backgroundSize=`600px 400px`;
+        div.style.backgroundSize = "600px 400px";
 
-        const x=(piece%COLS)*100;
-        const y=Math.floor(piece/COLS)*100;
+        const x = (piece % COLS) * 100;
+        const y = Math.floor(piece / COLS) * 100;
 
-        div.style.backgroundPosition=`-${x}px -${y}px`;
+        div.style.backgroundPosition = `-${x}px -${y}px`;
 
-        div.onclick=()=>selectPiece(index,div);
+        div.onclick = () => selectPiece(index, div);
 
         board.appendChild(div);
 
     });
 
+    // Bannière de victoire
+    const win = document.createElement("div");
+    win.id = "puzzleWinBanner";
+    win.className = "puzzle-win-banner";
+    win.style.display = "none";
+    win.innerHTML = `
+        <div>🎉 Bravo Malo ! 🎉</div>
+        <button class="pill" onclick="startPuzzle()">🔁 Rejouer</button>
+    `;
+
+    board.appendChild(win);
+
+    // Toast
+    const toast = document.createElement("div");
+    toast.id = "pzToast";
+    toast.className = "pz-toast";
+    board.appendChild(toast);
+
     updateScore();
 
 }
-
 function selectPiece(index,div){
 
     if(selected===null){
