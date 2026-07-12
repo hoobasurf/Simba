@@ -426,7 +426,7 @@
     <div class="topbar">
       <button class="pill back-pill" onclick="stopPuzzle()">←</button>
       <button class="pill" id="pzResetBtn" onclick="shufflePuzzle()" style="display:none;">🔀 Mélanger</button>
-      <div class="pill score-pill" id="pzScorePill" style="display:none;">🧩 <span id="pzScore">0</span>/10</div>
+      <div class="pill score-pill" id="pzScorePill" style="display:none;">🧩 <span id="pzScore">0</span>/8</div>
     </div>
 
     <div id="puzzlePicker">
@@ -1207,7 +1207,7 @@ const PUZZLE_IMAGES = [
     "malo-toutou.png"
 ];
 const ROWS = 2;
-const COLS = 5;
+const COLS = 4;
 const TOTAL = ROWS * COLS;
 const CELL = 100;          // taille d'une case du puzzle (px)
 const TAB = 26;             // débordement pour les crans qui s'emboîtent (px)
@@ -1216,7 +1216,7 @@ const BOARD_H = ROWS * CELL;
 const ARENA_W = BOARD_W + 240;   // largeur totale de la zone (plateau + pièces en vrac autour)
 const ARENA_H = BOARD_H + 320;   // hauteur totale de la zone
 const BOARD_X = (ARENA_W - BOARD_W) / 2;
-const BOARD_Y = 40;
+const BOARD_Y = (ARENA_H - BOARD_H) / 2;
 
 let currentPuzzle = 0;
 let pieceEls = [];
@@ -1478,7 +1478,7 @@ function attachDragHandlers(div){
         const x = parseFloat(div.style.left), y = parseFloat(div.style.top);
         const dist = Math.hypot(x-cx, y-cy);
 
-        if (dist < 22) {
+        if (dist < 60) {
             div.style.left = cx + 'px';
             div.style.top = cy + 'px';
             div.classList.add('placed');
