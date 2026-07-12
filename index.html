@@ -224,38 +224,58 @@
   .happy-float{position:absolute; font-size:30px; z-index:55; pointer-events:none; opacity:1;
     transition:transform .9s ease-out, opacity .9s;}
 
-  .home-btn-row{display:flex; gap:16px; margin:1.5vh 0 3.5vh 0; position:relative; z-index:3; flex-wrap:wrap; justify-content:center;}
+  .home-btn-row{display:flex; gap:14px; margin:1.5vh 0 3.5vh 0; position:relative; z-index:3; flex-wrap:wrap; justify-content:center;}
 
   .room-btn{
     position:relative; border:none; cursor:pointer; font-family:inherit;
-    display:flex; flex-direction:row; align-items:center; gap:8px;
-    width:auto; padding:10px 20px;
-    border-radius:22px; color:#fff; font-weight:800; letter-spacing:.3px;
-    text-shadow:0 1px 3px rgba(0,0,0,.35);
-    background:rgba(255,255,255,.14);
-    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-    border:1.5px solid rgba(255,255,255,.45);
-    box-shadow:0 4px 14px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.3);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    width:104px; height:118px; padding:8px 6px;
+    border-radius:28px; color:#fff; font-weight:900; letter-spacing:.3px;
+    text-shadow:0 2px 0 rgba(0,0,0,.35), 0 0 6px rgba(0,0,0,.25);
+    background:linear-gradient(160deg, var(--c1), var(--c2));
+    border:4px solid #fff;
+    box-shadow:0 6px 0 rgba(0,0,0,.2), 0 8px 18px rgba(0,0,0,.25);
     transition:transform .12s;
     overflow:visible;
-    animation:roomPop .5s cubic-bezier(.34,1.56,.64,1) backwards, neonBlink 2.4s ease-in-out infinite;
+    animation:roomPop .5s cubic-bezier(.34,1.56,.64,1) backwards, roomBounce 2.4s ease-in-out infinite, neonBlink 1.6s ease-in-out infinite;
   }
-  .room-btn:nth-child(1){animation-delay:.05s, .05s;}
-  .room-btn:nth-child(2){animation-delay:.2s, .2s;}
+  .room-btn:nth-child(1){animation-delay:.05s, .05s, .05s;}
+  .room-btn:nth-child(2){animation-delay:.2s, .35s, .2s;}
+  .room-btn:nth-child(3){animation-delay:.35s, .65s, .35s;}
   @keyframes roomPop{0%{transform:scale(.3) rotate(-8deg); opacity:0;} 100%{transform:scale(1) rotate(0); opacity:1;}}
-  .room-btn:active{transform:translateY(3px) scale(.97);}
+  @keyframes roomBounce{0%,100%{transform:translateY(0) scale(1);} 50%{transform:translateY(-6px) scale(1.04);}}
+  .room-btn:active{transform:translateY(3px) scale(.94) !important; animation-play-state:paused;}
 
-  .room-btn.kitchen{--neon:255,140,60;}
-  .room-btn.bath{--neon:70,190,255;}
+  .room-btn.kitchen{--neon:255,140,60; --c1:#ffb347; --c2:#ff7a3d;}
+  .room-btn.bath{--neon:70,190,255; --c1:#7fd8ff; --c2:#2fa8ff;}
+  .room-btn.puzzle{--neon:200,120,255; --c1:#c98fff; --c2:#8a4fe0;}
   @keyframes neonBlink{
-    0%,100%{box-shadow:0 4px 14px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.3), 0 0 6px 1px rgba(var(--neon),.35), 0 0 2px rgba(var(--neon),.6);}
-    50%{box-shadow:0 4px 14px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.3), 0 0 16px 4px rgba(var(--neon),.85), 0 0 6px rgba(var(--neon),1);}
+    0%,100%{box-shadow:0 6px 0 rgba(0,0,0,.2), 0 8px 18px rgba(0,0,0,.25), 0 0 10px 2px rgba(var(--neon),.55), 0 0 3px rgba(var(--neon),.8);}
+    50%{box-shadow:0 6px 0 rgba(0,0,0,.2), 0 8px 18px rgba(0,0,0,.25), 0 0 26px 8px rgba(var(--neon),1), 0 0 10px rgba(var(--neon),1);}
   }
 
-  .room-btn .room-emoji{font-size:26px; filter:drop-shadow(0 2px 3px rgba(0,0,0,.3));}
-  .room-btn .room-text{display:flex; flex-direction:column; align-items:flex-start; line-height:1.1;}
-  .room-btn .room-label{font-size:16px;}
-  .room-btn .room-sub{font-size:10px; font-weight:700; opacity:.85; letter-spacing:.3px;}
+  .room-btn .room-emoji{font-size:46px; line-height:1; filter:drop-shadow(0 3px 4px rgba(0,0,0,.35));}
+  .room-btn .room-text{display:flex; flex-direction:column; align-items:center; line-height:1.1;}
+  .room-btn .room-label{font-size:17px;}
+  .room-btn .room-sub{font-size:10px; font-weight:800; opacity:.9; letter-spacing:.3px;}
+
+  /* ---- puzzle ---- */
+  #puzzleScreen{background:linear-gradient(180deg,#3a2a6d 0%, #6a3fb5 55%, #9a5fd6 100%); overflow-y:auto;}
+  .puzzle-picker{display:flex; flex-wrap:wrap; gap:14px; justify-content:center; padding:16px;}
+  .puzzle-pick-card{width:120px; border-radius:18px; overflow:hidden; border:4px solid #fff; background:#222; cursor:pointer; box-shadow:0 6px 14px rgba(0,0,0,.35); transition:transform .12s;}
+  .puzzle-pick-card:active{transform:scale(.94);}
+  .puzzle-pick-card img{width:100%; height:110px; object-fit:cover; display:block;}
+  .puzzle-pick-card .pp-label{color:#fff; font-weight:800; text-align:center; padding:6px 2px; font-size:13px; background:rgba(0,0,0,.35);}
+  .puzzle-board-wrap{display:flex; flex-direction:column; align-items:center; padding:10px;}
+  #puzzleBoard{position:relative; display:grid; touch-action:none; border-radius:14px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,.4); border:4px solid #fff; background:#000;}
+  .puzzle-piece{position:relative; cursor:pointer; box-sizing:border-box; border:1px solid rgba(255,255,255,.15); transition:transform .15s, box-shadow .15s, filter .2s;}
+  .puzzle-piece.selected{outline:4px solid #fff700; outline-offset:-4px; filter:brightness(1.15); z-index:5; transform:scale(1.03);}
+  .puzzle-piece.correct{outline:3px solid #6dff9e; outline-offset:-3px;}
+  .puzzle-topbar-info{color:#fff; font-weight:800; text-align:center; margin:6px 0 2px;}
+  .puzzle-win-banner{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px; background:rgba(0,0,0,.55); color:#fff; font-size:22px; font-weight:900; text-align:center; opacity:0; pointer-events:none; transition:opacity .4s; z-index:20;}
+  .puzzle-win-banner.show{opacity:1; pointer-events:auto;}
+  .pz-toast{position:absolute; left:50%; top:8px; transform:translateX(-50%); background:rgba(0,0,0,.75); color:#fff; padding:8px 16px; border-radius:20px; font-weight:700; opacity:0; transition:opacity .3s; pointer-events:none; z-index:30;}
+  .pz-toast.show{opacity:1;}
 
 </style>
 </head>
@@ -301,6 +321,13 @@
         <span class="room-text">
           <span class="room-label">Bain</span>
           <span class="room-sub">Au bain !</span>
+        </span>
+      </button>
+      <button class="room-btn puzzle" onclick="startPuzzle()">
+        <span class="room-emoji">🧩</span>
+        <span class="room-text">
+          <span class="room-label">Puzzle</span>
+          <span class="room-sub">24 pièces !</span>
         </span>
       </button>
     </div>
@@ -372,6 +399,31 @@
       <button class="action-btn seche" id="btnSeche"><span class="ic">💨</span><span class="lb">Sécher</span></button>
     </div>
   </div>
+  </div>
+
+  <!-- JEU PUZZLE -->
+  <div class="screen" id="puzzleScreen">
+    <div class="topbar">
+      <button class="pill back-pill" onclick="stopPuzzle()">←</button>
+      <button class="pill" id="pzResetBtn" onclick="shufflePuzzle()" style="display:none;">🔀 Mélanger</button>
+      <div class="pill score-pill" id="pzScorePill" style="display:none;">🧩 <span id="pzScore">0</span>/24</div>
+    </div>
+
+    <div id="puzzlePicker">
+      <div class="subtitle" style="position:static; color:#fff; margin:10px 0 0;">Choisis ton image !</div>
+      <div class="puzzle-picker" id="puzzlePickerGrid"></div>
+    </div>
+
+    <div class="puzzle-board-wrap" id="puzzleBoardWrap" style="display:none;">
+      <div class="puzzle-topbar-info" id="puzzleInfo">Touche 2 pièces pour les échanger !</div>
+      <div id="puzzleBoard">
+        <div class="puzzle-win-banner" id="puzzleWinBanner">
+          <div>🎉 Bravo Malo ! 🎉</div>
+          <button class="pill" onclick="startPuzzle()" style="pointer-events:auto;">🔁 Rejouer</button>
+        </div>
+        <div class="pz-toast" id="pzToast"></div>
+      </div>
+    </div>
   </div>
 
 </div>
