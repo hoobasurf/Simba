@@ -1212,6 +1212,7 @@ const TOTAL = ROWS * COLS;
 let currentPuzzle = 0;
 let pieces = [];
 let selected = null;
+let pzBoard = null; // élément #puzzleBoard (renommé pour ne pas entrer en conflit avec l'id="board" de la planche à découper de la cuisine)
 
 
 function startPuzzle(index = null) {
@@ -1219,7 +1220,7 @@ function startPuzzle(index = null) {
 const picker = document.getElementById("puzzlePickerGrid");
 const pickerBox = document.getElementById("puzzlePicker");
 const boardWrap = document.getElementById("puzzleBoardWrap");
-const board = document.getElementById("puzzleBoard");
+pzBoard = document.getElementById("puzzleBoard");
 
     // Ouvre l'écran Puzzle
     goTo("puzzleScreen");
@@ -1273,7 +1274,7 @@ function stopPuzzle(){
 
 function createPuzzle(){
 
-    board.innerHTML='';
+    pzBoard.innerHTML='';
 
     pieces=[];
 
@@ -1299,18 +1300,18 @@ function shufflePuzzle(){
 
 function drawPuzzle(){
 
-    while (board.firstChild) {
-        board.removeChild(board.firstChild);
+    while (pzBoard.firstChild) {
+        pzBoard.removeChild(pzBoard.firstChild);
     }
 
-    board.style.display = 'grid';
-    board.style.gridTemplateColumns = 'repeat(6,100px)';
-    board.style.gridTemplateRows = 'repeat(4,100px)';
-    board.style.gap = '2px';
-    board.style.display = "grid";
-    board.style.width = "600px";
-    board.style.height = "400px";
-    board.style.margin = "20px auto";
+    pzBoard.style.display = 'grid';
+    pzBoard.style.gridTemplateColumns = 'repeat(6,100px)';
+    pzBoard.style.gridTemplateRows = 'repeat(4,100px)';
+    pzBoard.style.gap = '2px';
+    pzBoard.style.display = "grid";
+    pzBoard.style.width = "600px";
+    pzBoard.style.height = "400px";
+    pzBoard.style.margin = "20px auto";
 
 
     pieces.forEach((piece,index)=>{
@@ -1333,7 +1334,7 @@ function drawPuzzle(){
 
         div.onclick = () => selectPiece(index, div);
 
-        board.appendChild(div);
+        pzBoard.appendChild(div);
 
     });
 
@@ -1347,13 +1348,13 @@ function drawPuzzle(){
         <button class="pill" onclick="startPuzzle()">🔁 Rejouer</button>
     `;
 
-    board.appendChild(win);
+    pzBoard.appendChild(win);
 
     // Toast
     const toast = document.createElement("div");
     toast.id = "pzToast";
     toast.className = "pz-toast";
-    board.appendChild(toast);
+    pzBoard.appendChild(toast);
 
     updateScore();
 
@@ -1372,11 +1373,7 @@ function selectPiece(index,div){
 
     selected=null;
 
-    drawPuzzle();const PUZZLE_IMAGES = [
-    "dent.png",
-    "fondmalo.PNG",
-    "malo-toutou.png"
-];
+    drawPuzzle();
 
 }
 
