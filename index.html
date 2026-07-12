@@ -338,6 +338,8 @@
         <span class="room-text">
           <span class="room-label">Bain</span>
           <span class="room-sub">Au bain !</span>
+
+    // ...
         </span>
       </button>
       <button class="room-btn puzzle" onclick="startPuzzle()">
@@ -1217,19 +1219,25 @@ const pickerBox = document.getElementById("puzzlePicker");
 const boardWrap = document.getElementById("puzzleBoardWrap");
 const board = document.getElementById("puzzleBoard");
 
-function startPuzzle(index=null){
+function startPuzzle(index = null) {
 
-    if(index===null){
-        pickerBox.style.display="block";
-        boardWrap.style.display="none";
-        picker.innerHTML="";
+    // Ouvre l'écran Puzzle
+    goTo('puzzleScreen');
 
-        PUZZLE_IMAGES.forEach((img,i)=>{
+    if (index === null) {
 
-            const c=document.createElement("img");
-            c.src=img;
-            c.className="puzzle-choice";
-            c.onclick=()=>startPuzzle(i);
+        pickerBox.style.display = "block";
+        boardWrap.style.display = "none";
+        picker.innerHTML = "";
+
+        PUZZLE_IMAGES.forEach((img, i) => {
+
+            const c = document.createElement("img");
+
+            c.src = img;
+            c.className = "puzzle-choice";
+
+            c.onclick = () => startPuzzle(i);
 
             picker.appendChild(c);
 
@@ -1238,19 +1246,19 @@ function startPuzzle(index=null){
         return;
     }
 
-    currentPuzzle=index;
+    currentPuzzle = index;
 
-    pickerBox.style.display="none";
-    boardWrap.style.display="block";
+    pickerBox.style.display = "none";
+    boardWrap.style.display = "block";
+
+    document.getElementById("pzResetBtn").style.display = "";
+    document.getElementById("pzScorePill").style.display = "";
 
     createPuzzle();
 
-}
-
 function stopPuzzle(){
 
-    boardWrap.style.display="none";
-    pickerBox.style.display="block";
+    goTo('home');
 
 }
 
