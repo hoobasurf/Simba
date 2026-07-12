@@ -266,15 +266,16 @@
   .puzzle-pick-card:active{transform:scale(.94);}
   .puzzle-pick-card img{width:100%; height:110px; object-fit:cover; display:block;}
   .puzzle-pick-card .pp-label{color:#fff; font-weight:800; text-align:center; padding:6px 2px; font-size:13px; background:rgba(0,0,0,.35);}
-  .puzzle-board-wrap{display:flex; flex-direction:column; align-items:center; padding:10px;}
-  #puzzleBoard{position:relative; display:grid; touch-action:none; border-radius:14px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,.4); border:4px solid #fff; background:#000;}
-  .puzzle-piece{position:relative; cursor:pointer; box-sizing:border-box; border:1px solid rgba(255,255,255,.15); transition:transform .15s, box-shadow .15s, filter .2s;}
-  .puzzle-piece.selected{outline:4px solid #fff700; outline-offset:-4px; filter:brightness(1.15); z-index:5; transform:scale(1.03);}
-  .puzzle-piece.correct{outline:3px solid #6dff9e; outline-offset:-3px;}
+  .puzzle-board-wrap{display:flex; flex-direction:column; align-items:center; padding:10px; overflow-x:auto;}
+  #puzzleArena{position:relative;}
+  #puzzleTarget{background-repeat:no-repeat;}
+  .jz-piece{position:absolute; background-repeat:no-repeat; touch-action:none; cursor:grab; filter:drop-shadow(0 3px 6px rgba(0,0,0,.5)); transition:filter .15s;}
+  .jz-piece.dragging{cursor:grabbing; filter:drop-shadow(0 8px 14px rgba(0,0,0,.6)) brightness(1.08); transition:none;}
+  .jz-piece.placed{cursor:default; filter:drop-shadow(0 1px 2px rgba(0,0,0,.3));}
   .puzzle-topbar-info{color:#fff; font-weight:800; text-align:center; margin:6px 0 2px;}
-  .puzzle-win-banner{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px; background:rgba(0,0,0,.55); color:#fff; font-size:22px; font-weight:900; text-align:center; opacity:0; pointer-events:none; transition:opacity .4s; z-index:20;}
+  .puzzle-win-banner{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px; background:rgba(0,0,0,.55); color:#fff; font-size:22px; font-weight:900; text-align:center; opacity:0; pointer-events:none; transition:opacity .4s; z-index:200;}
   .puzzle-win-banner.show{opacity:1; pointer-events:auto;}
-  .pz-toast{position:absolute; left:50%; top:8px; transform:translateX(-50%); background:rgba(0,0,0,.75); color:#fff; padding:8px 16px; border-radius:20px; font-weight:700; opacity:0; transition:opacity .3s; pointer-events:none; z-index:30;}
+  .pz-toast{position:absolute; left:50%; top:8px; transform:translateX(-50%); background:rgba(0,0,0,.75); color:#fff; padding:8px 16px; border-radius:20px; font-weight:700; opacity:0; transition:opacity .3s; pointer-events:none; z-index:210;}
   .pz-toast.show{opacity:1;}
 
 .puzzle-choice{
@@ -434,8 +435,8 @@
     </div>
 
     <div class="puzzle-board-wrap" id="puzzleBoardWrap" style="display:none;">
-      <div class="puzzle-topbar-info" id="puzzleInfo">Touche 2 pièces pour les échanger !</div>
-      <div id="puzzleBoard">
+      <div class="puzzle-topbar-info" id="puzzleInfo">Fais glisser les pièces jusqu'à l'image !</div>
+      <div id="puzzleArena">
         <div class="puzzle-win-banner" id="puzzleWinBanner">
           <div>🎉 Bravo Malo ! 🎉</div>
           <button class="pill" onclick="startPuzzle()" style="pointer-events:auto;">🔁 Rejouer</button>
@@ -1208,11 +1209,19 @@ const PUZZLE_IMAGES = [
 const ROWS = 4;
 const COLS = 6;
 const TOTAL = ROWS * COLS;
+const CELL = 100;          // taille d'une case du puzzle (px)
+const TAB = 26;             // débordement pour les crans qui s'emboîtent (px)
+const BOARD_W = COLS * CELL;
+const BOARD_H = ROWS * CELL;
+const ARENA_W = BOARD_W + 240;   // largeur totale de la zone (plateau + pièces en vrac autour)
+const ARENA_H = BOARD_H + 320;   // hauteur totale de la zone
+const BOARD_X = (ARENA_W - BOARD_W) / 2;
+const BOARD_Y = 40;
 
 let currentPuzzle = 0;
-let pieces = [];
-let selected = null;
-let pzBoard = null; // élément #puzzleBoard (renommé pour ne pas entrer en conflit avec l'id="board" de la planche à découper de la cuisine)
+let pieceEls = [];
+let dragEl = null;
+let dragOffX = 0, dragOffY = 0;
 
 
 function startPuzzle(index = null) {
@@ -1220,7 +1229,6 @@ function startPuzzle(index = null) {
 const picker = document.getElementById("puzzlePickerGrid");
 const pickerBox = document.getElementById("puzzlePicker");
 const boardWrap = document.getElementById("puzzleBoardWrap");
-pzBoard = document.getElementById("puzzleBoard");
 
     // Ouvre l'écran Puzzle
     goTo("puzzleScreen");
@@ -1232,8 +1240,6 @@ pzBoard = document.getElementById("puzzleBoard");
         picker.innerHTML = "";
 
         PUZZLE_IMAGES.forEach((img, i) => {
-
-console.log(picker.innerHTML);
 
 const card = document.createElement("div");
 card.className = "puzzle-pick-card";
@@ -1272,128 +1278,215 @@ function stopPuzzle(){
 
 }
 
+/* --- Génère un contour de pièce de puzzle (avec crans) en chemin SVG --- */
+function edgeSeg(A, B, v){
+    if (v === 0) return `L ${B.x},${B.y} `;
+    const dx = B.x - A.x, dy = B.y - A.y;
+    const len = Math.sqrt(dx*dx + dy*dy);
+    const ux = dx/len, uy = dy/len;
+    const chord = len * 0.5;
+    const r = chord / 2;
+    const midx = (A.x+B.x)/2, midy = (A.y+B.y)/2;
+    const pax = midx - ux*chord/2, pay = midy - uy*chord/2;
+    const pbx = midx + ux*chord/2, pby = midy + uy*chord/2;
+    const sweep = v === 1 ? 1 : 0;
+    return `L ${pax},${pay} A ${r},${r} 0 0,${sweep} ${pbx},${pby} L ${B.x},${B.y} `;
+}
+
+function buildPiecePath(edges){
+    const p = TAB;
+    const TL={x:p,y:p}, TR={x:p+CELL,y:p}, BR={x:p+CELL,y:p+CELL}, BL={x:p,y:p+CELL};
+    let d = `M ${TL.x},${TL.y} `;
+    d += edgeSeg(TL, TR, edges.top);
+    d += edgeSeg(TR, BR, edges.right);
+    d += edgeSeg(BR, BL, edges.bottom);
+    d += edgeSeg(BL, TL, edges.left);
+    d += 'Z';
+    return d;
+}
+
+/* --- Génère aléatoirement les crans/creux partagés entre pièces voisines --- */
+function genEdges(){
+    const vEdges = []; // bords verticaux entre colonnes (partagés par la ligne)
+    for(let r=0;r<ROWS;r++){
+        vEdges.push([]);
+        for(let c=0;c<COLS-1;c++) vEdges[r].push(Math.random()<0.5 ? 1 : -1);
+    }
+    const hEdges = []; // bords horizontaux entre lignes
+    for(let r=0;r<ROWS-1;r++){
+        hEdges.push([]);
+        for(let c=0;c<COLS;c++) hEdges[r].push(Math.random()<0.5 ? 1 : -1);
+    }
+    return {vEdges, hEdges};
+}
+
+function pieceEdges(r, c, vEdges, hEdges){
+    return {
+        top:    r===0 ? 0 : -hEdges[r-1][c],
+        bottom: r===ROWS-1 ? 0 : hEdges[r][c],
+        left:   c===0 ? 0 : -vEdges[r][c-1],
+        right:  c===COLS-1 ? 0 : vEdges[r][c]
+    };
+}
+
 function createPuzzle(){
 
-    pzBoard.innerHTML='';
+    const arena = document.getElementById('puzzleArena');
+    arena.innerHTML = '';
+    arena.style.width = ARENA_W + 'px';
+    arena.style.height = ARENA_H + 'px';
 
-    pieces=[];
+    // Image cible affichée en transparence, comme guide
+    const target = document.createElement('div');
+    target.id = 'puzzleTarget';
+    target.style.cssText = `position:absolute; left:${BOARD_X}px; top:${BOARD_Y}px; width:${BOARD_W}px; height:${BOARD_H}px; background-image:url(${PUZZLE_IMAGES[currentPuzzle]}); background-size:${BOARD_W}px ${BOARD_H}px; opacity:.32; border-radius:10px; outline:3px dashed rgba(255,255,255,.6); outline-offset:2px; pointer-events:none;`;
+    arena.appendChild(target);
 
-    for(let i=0;i<TOTAL;i++) pieces.push(i);
+    // SVG contenant les découpes (clip-path) de chaque pièce
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('width', '0');
+    svg.setAttribute('height', '0');
+    svg.style.position = 'absolute';
+    const defs = document.createElementNS(svgNS, 'defs');
+    svg.appendChild(defs);
+    arena.appendChild(svg);
 
-    shufflePuzzle();
+    const {vEdges, hEdges} = genEdges();
+    const boxSize = CELL + 2*TAB;
 
-}
+    pieceEls = [];
 
-function shufflePuzzle(){
+    for(let r=0;r<ROWS;r++){
+        for(let c=0;c<COLS;c++){
 
-    for(let i=pieces.length-1;i>0;i--){
+            const id = r*COLS + c;
+            const edges = pieceEdges(r, c, vEdges, hEdges);
 
-        let j=Math.floor(Math.random()*(i+1));
+            const clipId = 'pzclip' + id;
+            const clipPath = document.createElementNS(svgNS, 'clipPath');
+            clipPath.setAttribute('id', clipId);
+            clipPath.setAttribute('clipPathUnits', 'userSpaceOnUse');
+            const path = document.createElementNS(svgNS, 'path');
+            path.setAttribute('d', buildPiecePath(edges));
+            clipPath.appendChild(path);
+            defs.appendChild(clipPath);
 
-        [pieces[i],pieces[j]]=[pieces[j],pieces[i]];
+            const div = document.createElement('div');
+            div.className = 'jz-piece';
+            div.dataset.id = id;
+            div.style.width = boxSize + 'px';
+            div.style.height = boxSize + 'px';
+            div.style.backgroundImage = `url(${PUZZLE_IMAGES[currentPuzzle]})`;
+            div.style.backgroundSize = `${BOARD_W}px ${BOARD_H}px`;
+            div.style.backgroundPosition = `${TAB - c*CELL}px ${TAB - r*CELL}px`;
+            div.style.clipPath = `url(#${clipId})`;
+            div.style.webkitClipPath = `url(#${clipId})`;
 
+            // Position correcte (coin haut-gauche de la boîte de la pièce)
+            const correctX = BOARD_X + c*CELL - TAB;
+            const correctY = BOARD_Y + r*CELL - TAB;
+            div.dataset.cx = correctX;
+            div.dataset.cy = correctY;
+
+            // Position de départ : en vrac, dispersée dans la zone
+            const startX = Math.random() * (ARENA_W - boxSize);
+            const startY = Math.random() * (ARENA_H - boxSize);
+            div.style.left = startX + 'px';
+            div.style.top = startY + 'px';
+
+            attachDragHandlers(div);
+
+            arena.appendChild(div);
+            pieceEls.push(div);
+        }
     }
-
-    drawPuzzle();
-
-}
-
-function drawPuzzle(){
-
-    while (pzBoard.firstChild) {
-        pzBoard.removeChild(pzBoard.firstChild);
-    }
-
-    pzBoard.style.display = 'grid';
-    pzBoard.style.gridTemplateColumns = 'repeat(6,100px)';
-    pzBoard.style.gridTemplateRows = 'repeat(4,100px)';
-    pzBoard.style.gap = '2px';
-    pzBoard.style.display = "grid";
-    pzBoard.style.width = "600px";
-    pzBoard.style.height = "400px";
-    pzBoard.style.margin = "20px auto";
-
-
-    pieces.forEach((piece,index)=>{
-
-        const div = document.createElement("div");
-
-        div.className = "piece";
-
-        div.style.width = "100px";
-        div.style.height = "100px";
-
-        div.style.backgroundImage = `url(${PUZZLE_IMAGES[currentPuzzle]})`;
-
-        div.style.backgroundSize = "600px 400px";
-
-        const x = (piece % COLS) * 100;
-        const y = Math.floor(piece / COLS) * 100;
-
-        div.style.backgroundPosition = `-${x}px -${y}px`;
-
-        div.onclick = () => selectPiece(index, div);
-
-        pzBoard.appendChild(div);
-
-    });
 
     // Bannière de victoire
     const win = document.createElement("div");
     win.id = "puzzleWinBanner";
     win.className = "puzzle-win-banner";
-    win.style.display = "none";
     win.innerHTML = `
         <div>🎉 Bravo Malo ! 🎉</div>
-        <button class="pill" onclick="startPuzzle()">🔁 Rejouer</button>
+        <button class="pill" onclick="startPuzzle()" style="pointer-events:auto;">🔁 Rejouer</button>
     `;
-
-    pzBoard.appendChild(win);
+    arena.appendChild(win);
 
     // Toast
     const toast = document.createElement("div");
     toast.id = "pzToast";
     toast.className = "pz-toast";
-    pzBoard.appendChild(toast);
+    arena.appendChild(toast);
 
     updateScore();
-
 }
-function selectPiece(index,div){
 
-    if(selected===null){
+/* Le bouton "Mélanger" régénère un nouveau puzzle (formes + dispersion) */
+function shufflePuzzle(){
+    createPuzzle();
+}
 
-        selected=index;
-        div.style.outline="4px solid #00e5ff";
-        return;
+function attachDragHandlers(div){
 
-    }
+    div.addEventListener('pointerdown', (e) => {
+        if (div.classList.contains('placed')) return;
+        e.preventDefault();
+        div.setPointerCapture(e.pointerId);
+        const arenaRect = document.getElementById('puzzleArena').getBoundingClientRect();
+        dragEl = div;
+        dragOffX = e.clientX - arenaRect.left - parseFloat(div.style.left);
+        dragOffY = e.clientY - arenaRect.top - parseFloat(div.style.top);
+        div.style.zIndex = 100;
+        div.classList.add('dragging');
+    });
 
-    [pieces[selected],pieces[index]]=[pieces[index],pieces[selected]];
+    div.addEventListener('pointermove', (e) => {
+        if (dragEl !== div) return;
+        const arenaRect = document.getElementById('puzzleArena').getBoundingClientRect();
+        let x = e.clientX - arenaRect.left - dragOffX;
+        let y = e.clientY - arenaRect.top - dragOffY;
+        div.style.left = x + 'px';
+        div.style.top = y + 'px';
+    });
 
-    selected=null;
+    const dropHandler = (e) => {
+        if (dragEl !== div) return;
+        dragEl = null;
+        div.classList.remove('dragging');
+        div.style.zIndex = 2;
 
-    drawPuzzle();
+        const cx = parseFloat(div.dataset.cx), cy = parseFloat(div.dataset.cy);
+        const x = parseFloat(div.style.left), y = parseFloat(div.style.top);
+        const dist = Math.hypot(x-cx, y-cy);
 
+        if (dist < 22) {
+            div.style.left = cx + 'px';
+            div.style.top = cy + 'px';
+            div.classList.add('placed');
+            div.style.zIndex = 1;
+            div.style.cursor = 'default';
+            tone(650, .12, 'triangle', .12);
+            updateScore();
+        }
+    };
+
+    div.addEventListener('pointerup', dropHandler);
+    div.addEventListener('pointercancel', dropHandler);
 }
 
 function updateScore(){
 
-    let ok=0;
+    const ok = pieceEls.filter(d => d.classList.contains('placed')).length;
 
-    for(let i=0;i<TOTAL;i++)
-        if(pieces[i]===i) ok++;
+    document.getElementById("pzScore").textContent = ok;
 
-    document.getElementById("pzScore").textContent=ok;
+    const banner = document.getElementById("puzzleWinBanner");
 
-    if(ok===TOTAL){
-
-        document.getElementById("puzzleWinBanner").style.display="flex";
-
-    }else{
-
-        document.getElementById("puzzleWinBanner").style.display="none";
-
+    if (ok === TOTAL) {
+        banner.classList.add('show');
+        tone(880, .2, 'triangle', .15);
+    } else {
+        banner.classList.remove('show');
     }
 
 }
