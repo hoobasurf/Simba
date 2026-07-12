@@ -426,7 +426,7 @@
     <div class="topbar">
       <button class="pill back-pill" onclick="stopPuzzle()">←</button>
       <button class="pill" id="pzResetBtn" onclick="shufflePuzzle()" style="display:none;">🔀 Mélanger</button>
-      <div class="pill score-pill" id="pzScorePill" style="display:none;">🧩 <span id="pzScore">0</span>/24</div>
+      <div class="pill score-pill" id="pzScorePill" style="display:none;">🧩 <span id="pzScore">0</span>/10</div>
     </div>
 
     <div id="puzzlePicker">
@@ -1206,8 +1206,8 @@ const PUZZLE_IMAGES = [
     "fondmalo.PNG",
     "malo-toutou.png"
 ];
-const ROWS = 4;
-const COLS = 6;
+const ROWS = 2;
+const COLS = 5;
 const TOTAL = ROWS * COLS;
 const CELL = 100;          // taille d'une case du puzzle (px)
 const TAB = 26;             // débordement pour les crans qui s'emboîtent (px)
@@ -1382,6 +1382,25 @@ function createPuzzle(){
             div.style.backgroundPosition = `${TAB - c*CELL}px ${TAB - r*CELL}px`;
             div.style.clipPath = `url(#${clipId})`;
             div.style.webkitClipPath = `url(#${clipId})`;
+
+            // Contour de la pièce (superposé, pour bien la distinguer)
+            const outlineSvg = document.createElementNS(svgNS, 'svg');
+            outlineSvg.setAttribute('width', boxSize);
+            outlineSvg.setAttribute('height', boxSize);
+            outlineSvg.style.cssText = 'position:absolute; left:0; top:0; pointer-events:none;';
+            const outlinePath = document.createElementNS(svgNS, 'path');
+            outlinePath.setAttribute('d', buildPiecePath(edges));
+            outlinePath.setAttribute('fill', 'none');
+            outlinePath.setAttribute('stroke', '#ffffff');
+            outlinePath.setAttribute('stroke-width', '3');
+            outlineSvg.appendChild(outlinePath);
+            const outlinePath2 = document.createElementNS(svgNS, 'path');
+            outlinePath2.setAttribute('d', buildPiecePath(edges));
+            outlinePath2.setAttribute('fill', 'none');
+            outlinePath2.setAttribute('stroke', '#2a1a55');
+            outlinePath2.setAttribute('stroke-width', '1.2');
+            outlineSvg.appendChild(outlinePath2);
+            div.appendChild(outlineSvg);
 
             // Position correcte (coin haut-gauche de la boîte de la pièce)
             const correctX = BOARD_X + c*CELL - TAB;
