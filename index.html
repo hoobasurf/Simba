@@ -1216,6 +1216,11 @@ let selected = null;
 
 function startPuzzle(index = null) {
 
+const picker = document.getElementById("puzzlePickerGrid");
+const pickerBox = document.getElementById("puzzlePicker");
+const boardWrap = document.getElementById("puzzleBoardWrap");
+const board = document.getElementById("puzzleBoard");
+
     // Ouvre l'écran Puzzle
     goTo("puzzleScreen");
 
