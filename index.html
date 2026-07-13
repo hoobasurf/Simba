@@ -268,8 +268,23 @@
       radial-gradient(circle at 90% 65%, rgba(255,255,255,.28) 0 6px, transparent 7px),
       radial-gradient(circle at 8% 70%, rgba(255,255,255,.3) 0 5px, transparent 6px),
       radial-gradient(circle at 60% 90%, rgba(255,255,255,.25) 0 5px, transparent 6px),
-      linear-gradient(180deg,#ff9ecb 0%, #b98bff 45%, #7f6bff 100%);
+      linear-gradient(-45deg,#ff9ecb,#b98bff,#7f6bff,#6fd6ff,#ff9ecb);
+    background-size: 100% 100%,100% 100%,100% 100%,100% 100%,100% 100%,100% 100%, 400% 400%;
+    animation: pzBgFlow 16s ease infinite;
     overflow-y:auto;
+  }
+  @keyframes pzBgFlow{
+    0%{background-position:0 0,0 0,0 0,0 0,0 0,0 0, 0% 50%;}
+    50%{background-position:0 0,0 0,0 0,0 0,0 0,0 0, 100% 50%;}
+    100%{background-position:0 0,0 0,0 0,0 0,0 0,0 0, 0% 50%;}
+  }
+  .pz-bg-decor{position:absolute; inset:0; z-index:-1; overflow:hidden; pointer-events:none;}
+  .pz-bg-decor span{position:absolute; bottom:-60px; font-size:26px; opacity:.55; animation:pzFloatUp linear infinite; filter:drop-shadow(0 2px 3px rgba(0,0,0,.15));}
+  @keyframes pzFloatUp{
+    0%{transform:translateY(0) translateX(0) rotate(0deg); opacity:0;}
+    10%{opacity:.6;}
+    90%{opacity:.55;}
+    100%{transform:translateY(-115vh) translateX(var(--drift,20px)) rotate(25deg); opacity:0;}
   }
   .puzzle-picker{display:flex; flex-wrap:wrap; gap:16px; justify-content:center; padding:18px;}
   .puzzle-pick-card{width:130px; border-radius:22px; overflow:hidden; background:#fff; cursor:pointer; box-shadow:0 8px 0 rgba(0,0,0,.18), 0 10px 20px rgba(0,0,0,.3); border:5px solid #fff; transition:transform .15s, box-shadow .15s; animation:ppPop .5s ease both;}
@@ -488,6 +503,16 @@
 
   <!-- JEU PUZZLE -->
   <div class="screen" id="puzzleScreen">
+    <div class="pz-bg-decor" aria-hidden="true">
+      <span style="left:6%; --drift:15px; font-size:22px; animation-duration:11s; animation-delay:0s;">⭐</span>
+      <span style="left:18%; --drift:-25px; font-size:30px; animation-duration:14s; animation-delay:2s;">🎈</span>
+      <span style="left:30%; --drift:10px; font-size:18px; animation-duration:9s; animation-delay:4s;">✨</span>
+      <span style="left:45%; --drift:-15px; font-size:26px; animation-duration:13s; animation-delay:1s;">🫧</span>
+      <span style="left:58%; --drift:20px; font-size:20px; animation-duration:10s; animation-delay:5s;">⭐</span>
+      <span style="left:70%; --drift:-10px; font-size:28px; animation-duration:15s; animation-delay:3s;">🎈</span>
+      <span style="left:82%; --drift:15px; font-size:18px; animation-duration:9.5s; animation-delay:6s;">✨</span>
+      <span style="left:92%; --drift:-20px; font-size:24px; animation-duration:12s; animation-delay:2.5s;">🫧</span>
+    </div>
     <div class="topbar">
       <button class="pill back-pill" onclick="stopPuzzle()">←</button>
       <button class="pill" id="pzResetBtn" onclick="shufflePuzzle()" style="display:none;">🔀 Nouveau</button>
@@ -1277,8 +1302,8 @@ const PUZZLE_IMAGES = [
 const ROWS = 2;
 const COLS = 4;
 const TOTAL = ROWS * COLS;
-const CELL = 72;             // taille d'une case du puzzle (px)
-const TAB = 18;               // débordement pour les crans qui s'emboîtent (px)
+const CELL = 92;             // taille d'une case du puzzle (px)
+const TAB = 17;                // débordement pour les crans qui s'emboîtent (px)
 const BOARD_W = COLS * CELL;
 const BOARD_H = ROWS * CELL;
 const PIECE_BOX = CELL + 2 * TAB;    // taille de la boîte d'une pièce (avec débordement)
