@@ -308,7 +308,7 @@
   .puzzle-pick-card .pp-label{color:#fff; font-weight:900; text-align:center; padding:7px 2px; font-size:14px; background:linear-gradient(135deg,#ff6fa5,#8a5cff);}
   @keyframes ppPop{ from{transform:scale(.6); opacity:0;} to{transform:scale(1); opacity:1;} }
 
-  .puzzle-board-wrap{display:flex; flex-direction:column; align-items:center; padding:10px; overflow-x:auto; max-width:100vw; box-sizing:border-box;}
+  .puzzle-board-wrap{display:flex; flex-direction:column; align-items:center; padding:20px 10px 14px; overflow-x:auto; max-width:100vw; box-sizing:border-box;}
   #puzzleArena{position:relative;}
 
   #puzzleTarget{
@@ -1328,26 +1328,26 @@ let CELL, TAB, BOARD_W, BOARD_H, PIECE_BOX, MARGIN, TRAY_GAP, TRAY_PAD,
 
 function computeLayout(){
 
-    // Largeur réellement disponible sur l'écran (avec un peu de marge de sécurité)
-    const availW = Math.max(260, Math.min(window.innerWidth - 24, 520));
+    // Largeur réellement disponible sur l'écran (marge de sécurité un peu plus large pour ne JAMAIS rien tronquer)
+    const availW = Math.max(260, Math.min(window.innerWidth - 30, 560));
 
-    MARGIN = 14;
-    TRAY_GAP = 10;
-    TRAY_PAD = 12;
+    MARGIN = 12;
+    TRAY_GAP = 8;
+    TRAY_PAD = 10;
 
-    // Taille de case pour que l'image (le plateau) soit la plus grande possible tout en tenant en largeur
-    // (BOARD_W + 2*TAB doit tenir dans l'écran, TAB ≈ 0.22*CELL)
-    let cell = Math.floor((availW - 2*MARGIN) / (COLS + 0.44));
-    cell = Math.max(60, Math.min(cell, 120));
+    // Emplacement des pièces réduit (petits crans) : plus de place laissée pour agrandir l'image
+    const TAB_RATIO = 0.13;
+    let cell = Math.floor((availW - 2*MARGIN - 6) / (COLS + 2*TAB_RATIO));
+    cell = Math.max(60, Math.min(cell, 140));
 
     CELL = cell;
-    TAB = Math.round(cell * 0.22);
+    TAB = Math.round(cell * TAB_RATIO);
     BOARD_W = COLS * CELL;
     BOARD_H = ROWS * CELL;
     PIECE_BOX = CELL + 2 * TAB;
 
     // La pioche s'adapte : autant de colonnes que la largeur le permet, et s'étale sur plusieurs lignes si besoin
-    TRAY_COLS = Math.max(2, Math.floor((availW - 2*TRAY_PAD + TRAY_GAP) / (PIECE_BOX + TRAY_GAP)));
+    TRAY_COLS = Math.max(2, Math.floor((availW - 2*TRAY_PAD - 6 + TRAY_GAP) / (PIECE_BOX + TRAY_GAP)));
     TRAY_COLS = Math.min(TRAY_COLS, TOTAL);
     TRAY_ROWS = Math.ceil(TOTAL / TRAY_COLS);
 
@@ -1355,7 +1355,7 @@ function computeLayout(){
     TRAY_H = TRAY_ROWS * PIECE_BOX + (TRAY_ROWS - 1) * TRAY_GAP + 2 * TRAY_PAD;
     ARENA_W = Math.max(BOARD_W + 2 * TAB, TRAY_W) + 2 * MARGIN;
     BOARD_X = (ARENA_W - BOARD_W) / 2;
-    BOARD_Y = MARGIN;
+    BOARD_Y = MARGIN + 16;                 // un peu d'air au-dessus de l'image
     TRAY_X = (ARENA_W - TRAY_W) / 2;
     TRAY_Y = BOARD_Y + BOARD_H + MARGIN * 2;
     ARENA_H = TRAY_Y + TRAY_H + MARGIN;
