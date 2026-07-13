@@ -260,21 +260,86 @@
   .room-btn .room-sub{font-size:10px; font-weight:800; opacity:.9; letter-spacing:.3px;}
 
   /* ---- puzzle ---- */
-  #puzzleScreen{background:linear-gradient(180deg,#3a2a6d 0%, #6a3fb5 55%, #9a5fd6 100%); overflow-y:auto;}
-  .puzzle-picker{display:flex; flex-wrap:wrap; gap:14px; justify-content:center; padding:16px;}
-  .puzzle-pick-card{width:120px; border-radius:18px; overflow:hidden; border:4px solid #fff; background:#222; cursor:pointer; box-shadow:0 6px 14px rgba(0,0,0,.35); transition:transform .12s;}
-  .puzzle-pick-card:active{transform:scale(.94);}
+  #puzzleScreen{
+    background:
+      radial-gradient(circle at 15% 12%, rgba(255,255,255,.35) 0 6px, transparent 7px),
+      radial-gradient(circle at 78% 22%, rgba(255,255,255,.3) 0 5px, transparent 6px),
+      radial-gradient(circle at 40% 8%, rgba(255,255,255,.25) 0 4px, transparent 5px),
+      radial-gradient(circle at 90% 65%, rgba(255,255,255,.28) 0 6px, transparent 7px),
+      radial-gradient(circle at 8% 70%, rgba(255,255,255,.3) 0 5px, transparent 6px),
+      radial-gradient(circle at 60% 90%, rgba(255,255,255,.25) 0 5px, transparent 6px),
+      linear-gradient(180deg,#ff9ecb 0%, #b98bff 45%, #7f6bff 100%);
+    overflow-y:auto;
+  }
+  .puzzle-picker{display:flex; flex-wrap:wrap; gap:16px; justify-content:center; padding:18px;}
+  .puzzle-pick-card{width:130px; border-radius:22px; overflow:hidden; background:#fff; cursor:pointer; box-shadow:0 8px 0 rgba(0,0,0,.18), 0 10px 20px rgba(0,0,0,.3); border:5px solid #fff; transition:transform .15s, box-shadow .15s; animation:ppPop .5s ease both;}
+  .puzzle-pick-card:active{transform:scale(.93) translateY(3px); box-shadow:0 3px 0 rgba(0,0,0,.18), 0 4px 10px rgba(0,0,0,.3);}
   .puzzle-pick-card img{width:100%; height:110px; object-fit:cover; display:block;}
-  .puzzle-pick-card .pp-label{color:#fff; font-weight:800; text-align:center; padding:6px 2px; font-size:13px; background:rgba(0,0,0,.35);}
+  .puzzle-pick-card .pp-label{color:#fff; font-weight:900; text-align:center; padding:7px 2px; font-size:14px; background:linear-gradient(135deg,#ff6fa5,#8a5cff);}
+  @keyframes ppPop{ from{transform:scale(.6); opacity:0;} to{transform:scale(1); opacity:1;} }
+
   .puzzle-board-wrap{display:flex; flex-direction:column; align-items:center; padding:10px; overflow-x:auto;}
   #puzzleArena{position:relative;}
-  #puzzleTarget{background-repeat:no-repeat;}
-  .jz-piece{position:absolute; background-repeat:no-repeat; touch-action:none; cursor:grab; filter:drop-shadow(0 3px 6px rgba(0,0,0,.5)); transition:filter .15s;}
-  .jz-piece.dragging{cursor:grabbing; filter:drop-shadow(0 8px 14px rgba(0,0,0,.6)) brightness(1.08); transition:none;}
-  .jz-piece.placed{cursor:default; filter:drop-shadow(0 1px 2px rgba(0,0,0,.3));}
-  .puzzle-topbar-info{color:#fff; font-weight:800; text-align:center; margin:6px 0 2px;}
-  .puzzle-win-banner{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px; background:rgba(0,0,0,.55); color:#fff; font-size:22px; font-weight:900; text-align:center; opacity:0; pointer-events:none; transition:opacity .4s; z-index:200;}
+
+  #puzzleTarget{
+    background-repeat:no-repeat;
+    border-radius:16px;
+    outline:none !important;
+    border:6px solid #fff;
+    box-shadow:0 0 0 4px #ffd23f, 0 10px 22px rgba(0,0,0,.3);
+  }
+
+  .pz-tray-card{
+    position:absolute;
+    background:rgba(255,255,255,.22);
+    border:3px dashed rgba(255,255,255,.75);
+    border-radius:22px;
+    backdrop-filter:blur(1px);
+  }
+  .pz-tray-label{
+    position:absolute;
+    color:#fff;
+    font-weight:900;
+    font-size:13px;
+    letter-spacing:.3px;
+    text-shadow:0 2px 3px rgba(0,0,0,.35);
+    background:rgba(0,0,0,.2);
+    padding:3px 10px;
+    border-radius:20px;
+  }
+
+  .jz-piece{
+    position:absolute;
+    background-repeat:no-repeat;
+    touch-action:none;
+    cursor:grab;
+    filter:drop-shadow(0 4px 7px rgba(0,0,0,.45));
+    transition:filter .15s, transform .15s;
+    animation:pieceFloat 2.6s ease-in-out infinite;
+  }
+  .jz-piece:active{filter:drop-shadow(0 4px 7px rgba(0,0,0,.45)) brightness(1.12);}
+  .jz-piece.dragging{cursor:grabbing; filter:drop-shadow(0 10px 16px rgba(0,0,0,.55)) brightness(1.12); transition:none; animation:none; transform:scale(1.08); z-index:100;}
+  .jz-piece.placed{cursor:default; filter:drop-shadow(0 1px 2px rgba(0,0,0,.3)); animation:none;}
+  @keyframes pieceFloat{0%,100%{transform:translateY(0);} 50%{transform:translateY(-4px);}}
+
+  .puzzle-topbar-info{color:#fff; font-weight:900; text-align:center; margin:8px 0 4px; font-size:15px; text-shadow:0 2px 3px rgba(0,0,0,.3);}
+
+  .puzzle-win-banner{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px;
+    background:rgba(40,10,60,.6);
+    color:#fff; text-align:center; opacity:0; pointer-events:none; transition:opacity .4s; z-index:200;
+  }
   .puzzle-win-banner.show{opacity:1; pointer-events:auto;}
+  .puzzle-win-banner .win-card{
+    background:linear-gradient(135deg,#ff6fa5,#ffd23f 55%,#8a5cff);
+    padding:22px 26px; border-radius:24px;
+    box-shadow:0 10px 0 rgba(0,0,0,.2), 0 14px 30px rgba(0,0,0,.4);
+    animation:winPop .5s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  .puzzle-win-banner .win-title{font-size:24px; font-weight:900; text-shadow:0 2px 4px rgba(0,0,0,.3); margin-bottom:6px;}
+  .puzzle-win-banner .win-emojis{font-size:26px; margin-bottom:10px; letter-spacing:4px;}
+  @keyframes winPop{ from{transform:scale(.5) rotate(-6deg); opacity:0;} to{transform:scale(1) rotate(0); opacity:1;} }
+
   .pz-toast{position:absolute; left:50%; top:8px; transform:translateX(-50%); background:rgba(0,0,0,.75); color:#fff; padding:8px 16px; border-radius:20px; font-weight:700; opacity:0; transition:opacity .3s; pointer-events:none; z-index:210;}
   .pz-toast.show{opacity:1;}
 
@@ -425,21 +490,24 @@
   <div class="screen" id="puzzleScreen">
     <div class="topbar">
       <button class="pill back-pill" onclick="stopPuzzle()">←</button>
-      <button class="pill" id="pzResetBtn" onclick="shufflePuzzle()" style="display:none;">🔀 Mélanger</button>
+      <button class="pill" id="pzResetBtn" onclick="shufflePuzzle()" style="display:none;">🔀 Nouveau</button>
       <div class="pill score-pill" id="pzScorePill" style="display:none;">🧩 <span id="pzScore">0</span>/8</div>
     </div>
 
     <div id="puzzlePicker">
-      <div class="subtitle" style="position:static; color:#fff; margin:10px 0 0;">Choisis ton image !</div>
+      <div class="subtitle" style="position:static; color:#fff; margin:10px 0 0; font-size:20px; text-shadow:0 2px 3px rgba(0,0,0,.3);">🌟 Choisis ton puzzle ! 🌟</div>
       <div class="puzzle-picker" id="puzzlePickerGrid"></div>
     </div>
 
     <div class="puzzle-board-wrap" id="puzzleBoardWrap" style="display:none;">
-      <div class="puzzle-topbar-info" id="puzzleInfo">Fais glisser les pièces jusqu'à l'image !</div>
+      <div class="puzzle-topbar-info" id="puzzleInfo">👉 Fais glisser les pièces dans l'image ! 👈</div>
       <div id="puzzleArena">
         <div class="puzzle-win-banner" id="puzzleWinBanner">
-          <div>🎉 Bravo Malo ! 🎉</div>
-          <button class="pill" onclick="startPuzzle()" style="pointer-events:auto;">🔁 Rejouer</button>
+          <div class="win-card">
+            <div class="win-title">🎉 Bravo Malo ! 🎉</div>
+            <div class="win-emojis">⭐🎊✨🎊⭐</div>
+            <button class="pill" onclick="startPuzzle()" style="pointer-events:auto;">🔁 Rejouer</button>
+          </div>
         </div>
         <div class="pz-toast" id="pzToast"></div>
       </div>
@@ -1209,14 +1277,25 @@ const PUZZLE_IMAGES = [
 const ROWS = 2;
 const COLS = 4;
 const TOTAL = ROWS * COLS;
-const CELL = 100;          // taille d'une case du puzzle (px)
-const TAB = 26;             // débordement pour les crans qui s'emboîtent (px)
+const CELL = 72;             // taille d'une case du puzzle (px)
+const TAB = 18;               // débordement pour les crans qui s'emboîtent (px)
 const BOARD_W = COLS * CELL;
 const BOARD_H = ROWS * CELL;
-const ARENA_W = BOARD_W + 240;   // largeur totale de la zone (plateau + pièces en vrac autour)
-const ARENA_H = BOARD_H + 320;   // hauteur totale de la zone
+const PIECE_BOX = CELL + 2 * TAB;    // taille de la boîte d'une pièce (avec débordement)
+const MARGIN = 18;
+const TRAY_GAP = 12;
+const TRAY_PAD = 14;
+const TRAY_COLS = COLS;                          // pièces rangées en grille, jamais en vrac qui déborde
+const TRAY_ROWS = Math.ceil(TOTAL / TRAY_COLS);
+const TRAY_W = TRAY_COLS * PIECE_BOX + (TRAY_COLS - 1) * TRAY_GAP + 2 * TRAY_PAD;
+const TRAY_H = TRAY_ROWS * PIECE_BOX + (TRAY_ROWS - 1) * TRAY_GAP + 2 * TRAY_PAD;
+const ARENA_W = Math.max(BOARD_W + 2 * TAB, TRAY_W) + 2 * MARGIN;
 const BOARD_X = (ARENA_W - BOARD_W) / 2;
-const BOARD_Y = (ARENA_H - BOARD_H) / 2;
+const BOARD_Y = MARGIN;
+const TRAY_X = (ARENA_W - TRAY_W) / 2;
+const TRAY_Y = BOARD_Y + BOARD_H + MARGIN * 2;
+const ARENA_H = TRAY_Y + TRAY_H + MARGIN;
+const SNAP_DIST = Math.round(CELL * 0.6);
 
 let currentPuzzle = 0;
 let pieceEls = [];
@@ -1339,8 +1418,32 @@ function createPuzzle(){
     // Image cible affichée en transparence, comme guide
     const target = document.createElement('div');
     target.id = 'puzzleTarget';
-    target.style.cssText = `position:absolute; left:${BOARD_X}px; top:${BOARD_Y}px; width:${BOARD_W}px; height:${BOARD_H}px; background-image:url(${PUZZLE_IMAGES[currentPuzzle]}); background-size:${BOARD_W}px ${BOARD_H}px; opacity:.32; border-radius:10px; outline:3px dashed rgba(255,255,255,.6); outline-offset:2px; pointer-events:none;`;
+    target.style.position = 'absolute';
+    target.style.left = BOARD_X + 'px';
+    target.style.top = BOARD_Y + 'px';
+    target.style.width = BOARD_W + 'px';
+    target.style.height = BOARD_H + 'px';
+    target.style.backgroundImage = `url(${PUZZLE_IMAGES[currentPuzzle]})`;
+    target.style.backgroundSize = `${BOARD_W}px ${BOARD_H}px`;
+    target.style.opacity = '.32';
+    target.style.pointerEvents = 'none';
     arena.appendChild(target);
+
+    // Carte "pioche" : zone bien délimitée où les pièces sont rangées, une par une
+    const trayCard = document.createElement('div');
+    trayCard.className = 'pz-tray-card';
+    trayCard.style.left = TRAY_X + 'px';
+    trayCard.style.top = TRAY_Y + 'px';
+    trayCard.style.width = TRAY_W + 'px';
+    trayCard.style.height = TRAY_H + 'px';
+    arena.appendChild(trayCard);
+
+    const trayLabel = document.createElement('div');
+    trayLabel.className = 'pz-tray-label';
+    trayLabel.textContent = '🧺 Pioche';
+    trayLabel.style.left = (TRAY_X + 10) + 'px';
+    trayLabel.style.top = (TRAY_Y - 14) + 'px';
+    arena.appendChild(trayLabel);
 
     // SVG contenant les découpes (clip-path) de chaque pièce
     const svgNS = 'http://www.w3.org/2000/svg';
@@ -1353,7 +1456,15 @@ function createPuzzle(){
     arena.appendChild(svg);
 
     const {vEdges, hEdges} = genEdges();
-    const boxSize = CELL + 2*TAB;
+
+    // Liste des pièces, puis mélange de l'ORDRE de rangement dans la pioche
+    // (les pièces gardent leur forme/emplacement cible, seul leur rangement change)
+    const order = [];
+    for(let i=0;i<TOTAL;i++) order.push(i);
+    for(let i=order.length-1;i>0;i--){
+        const j = Math.floor(Math.random()*(i+1));
+        [order[i],order[j]] = [order[j],order[i]];
+    }
 
     pieceEls = [];
 
@@ -1375,18 +1486,19 @@ function createPuzzle(){
             const div = document.createElement('div');
             div.className = 'jz-piece';
             div.dataset.id = id;
-            div.style.width = boxSize + 'px';
-            div.style.height = boxSize + 'px';
+            div.style.width = PIECE_BOX + 'px';
+            div.style.height = PIECE_BOX + 'px';
             div.style.backgroundImage = `url(${PUZZLE_IMAGES[currentPuzzle]})`;
             div.style.backgroundSize = `${BOARD_W}px ${BOARD_H}px`;
             div.style.backgroundPosition = `${TAB - c*CELL}px ${TAB - r*CELL}px`;
             div.style.clipPath = `url(#${clipId})`;
             div.style.webkitClipPath = `url(#${clipId})`;
+            div.style.animationDelay = (Math.random()*2).toFixed(2) + 's';
 
             // Contour de la pièce (superposé, pour bien la distinguer)
             const outlineSvg = document.createElementNS(svgNS, 'svg');
-            outlineSvg.setAttribute('width', boxSize);
-            outlineSvg.setAttribute('height', boxSize);
+            outlineSvg.setAttribute('width', PIECE_BOX);
+            outlineSvg.setAttribute('height', PIECE_BOX);
             outlineSvg.style.cssText = 'position:absolute; left:0; top:0; pointer-events:none;';
             const outlinePath = document.createElementNS(svgNS, 'path');
             outlinePath.setAttribute('d', buildPiecePath(edges));
@@ -1402,15 +1514,18 @@ function createPuzzle(){
             outlineSvg.appendChild(outlinePath2);
             div.appendChild(outlineSvg);
 
-            // Position correcte (coin haut-gauche de la boîte de la pièce)
+            // Position correcte (coin haut-gauche de la boîte de la pièce) sur le plateau
             const correctX = BOARD_X + c*CELL - TAB;
             const correctY = BOARD_Y + r*CELL - TAB;
             div.dataset.cx = correctX;
             div.dataset.cy = correctY;
 
-            // Position de départ : en vrac, dispersée dans la zone
-            const startX = Math.random() * (ARENA_W - boxSize);
-            const startY = Math.random() * (ARENA_H - boxSize);
+            // Position de départ : bien rangée dans la grille de la pioche (pas de chevauchement)
+            const slot = order.indexOf(id);
+            const trayR = Math.floor(slot / TRAY_COLS);
+            const trayC = slot % TRAY_COLS;
+            const startX = TRAY_X + TRAY_PAD + trayC * (PIECE_BOX + TRAY_GAP);
+            const startY = TRAY_Y + TRAY_PAD + trayR * (PIECE_BOX + TRAY_GAP);
             div.style.left = startX + 'px';
             div.style.top = startY + 'px';
 
@@ -1426,8 +1541,11 @@ function createPuzzle(){
     win.id = "puzzleWinBanner";
     win.className = "puzzle-win-banner";
     win.innerHTML = `
-        <div>🎉 Bravo Malo ! 🎉</div>
-        <button class="pill" onclick="startPuzzle()" style="pointer-events:auto;">🔁 Rejouer</button>
+        <div class="win-card">
+            <div class="win-title">🎉 Bravo Malo ! 🎉</div>
+            <div class="win-emojis">⭐🎊✨🎊⭐</div>
+            <button class="pill" onclick="startPuzzle()" style="pointer-events:auto;">🔁 Rejouer</button>
+        </div>
     `;
     arena.appendChild(win);
 
@@ -1478,7 +1596,7 @@ function attachDragHandlers(div){
         const x = parseFloat(div.style.left), y = parseFloat(div.style.top);
         const dist = Math.hypot(x-cx, y-cy);
 
-        if (dist < 60) {
+        if (dist < SNAP_DIST) {
             div.style.left = cx + 'px';
             div.style.top = cy + 'px';
             div.classList.add('placed');
