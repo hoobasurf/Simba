@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Les copains de Malo">
+<meta name="theme-color" content="#2b1c10">
+<title>Les copains de Malo</title>
+<link rel="icon" href="images/icon.png">
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ACCUEIL -->
+  <div class="screen active" id="home" style="background-image:url('images/home_bg.jpg'); background-size:cover; background-position:center;">
+    <div class="sun"></div>
+    <div class="cloud c1"></div>
+    <div class="cloud c2"></div>
+    <div class="cloud c3"></div>
+    <div class="bird" style="top:14%;">〰</div>
+    <div class="bird b2" style="top:30%;">〰</div>
+    <div class="butterfly" style="top:52%; left:12%; animation-delay:.3s;">🦋</div>
+    <div class="butterfly" style="top:60%; right:14%; animation-delay:1.6s;">🦋</div>
+
+    <h1 class="title">Les copains de Malo</h1>
+    <div class="subtitle">Touche pour jouer avec eux !</div>
+    <div class="roster"></div>
+
+    <div class="grass-row">
+      <div class="blade"></div><div class="blade"></div><div class="blade"></div>
+      <div class="blade"></div><div class="blade"></div><div class="blade"></div>
+      <div class="blade"></div><div class="blade"></div><div class="blade"></div>
+      <div class="blade"></div><div class="blade"></div><div class="blade"></div>
+    </div>
+    <div class="flower" style="left:10%;">🌼</div>
+    <div class="flower" style="left:30%; animation-delay:.6s;">🌸</div>
+    <div class="flower" style="right:22%; animation-delay:1.1s;">🌼</div>
+    <div class="flower" style="right:6%; animation-delay:1.7s;">🌸</div>
+
+    <div class="home-btn-row">
+      <button class="room-btn kitchen" onclick="startKitchen()">
+        <span class="room-emoji">🍽️</span>
+        <span class="room-text">
+          <span class="room-label">Cuisine</span>
+          <span class="room-sub">On va jouer !</span>
+        </span>
+      </button>
+      <button class="room-btn bath" onclick="startBath()">
+        <span class="room-emoji">🛁</span>
+        <span class="room-text">
+          <span class="room-label">Bain</span>
+          <span class="room-sub">Au bain !</span>
+
+    // ...
+        </span>
+      </button>
+      <button class="room-btn puzzle" onclick="startPuzzle()">
+        <span class="room-emoji">🧩</span>
+        <span class="room-text">
+          <span class="room-label">Puzzle</span>
+          <span class="room-sub">24 pièces !</span>
+        </span>
+      </button>
+      <button class="room-btn aventure" onclick="startAventure()">
+        <span class="room-emoji">🗺️</span>
+        <span class="room-text">
+          <span class="room-label">Aventure</span>
+          <span class="room-sub">La prairie !</span>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- JEU CUISINE -->
+  <div class="screen" id="kitchenScreen">
+<div id="wrap">
+  <div class="topbar">
+    <button class="pill back-pill" onclick="stopKitchen()">←</button>
+    <button class="pill" onclick="resetScene()">🧹 Ranger</button>
+    <div class="pill score-pill">🍽️ <span id="kScore">0</span>/4</div>
+    <button class="pill" id="soundToggle" onclick="toggleMute()">🔊</button>
+  </div>
+  <div id="stage">
+    <div class="photo-frame" id="photoFrame">
+    <img class="photo" id="kitchenPhoto" alt="cuisine">
+    <div class="toast" id="toast"></div>
+    <!-- calques + zones interactives injectés en JS -->
+    <div class="char-row">
+      <div class="k-char" id="kLion">
+        <img id="imgKLion" alt="lion">
+      </div>
+      <div class="k-char" id="kMalo">
+        <img id="imgKMalo" alt="Malo">
+      </div>
+      <div class="k-char" id="kChien">
+        <img id="imgKChien" alt="chien">
+      </div>
+    </div>
+    <div class="dropzone food dz-lion-food" data-need="food-lion">🍖</div>
+    <div class="dropzone water dz-lion-water" data-need="water-lion">💧</div>
+    <div class="dropzone food dz-chien-food" data-need="food-chien">🍖</div>
+    <div class="dropzone water dz-chien-water" data-need="water-chien">💧</div>
+    </div>
+  </div>
+  <div class="tray" id="tray"><div class="tray-hint">Ouvre les placards pour trouver les gamelles 🔍</div></div>
+  <div class="end-banner" id="endKitchen">
+    <div class="big">🦁🐶🍽️</div>
+    <h2>Bravo !</h2>
+    <p>Le lion et le chiot ont bien mangé et bien bu !</p>
+    <button class="again-btn" onclick="startKitchen()">Rejouer</button>
+  </div>
+</div>
+  </div>
+
+  <!-- JEU SALLE DE BAIN -->
+  <div class="screen" id="bathroomScreen">
+  <div id="bathWrap" style="position:relative; width:100%; height:100%; display:flex; flex-direction:column;">
+    <div class="topbar">
+      <button class="pill back-pill" onclick="stopBath()">←</button>
+      <button class="pill" id="bSoundToggle" onclick="toggleBathMute()">🔊</button>
+    </div>
+    <div id="bathStage">
+      <div id="bathPhotoFrame">
+        <img class="bath-photo" id="bathPhoto" alt="bain de Malo">
+        <div class="toast" id="bathToast"></div>
+        <div class="shower-hotspot" id="showerHotspot"></div>
+        <div class="hold-bar-wrap" id="holdBarWrap">
+          <div class="hold-emoji" id="holdEmoji">🧼</div>
+          <div class="hold-track"><div class="hold-fill" id="holdFill"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="action-row" id="actionRow">
+      <button class="action-btn savon" id="btnSavon"><span class="ic">🧼</span><span class="lb">Savon</span></button>
+      <button class="action-btn brosse" id="btnBrosse"><span class="ic">🪥</span><span class="lb">Dents</span></button>
+      <button class="action-btn gobelet" id="btnGobelet"><span class="ic">🥤</span><span class="lb">Rincer</span></button>
+      <button class="action-btn seche" id="btnSeche"><span class="ic">💨</span><span class="lb">Sécher</span></button>
+    </div>
+  </div>
+  </div>
+
+  <!-- JEU PUZZLE -->
+  <div class="screen" id="puzzleScreen">
+    <div class="pz-bg-decor" aria-hidden="true">
+      <div class="pz-sun"></div>
+      <div class="pz-cloud" style="width:90px; height:34px; top:14%; animation-duration:34s;"></div>
+      <div class="pz-cloud" style="width:70px; height:26px; top:30%; animation-duration:26s; animation-delay:-8s;"></div>
+      <div class="pz-cloud" style="width:110px; height:38px; top:6%; animation-duration:42s; animation-delay:-20s;"></div>
+      <div class="pz-rainbow"></div>
+      <div class="pz-hill"></div>
+      <span style="left:20%; --drift:15px; font-size:22px; animation-duration:12s; animation-delay:0s;">🦋</span>
+      <span style="left:50%; --drift:-20px; font-size:20px; animation-duration:15s; animation-delay:3s;">🐦</span>
+      <span style="left:75%; --drift:18px; font-size:24px; animation-duration:13s; animation-delay:6s;">🦋</span>
+      <span style="left:35%; --drift:-15px; font-size:26px; animation-duration:16s; animation-delay:8s;">🎈</span>
+    </div>
+    <div class="topbar">
+      <button class="pill back-pill" onclick="stopPuzzle()">←</button>
+      <button class="pill" id="pzResetBtn" onclick="shufflePuzzle()" style="display:none;">🔀 Nouveau</button>
+      <div class="pill score-pill" id="pzScorePill" style="display:none;">🧩 <span id="pzScore">0</span>/8</div>
+    </div>
+
+    <div id="puzzlePicker">
+      <div class="subtitle" style="position:static; color:#fff; margin:10px 0 0; font-size:20px; text-shadow:0 2px 3px rgba(0,0,0,.3);">🌟 Choisis ton puzzle ! 🌟</div>
+      <div class="puzzle-picker" id="puzzlePickerGrid"></div>
+    </div>
+
+    <div class="puzzle-board-wrap" id="puzzleBoardWrap" style="display:none;">
+      <div class="puzzle-topbar-info" id="puzzleInfo">👉 Fais glisser les pièces dans l'image ! 👈</div>
+      <div id="puzzleArena">
+        <div class="puzzle-win-banner" id="puzzleWinBanner">
+          <div class="win-card">
+            <div class="win-title">🎉 Bravo Malo ! 🎉</div>
+            <div class="win-emojis">⭐🎊✨🎊⭐</div>
+            <button class="pill" onclick="startPuzzle()" style="pointer-events:auto;">🔁 Rejouer</button>
+          </div>
+        </div>
+        <div class="pz-toast" id="pzToast"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<script src="app.js"></script>
+</body>
+</html>
