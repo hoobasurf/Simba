@@ -1,12 +1,12 @@
 /* =============== Images (photo de base + variantes "ouvertes") =============== */
-const KITCHEN_SRC = "images/kitchen/kitchen.jpg";
+const KITCHEN_SRC = "images/kitchen.jpg";
 const OPEN_SRC = {
-  glass_cab: "images/kitchen/glass_cab.jpg",
-  left_cab:  "images/kitchen/left_cab.jpg",
-  drawers:   "images/kitchen/drawers.jpg",
-  yellow_cab:"images/kitchen/yellow_cab.jpg",
-  sink_cab:  "images/kitchen/sink_cab.jpg",
-  oven:      "images/kitchen/oven.jpg",
+  glass_cab: "images/glass_cab.jpg",
+  left_cab:  "images/left_cab.jpg",
+  drawers:   "images/drawers.jpg",
+  yellow_cab:"images/yellow_cab.jpg",
+  sink_cab:  "images/sink_cab.jpg",
+  oven:      "images/oven.jpg",
 };
 document.getElementById('kitchenPhoto').src = KITCHEN_SRC;
 
@@ -235,9 +235,9 @@ function resetScene(){
   toast('Cuisine rangée ! ✨');
 }
 /* =============== Images personnages (accueil + cuisine) =============== */
-const LION_IMG = "images/kitchen/lion.png";
-const MALO_IMG = "images/kitchen/malo.png";
-const CHIEN_IMG = "images/kitchen/chien.png";
+const LION_IMG = "images/lion.png";
+const MALO_IMG = "images/malo.png";
+const CHIEN_IMG = "images/chien.png";
 document.getElementById('imgKLion').src = LION_IMG;
 document.getElementById('imgKMalo').src = MALO_IMG;
 document.getElementById('imgKChien').src = CHIEN_IMG;
@@ -463,13 +463,13 @@ function checkWin(){
 }
 
 /* =============== SALLE DE BAIN : images (etats) =============== */
-const NORMAL_SRC = "images/bath/normal.jpg";
-const MOUSSE_SRC = "images/bath/mousse.jpg";
-const DOUCHE_SRC = "images/bath/douche.jpg";
-const DENT_SRC = "images/bath/dent.jpg";
-const MOUSSE_DENT_SRC = "images/bath/mousse_dent.jpg";
-const SOURIR_SRC = "images/bath/sourir.jpg";
-const SECHE_SRC = "images/bath/seche.jpg";
+const NORMAL_SRC = "images/normal.jpg";
+const MOUSSE_SRC = "images/mousse.jpg";
+const DOUCHE_SRC = "images/douche.jpg";
+const DENT_SRC = "images/dent.jpg";
+const MOUSSE_DENT_SRC = "images/mousse_dent.jpg";
+const SOURIR_SRC = "images/sourir.jpg";
+const SECHE_SRC = "images/seche.jpg";
 
 document.getElementById('bathPhoto').src = NORMAL_SRC;
 
