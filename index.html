@@ -348,21 +348,16 @@
 
   .jz-piece{
     position:absolute;
-    background-repeat:no-repeat;
     touch-action:none;
     cursor:grab;
     filter:drop-shadow(0 4px 7px rgba(0,0,0,.45));
     transition:filter .15s, transform .15s;
     animation:pieceFloat 2.6s ease-in-out infinite;
-    transform:scale(1.045);
-    transform-origin:center center;
   }
   .jz-piece:active{filter:drop-shadow(0 4px 7px rgba(0,0,0,.45)) brightness(1.12);}
   .jz-piece.dragging{cursor:grabbing; filter:drop-shadow(0 10px 16px rgba(0,0,0,.55)) brightness(1.12); transition:none; animation:none; transform:scale(1.08); z-index:100;}
   .jz-piece.placed{cursor:default; filter:drop-shadow(0 1px 2px rgba(0,0,0,.3)); animation:none;}
-  .jz-piece.placed > svg{opacity:0; transition:opacity .25s ease;}
-  .jz-piece > svg{transition:opacity .25s ease;}
-  @keyframes pieceFloat{0%,100%{transform:scale(1.045) translateY(0);} 50%{transform:scale(1.045) translateY(-4px);}}
+  @keyframes pieceFloat{0%,100%{transform:translateY(0);} 50%{transform:translateY(-4px);}}
 
   .puzzle-topbar-info{color:#fff; font-weight:900; text-align:center; margin:8px 0 4px; font-size:15px; text-shadow:0 2px 3px rgba(0,0,0,.3);}
 
@@ -1368,8 +1363,9 @@ function computeLayout(){
     TRAY_GAP = 8;
     TRAY_PAD = 10;
 
-    // Emplacement des pièces réduit (petits crans) : plus de place laissée pour agrandir l'image
-    const TAB_RATIO = 0.13;
+    // Emplacement des pièces : la bosse d'emboîtement dépasse de CELL/4 (25%),
+    // il faut donc une marge au moins aussi grande pour ne jamais la couper.
+    const TAB_RATIO = 0.29;
     let cell = Math.floor((availW - 2*MARGIN - 6) / (COLS + 2*TAB_RATIO));
     cell = Math.max(60, Math.min(cell, 140));
 
@@ -1396,6 +1392,30 @@ function computeLayout(){
 }
 
 let currentPuzzle = 0;
+let puzzleSrcImg = null;
+
+// Dessine (ou redessine) une pièce sur son canvas ; withOutline=false une fois posée
+function renderPieceCanvas(canvas, edges, r, c, withOutline){
+    const pctx = canvas.getContext('2d');
+    pctx.clearRect(0, 0, PIECE_BOX, PIECE_BOX);
+    pctx.save();
+    pctx.beginPath();
+    tracePiecePath(pctx, edges);
+    pctx.clip();
+    pctx.drawImage(puzzleSrcImg, TAB - c*CELL, TAB - r*CELL, BOARD_W, BOARD_H);
+    pctx.restore();
+    if(withOutline){
+        pctx.beginPath();
+        tracePiecePath(pctx, edges);
+        pctx.lineJoin = 'round';
+        pctx.strokeStyle = '#ffffff';
+        pctx.lineWidth = 3;
+        pctx.stroke();
+        pctx.strokeStyle = '#2a1a55';
+        pctx.lineWidth = 1.2;
+        pctx.stroke();
+    }
+}
 let pieceEls = [];
 let dragEl = null;
 let dragOffX = 0, dragOffY = 0;
@@ -1497,6 +1517,38 @@ function buildPiecePath(edges){
     return d;
 }
 
+/* --- Trace un bord (avec cran éventuel) directement sur un contexte canvas ---
+   Équivalent canvas-natif de edgeSeg(), sans dépendre de Path2D (compatibilité maximale). --- */
+function edgeSegCanvas(ctx, A, B, v){
+    if (v === 0){ ctx.lineTo(B.x, B.y); return; }
+    const dx = B.x - A.x, dy = B.y - A.y;
+    const len = Math.sqrt(dx*dx + dy*dy);
+    const ux = dx/len, uy = dy/len;
+    const chord = len * 0.5;
+    const r = chord / 2;
+    const midx = (A.x+B.x)/2, midy = (A.y+B.y)/2;
+    const pax = midx - ux*chord/2, pay = midy - uy*chord/2;
+    const pbx = midx + ux*chord/2, pby = midy + uy*chord/2;
+    ctx.lineTo(pax, pay);
+    const startAngle = Math.atan2(pay - midy, pax - midx);
+    const endAngle = Math.atan2(pby - midy, pbx - midx);
+    const anticlockwise = (v !== 1); // v=1 -> sens horaire (comme sweep=1 en SVG)
+    ctx.arc(midx, midy, r, startAngle, endAngle, anticlockwise);
+    ctx.lineTo(B.x, B.y);
+}
+
+/* --- Trace le contour complet d'une pièce directement sur un contexte canvas --- */
+function tracePiecePath(ctx, edges){
+    const p = TAB;
+    const TL={x:p,y:p}, TR={x:p+CELL,y:p}, BR={x:p+CELL,y:p+CELL}, BL={x:p,y:p+CELL};
+    ctx.moveTo(TL.x, TL.y);
+    edgeSegCanvas(ctx, TL, TR, edges.top);
+    edgeSegCanvas(ctx, TR, BR, edges.right);
+    edgeSegCanvas(ctx, BR, BL, edges.bottom);
+    edgeSegCanvas(ctx, BL, TL, edges.left);
+    ctx.closePath();
+}
+
 /* --- Génère aléatoirement les crans/creux partagés entre pièces voisines --- */
 function genEdges(){
     const vEdges = []; // bords verticaux entre colonnes (partagés par la ligne)
@@ -1560,15 +1612,11 @@ function createPuzzle(){
     trayLabel.style.top = (TRAY_Y - 14) + 'px';
     arena.appendChild(trayLabel);
 
-    // SVG contenant les découpes (clip-path) de chaque pièce
-    const svgNS = 'http://www.w3.org/2000/svg';
-    const svg = document.createElementNS(svgNS, 'svg');
-    svg.setAttribute('width', '0');
-    svg.setAttribute('height', '0');
-    svg.style.position = 'absolute';
-    const defs = document.createElementNS(svgNS, 'defs');
-    svg.appendChild(defs);
-    arena.appendChild(svg);
+    // ---- Découpe des pièces en CANVAS (plus fiable que clip-path CSS sur Safari) ----
+    // On charge l'image source une fois, puis chaque pièce est un <canvas> qui se
+    // dessine lui-même avec un découpage net (ctx.clip), sans aucune dépendance CSS fragile.
+    puzzleSrcImg = new Image();
+    puzzleSrcImg.src = PUZZLE_IMAGES[currentPuzzle];
 
     const {vEdges, hEdges} = genEdges();
 
@@ -1583,51 +1631,29 @@ function createPuzzle(){
 
     pieceEls = [];
 
+    function buildAllPieces(){
     for(let r=0;r<ROWS;r++){
         for(let c=0;c<COLS;c++){
 
             const id = r*COLS + c;
             const edges = pieceEdges(r, c, vEdges, hEdges);
 
-            const clipId = 'pzclip' + id;
-            const clipPath = document.createElementNS(svgNS, 'clipPath');
-            clipPath.setAttribute('id', clipId);
-            clipPath.setAttribute('clipPathUnits', 'userSpaceOnUse');
-            const path = document.createElementNS(svgNS, 'path');
-            path.setAttribute('d', buildPiecePath(edges));
-            clipPath.appendChild(path);
-            defs.appendChild(clipPath);
-
             const div = document.createElement('div');
             div.className = 'jz-piece';
             div.dataset.id = id;
             div.style.width = PIECE_BOX + 'px';
             div.style.height = PIECE_BOX + 'px';
-            div.style.backgroundImage = `url(${PUZZLE_IMAGES[currentPuzzle]})`;
-            div.style.backgroundSize = `${BOARD_W}px ${BOARD_H}px`;
-            div.style.backgroundPosition = `${TAB - c*CELL}px ${TAB - r*CELL}px`;
-            div.style.clipPath = `url(#${clipId})`;
-            div.style.webkitClipPath = `url(#${clipId})`;
             div.style.animationDelay = (Math.random()*2).toFixed(2) + 's';
 
-            // Contour de la pièce (superposé, pour bien la distinguer)
-            const outlineSvg = document.createElementNS(svgNS, 'svg');
-            outlineSvg.setAttribute('width', PIECE_BOX);
-            outlineSvg.setAttribute('height', PIECE_BOX);
-            outlineSvg.style.cssText = 'position:absolute; left:0; top:0; pointer-events:none;';
-            const outlinePath = document.createElementNS(svgNS, 'path');
-            outlinePath.setAttribute('d', buildPiecePath(edges));
-            outlinePath.setAttribute('fill', 'none');
-            outlinePath.setAttribute('stroke', '#ffffff');
-            outlinePath.setAttribute('stroke-width', '3');
-            outlineSvg.appendChild(outlinePath);
-            const outlinePath2 = document.createElementNS(svgNS, 'path');
-            outlinePath2.setAttribute('d', buildPiecePath(edges));
-            outlinePath2.setAttribute('fill', 'none');
-            outlinePath2.setAttribute('stroke', '#2a1a55');
-            outlinePath2.setAttribute('stroke-width', '1.2');
-            outlineSvg.appendChild(outlinePath2);
-            div.appendChild(outlineSvg);
+            const canvas = document.createElement('canvas');
+            canvas.width = PIECE_BOX;
+            canvas.height = PIECE_BOX;
+            canvas.style.cssText = 'position:absolute; left:0; top:0; width:100%; height:100%; display:block; pointer-events:none;';
+            div.appendChild(canvas);
+            renderPieceCanvas(canvas, edges, r, c, true);
+            div._canvas = canvas;
+            div._edges = edges;
+            div._r = r; div._c = c;
 
             // Position correcte (coin haut-gauche de la boîte de la pièce) sur le plateau
             const correctX = BOARD_X + c*CELL - TAB;
@@ -1649,6 +1675,13 @@ function createPuzzle(){
             arena.appendChild(div);
             pieceEls.push(div);
         }
+    }
+    }
+
+    if(puzzleSrcImg.complete && puzzleSrcImg.naturalWidth){
+        buildAllPieces();
+    } else {
+        puzzleSrcImg.onload = buildAllPieces;
     }
 
     // Bannière de victoire
@@ -1717,6 +1750,7 @@ function attachDragHandlers(div){
             div.classList.add('placed');
             div.style.zIndex = 1;
             div.style.cursor = 'default';
+            if(div._canvas) renderPieceCanvas(div._canvas, div._edges, div._r, div._c, false);
             tone(650, .12, 'triangle', .12);
             updateScore();
         }
