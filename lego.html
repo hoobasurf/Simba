@@ -27,14 +27,6 @@
   }
   #backHome:active{ background:rgba(255,255,255,.9); transform:scale(.94); }
 
-  #hint{
-    position:absolute; top:14px; left:50%; transform:translateX(-50%);
-    background:rgba(255,255,255,.85); border-radius:20px; padding:8px 18px;
-    font-family:'Comic Sans MS','Trebuchet MS',sans-serif;
-    font-size:clamp(11px,3vw,14px); font-weight:800; color:#3a4a5a;
-    box-shadow:0 4px 10px rgba(0,0,0,.2); z-index:30; text-align:center; white-space:nowrap;
-  }
-
   #resetBtn{
     position:absolute; top:14px; right:14px; z-index:40;
     background:linear-gradient(180deg,#ff9d6a,#e6612c);
@@ -47,37 +39,28 @@
 
   #tray{
     position:absolute; left:0; bottom:0; width:100%; z-index:50;
-    display:flex; flex-wrap:wrap; align-content:flex-start; align-items:flex-start; justify-content:center; gap:6px;
-    padding:26px 10px calc(8px + env(safe-area-inset-bottom)) 10px;
-    overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y;
-    background:linear-gradient(0deg, rgba(20,40,70,.45), rgba(20,40,70,0) 90%);
+    display:flex; flex-wrap:wrap; align-content:center; align-items:center; justify-content:center; gap:10px;
+    padding:10px 10px calc(10px + env(safe-area-inset-bottom));
+    background:linear-gradient(0deg, rgba(20,40,70,.5), rgba(20,40,70,.1));
     border-top:3px dashed rgba(255,255,255,.6);
     box-sizing:border-box;
   }
-  .trayLabel{
-    position:absolute; top:4px; left:0; width:100%; text-align:center;
-    color:#fff; font-weight:900; font-size:12px; text-shadow:0 2px 3px rgba(0,0,0,.35);
-  }
   .pieceBtn{
-    flex:0 0 auto; border-radius:12px;
-    background:rgba(255,255,255,.9); border:3px solid #fff;
+    flex:0 0 auto; border-radius:16px;
+    background:rgba(255,255,255,.92); border:3px solid #fff;
     box-shadow:0 4px 8px rgba(0,0,0,.3);
     display:flex; align-items:center; justify-content:center;
     touch-action:none;
   }
-  .pieceBtn.selected{ border-color:#3fea5a; box-shadow:0 0 0 4px rgba(63,234,90,.6), 0 4px 8px rgba(0,0,0,.3); }
   .pieceBtn.dragSource{ opacity:.35; }
 </style>
 </head>
 <body>
 <div id="gameWrap">
   <a id="backHome" href="index.html">←</a>
-  <div id="hint">👆 Glisse une pièce de la pioche jusqu'à la plaque</div>
   <button id="resetBtn">🗑️ Effacer</button>
   <canvas id="game"></canvas>
-  <div id="tray">
-    <div class="trayLabel">🧺 Pioche</div>
-  </div>
+  <div id="tray"></div>
 </div>
 
 <script>
@@ -97,100 +80,62 @@
   window.addEventListener('resize', ()=>{ fitCanvas(); computeLayout(); });
   window.addEventListener('orientationchange', ()=>{ fitCanvas(); computeLayout(); });
 
-  // ---- Fond du jeu : image fixe, pas de défilement ----
+  // ---- Fond du jeu : image fixe (le ciel/paysage), pas de défilement ----
   const bgImg = new Image();
   bgImg.src = 'images/lego_bg.jpg';
   let bgReady = false;
   bgImg.onload = ()=>{ bgReady = true; };
 
-  // ---- Pièces Lego : toutes les pièces découpées dans les 2 planches fournies ----
-  const PIECE_DEFS = [
-    {file:'piece_lego_brique_rouge.png', studs:2},
-    {file:'piece_lego_brique_bleue.png', studs:2},
-    {file:'piece_lego_brique_jaune.png', studs:2},
-    {file:'piece_lego_brique_verte.png', studs:2},
-    {file:'piece_lego_brique_blanche.png', studs:2},
-    {file:'piece_lego_toit_bleu.png', studs:2},
-    {file:'piece_lego_toit_rouge.png', studs:2},
-    {file:'piece_lego_toit33b.png', studs:2},
-    {file:'piece_lego_arbre_tronc.png', studs:2},
-    {file:'piece_lego_feuillage.png', studs:2},
-    {file:'piece_lego_arbre40.png', studs:2},
-    {file:'piece_lego_fenetre3.png', studs:2},
-    {file:'piece_lego_fenetre40.png', studs:2},
-    {file:'piece_lego_porte3.png', studs:2},
-    {file:'piece_lego_porte40.png', studs:2},
-    {file:'piece_lego_cloture3.png', studs:3},
-    {file:'piece_lego_cloture40.png', studs:3},
-    {file:'piece_lego_rocher3.png', studs:2},
-    {file:'piece_lego_rocher40.png', studs:2},
-    {file:'piece_lego_fleur3.png', studs:1},
-    {file:'piece_lego_fleur40.png', studs:1},
-    {file:'piece_lego_dinosaure3.png', studs:3},
-    {file:'piece_lego_dinosaure40.png', studs:3},
-    {file:'piece_lego_personnage3.png', studs:1},
-    {file:'piece_lego_eau3.png', studs:2},
-    {file:'piece_lego_marche3.png', studs:2},
-    {file:'piece_lego_nuage3.png', studs:2},
-    {file:'piece_lego_plaque2x2.png', studs:2},
-    {file:'piece_lego_plaque4x4.png', studs:3},
-    {file:'piece_lego_plaque_verte.png', studs:2},
-    {file:'piece_lego_plaquefine2x4.png', studs:2},
-    {file:'piece_lego_pente45.png', studs:2},
-    {file:'piece_lego_arche40.png', studs:2},
-    {file:'piece_lego_banc40.png', studs:2},
-    {file:'piece_lego_escalier40.png', studs:2},
-    {file:'piece_lego_voiture40.png', studs:3},
-    {file:'piece_lego_brique2x2b.png', studs:2},
-    {file:'piece_lego_brique2x4b.png', studs:2},
-    {file:'piece_lego_brique2x8b.png', studs:2},
-    {file:'piece_lego_chat40.png', studs:2},
-    {file:'piece_lego_cheval40.png', studs:2},
-    {file:'piece_lego_chien40.png', studs:2},
+  // ---- Pièces DESSINÉES (pas des photos) : formes géométriques pures, donc TOUJOURS
+  //      parfaitement rectangulaires -> l'emboîtement est garanti à 100%, sans exception,
+  //      quelle que soit la pièce. Peu de choix, pour rester simple pour un enfant de 4 ans. ----
+  const COLORS = {
+    red:   {top:'#ff6b5c', side:'#e0483a', dark:'#b8291d'},
+    blue:  {top:'#5aa9ff', side:'#2f7de0', dark:'#1c5cb5'},
+    yellow:{top:'#ffd94a', side:'#f0b400', dark:'#c98e00'},
+    green: {top:'#7ee06a', side:'#4fae2c', dark:'#2f7d18'},
+    white: {top:'#f7f7f7', side:'#dcdcdc', dark:'#b8b8b8'},
+    brown: {top:'#c98a4f', side:'#a5692f', dark:'#7d4e20'},
+  };
+  const BRICK_TYPES = [
+    {shape:'brick', color:'red',    studs:2},
+    {shape:'brick', color:'blue',   studs:2},
+    {shape:'brick', color:'yellow', studs:2},
+    {shape:'brick', color:'green',  studs:2},
+    {shape:'brick', color:'red',    studs:4},
+    {shape:'brick', color:'blue',   studs:4},
+    {shape:'roof',  color:'red',    studs:2},
+    {shape:'roof',  color:'yellow', studs:2},
+    {shape:'window', color:'white', studs:2},
+    {shape:'door',   color:'brown', studs:2},
+    {shape:'tree',   color:'green', studs:2},
+    {shape:'flower', color:'red',   studs:1},
   ];
+  BRICK_TYPES.forEach(t=>{ t.ready = true; t.w = 0; t.h = 0; });
 
-  // ---- Disposition : plateau fixe (ne bouge jamais). L'unité de grille (UNIT) est LA
-  //      référence unique utilisée à la fois pour la position et la taille des pièces :
-  //      ça garantit un emboîtement pixel-parfait, sans aucun décalage possible. ----
   let UNIT, BOARD_COLS, BOARD_X, BOARD_Y, BOARD_W_PX;
   let TRAY_THUMB = 76;
-  const BRICK_TYPES = PIECE_DEFS.map(def=>{
-    const img = new Image();
-    img.src = 'images/' + def.file;
-    return { img, studs: def.studs, w: 0, h: 0, ready:false, naturalRatio: 1 };
-  });
-  BRICK_TYPES.forEach(t=>{
-    t.img.onload = ()=>{
-      t.ready = true;
-      t.naturalRatio = t.img.naturalHeight / t.img.naturalWidth;
-      computeBrickPixelSize(t);
-    };
-  });
+
   function computeBrickPixelSize(t){
-    // Largeur TOUJOURS un multiple exact de UNIT (studs entiers) : c'est ce qui garantit
-    // que deux pièces posées côte à côte se touchent exactement, sans jamais de décalage.
-    t.w = Math.round(t.studs * UNIT);
-    t.h = Math.round(t.w * t.naturalRatio);
+    // Largeur TOUJOURS un multiple exact de UNIT (studs entiers) : deux pièces posées
+    // côte à côte se touchent donc pile, sans jamais le moindre décalage.
+    t.w = t.studs * UNIT;
+    t.h = Math.round(UNIT * 0.85);
   }
 
   function computeLayout(){
     const availW = Math.max(260, window.innerWidth - 20);
 
-    UNIT = Math.max(28, Math.min(50, Math.floor(availW / 9)));
+    UNIT = Math.max(30, Math.min(50, Math.floor(availW / 10)));
     BOARD_COLS = Math.max(6, Math.floor((window.innerWidth - 20) / UNIT));
     BOARD_W_PX = BOARD_COLS * UNIT;
     BOARD_X = Math.round((window.innerWidth - BOARD_W_PX) / 2);
 
-    // Pioche : grille complète avec TOUTES les pièces (comme le puzzle), pas de pièce cachée.
-    // On calcule la hauteur exacte nécessaire pour un nombre de colonnes raisonnable ; si ça
-    // dépasse la place disponible, un scroll vertical (facile à découvrir) prend le relais.
-    const labelH = 22, pad = 10, gap = 6;
-    TRAY_THUMB = Math.max(40, Math.min(60, Math.floor(availW / 7)));
-    const itemsPerRow = Math.max(4, Math.floor((availW - 2*pad) / (TRAY_THUMB+gap)));
+    // Peu de pièces (8) : tout tient facilement sur 2 lignes, sans jamais surcharger l'écran.
+    TRAY_THUMB = Math.max(64, Math.min(84, Math.floor(availW / 5)));
+    const itemsPerRow = Math.max(4, Math.floor((availW - 20) / (TRAY_THUMB+10)));
     const rows = Math.ceil(BRICK_TYPES.length / itemsPerRow);
-    let trayH = labelH + rows*(TRAY_THUMB+gap) + 2*pad;
-    trayH = Math.min(trayH, window.innerHeight * 0.46); // au-delà, ça défile verticalement
-    trayH = Math.max(trayH, 130);
+    const trayH = rows*(TRAY_THUMB+14) + 16;
     BOARD_Y = window.innerHeight - trayH;
 
     BRICK_TYPES.forEach(computeBrickPixelSize);
@@ -198,14 +143,111 @@
     document.getElementById('tray').style.height = trayH + 'px';
   }
 
+  // ---- Dessin d'une brique : toujours un rectangle net (+plots), jamais de contour flou ----
   function drawBrick(g, type, x, topY, scale){
-    if(!type.ready) return;
     scale = scale || 1;
-    g.drawImage(type.img, x, topY, type.w*scale, type.h*scale);
+    const c = COLORS[type.color];
+    const w = type.w*scale, h = type.h*scale;
+    const studR = Math.min(UNIT*scale*0.19, h*0.22);
+    g.save();
+    g.translate(x, topY);
+
+    if(type.shape === 'tree'){
+      g.fillStyle = '#a5692f';
+      g.fillRect(w*0.42, h*0.55, w*0.16, h*0.45);
+      g.fillStyle = '#4fae2c';
+      g.beginPath();
+      g.moveTo(w*0.5, -h*0.35);
+      g.lineTo(w*0.95, h*0.35);
+      g.lineTo(w*0.05, h*0.35);
+      g.closePath(); g.fill();
+      g.beginPath();
+      g.moveTo(w*0.5, -h*0.05);
+      g.lineTo(w*0.85, h*0.55);
+      g.lineTo(w*0.15, h*0.55);
+      g.closePath(); g.fill();
+      g.restore();
+      return;
+    }
+    if(type.shape === 'flower'){
+      g.fillStyle = '#4fae2c';
+      g.fillRect(w*0.42, h*0.35, w*0.16, h*0.65);
+      const petalColor = '#ff6b9c';
+      g.fillStyle = petalColor;
+      const cx = w/2, cy = h*0.25, pr = w*0.24;
+      for(let i=0;i<5;i++){
+        const a = i*(Math.PI*2/5);
+        g.beginPath();
+        g.ellipse(cx+Math.cos(a)*pr*0.7, cy+Math.sin(a)*pr*0.7, pr*0.5, pr*0.32, a, 0, Math.PI*2);
+        g.fill();
+      }
+      g.fillStyle = '#ffd94a';
+      g.beginPath(); g.arc(cx, cy, pr*0.4, 0, Math.PI*2); g.fill();
+      g.restore();
+      return;
+    }
+
+    g.fillStyle = c.side;
+    g.fillRect(0, h*0.24, w, h*0.76);
+    g.fillStyle = c.top;
+    if(type.shape === 'roof'){
+      g.beginPath();
+      g.moveTo(0, h*0.24);
+      g.lineTo(w/2, -h*0.35);
+      g.lineTo(w, h*0.24);
+      g.closePath(); g.fill();
+    } else if(type.shape === 'window'){
+      g.fillRect(0, 0, w, h*0.28);
+      g.fillStyle = c.dark;
+      g.fillRect(w-Math.max(3,w*0.04), h*0.24, Math.max(3,w*0.04), h*0.76);
+      // vitre bleue avec croisillon
+      g.fillStyle = '#bfe6ff';
+      g.fillRect(w*0.18, h*0.36, w*0.64, h*0.5);
+      g.strokeStyle = '#fff'; g.lineWidth = Math.max(2, w*0.035);
+      g.beginPath();
+      g.moveTo(w*0.5, h*0.36); g.lineTo(w*0.5, h*0.86);
+      g.moveTo(w*0.18, h*0.61); g.lineTo(w*0.82, h*0.61);
+      g.stroke();
+      g.strokeStyle = c.dark;
+      g.strokeRect(w*0.18, h*0.36, w*0.64, h*0.5);
+    } else if(type.shape === 'door'){
+      g.fillRect(0, 0, w, h*0.28);
+      g.fillStyle = c.dark;
+      g.fillRect(w-Math.max(3,w*0.04), h*0.24, Math.max(3,w*0.04), h*0.76);
+      g.fillStyle = '#e8c99a';
+      g.beginPath();
+      const dx=w*0.2, dy=h*0.32, dw=w*0.6, dh=h*0.62;
+      g.moveTo(dx, dy+dh);
+      g.lineTo(dx, dy+dh*0.3);
+      g.quadraticCurveTo(dx, dy, dx+dw/2, dy);
+      g.quadraticCurveTo(dx+dw, dy, dx+dw, dy+dh*0.3);
+      g.lineTo(dx+dw, dy+dh);
+      g.closePath(); g.fill();
+      g.fillStyle = c.dark;
+      g.beginPath(); g.arc(dx+dw*0.78, dy+dh*0.6, Math.max(2,w*0.035), 0, Math.PI*2); g.fill();
+    } else {
+      g.fillRect(0, 0, w, h*0.28);
+      g.fillStyle = c.dark;
+      g.fillRect(w-Math.max(3,w*0.04), h*0.24, Math.max(3,w*0.04), h*0.76);
+      g.fillStyle = c.top;
+      const nStuds = type.studs;
+      for(let i=0;i<nStuds;i++){
+        const sx = (i+0.5) * (w/nStuds);
+        g.beginPath();
+        g.ellipse(sx, -studR*0.5, studR, studR*0.6, 0, 0, Math.PI*2);
+        g.fill();
+        g.fillStyle = c.side;
+        g.fillRect(sx-studR*0.7, -studR*0.5, studR*1.4, studR*0.85);
+        g.fillStyle = c.top;
+      }
+    }
+    g.fillStyle = 'rgba(255,255,255,.25)';
+    g.fillRect(0, h*0.24, w, Math.max(2,3*scale));
+    g.restore();
   }
 
   // ---- Palette (pioche) : glisser une pièce directement depuis sa vignette jusqu'à la
-  //      plaque, en un seul geste fluide (comme le puzzle) — pas de clic séparé. ----
+  //      plaque, en un seul geste fluide — pas de clic séparé, comme le puzzle. ----
   const tray = document.getElementById('tray');
   let selectedIdx = 0;
   const trayBtns = [];
@@ -226,14 +268,10 @@
       const s = TRAY_THUMB;
       g.setTransform(dpr,0,0,dpr,0,0);
       g.clearRect(0,0,s,s);
-      if(t.ready){
-        const sc = Math.min((s-10)/t.w, (s-10)/t.h);
-        drawBrick(g, t, s/2 - (t.w*sc)/2, s/2 - (t.h*sc)/2, sc);
-      }
+      const sc = Math.min((s-16)/t.w, (s-16)/(t.h*1.5));
+      drawBrick(g, t, s/2 - (t.w*sc)/2, s/2 - (t.h*sc)/2 + t.h*sc*0.2, sc);
     }
     sizeThumb();
-    t.img.addEventListener('load', paintThumb);
-    paintThumb();
     btn.appendChild(c);
     btn.addEventListener('pointerdown', (ev)=>{
       ev.preventDefault();
@@ -246,6 +284,7 @@
   });
 
   computeLayout();
+  trayBtns.forEach(b=>b._paintThumb());
 
   // ---- Colonnes de la plaque : chaque colonne empile ses briques indépendamment.
   //      colStart est TOUJOURS un entier -> deux pièces voisines occupent des colonnes
@@ -297,9 +336,8 @@
     resetColumns();
   });
 
-  // ---- Glisser depuis la pioche : UN SEUL geste (appui -> déplacement -> relâchement),
-  //      exactement comme le puzzle. Le fantôme suit le doigt même hors du canvas. ----
-  let placeDrag = null; // {x, y, pickedBrick|null}
+  // ---- Glisser depuis la pioche : UN SEUL geste (appui -> déplacement -> relâchement) ----
+  let placeDrag = null;
 
   function updateGhostFromEvent(ev){
     const rect = canvas.getBoundingClientRect();
@@ -309,8 +347,6 @@
 
   function startDragFromTray(idx, btn, ev){
     selectedIdx = idx;
-    trayBtns.forEach(b=>{ b.classList.remove('selected'); b.classList.remove('dragSource'); });
-    btn.classList.add('selected');
     btn.classList.add('dragSource');
     placeDrag = { x:0, y:0, pickedBrick: null };
     updateGhostFromEvent(ev);
@@ -350,7 +386,7 @@
   canvas.addEventListener('pointerdown', (ev)=>{
     const rect = canvas.getBoundingClientRect();
     const px = ev.clientX - rect.left, py = ev.clientY - rect.top;
-    if(py >= BOARD_Y) return; // la pioche gère elle-même ses propres pointerdown
+    if(py >= BOARD_Y) return;
     const hit = topmostBrickAt(px);
     if(hit){
       const topOfCol = Math.abs((hit.y + hit.type.h) - columns[hit.colStart].h) < 1;
@@ -419,11 +455,8 @@
   function drawGhost(){
     if(!placeDrag) return;
     const t = BRICK_TYPES[selectedIdx];
-    if(!t.ready) return;
 
     if(placeDrag.y >= BOARD_Y){
-      // Le doigt est encore au-dessus de la pioche : on montre quand même la pièce
-      // directement sous le doigt, pour un retour visuel continu pendant tout le geste.
       ctx.save();
       ctx.globalAlpha = 0.9;
       drawBrick(ctx, t, placeDrag.x - t.w/2, placeDrag.y - t.h/2, 1);
@@ -445,7 +478,7 @@
     ctx.fill(); ctx.stroke();
 
     ctx.save();
-    ctx.globalAlpha = 0.9;
+    ctx.globalAlpha = 0.95;
     drawBrick(ctx, t, gx, gy, 1);
     ctx.restore();
   }
