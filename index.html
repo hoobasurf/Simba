@@ -574,7 +574,7 @@
     <div class="topbar">
       <button class="pill back-pill" onclick="stopPuzzle()">←</button>
       <button class="pill" id="pzResetBtn" onclick="shufflePuzzle()" style="display:none;">🔀 Nouveau</button>
-      <div class="pill score-pill" id="pzScorePill" style="display:none;">🧩 <span id="pzScore">0</span>/8</div>
+      <div class="pill score-pill" id="pzScorePill" style="display:none;">🧩 <span id="pzScore">0</span>/<span id="pzTotal">8</span></div>
     </div>
 
     <div id="puzzlePicker">
@@ -1351,13 +1351,13 @@ const PUZZLE_IMAGES = [
     "fondmalo.PNG",
     "malo-toutou.png"
 ];
-const ROWS = 3;
-const COLS = 3;
+const ROWS = 2;
+const COLS = 4;
 const TOTAL = ROWS * COLS;
 
 // Ces valeurs sont recalculées à chaque ouverture du puzzle par computeLayout()
 // pour toujours tenir dans la largeur de l'écran du téléphone, quelle que soit sa taille.
-let CELL, TAB, BOARD_W, BOARD_H, PIECE_BOX, MARGIN, TRAY_GAP, TRAY_PAD, TRAY_THUMB,
+let CELL_W, CELL_H, TAB_X, TAB_Y, BOARD_W, BOARD_H, PIECE_BOX_W, PIECE_BOX_H, MARGIN, TRAY_GAP, TRAY_PAD, TRAY_THUMB_W, TRAY_THUMB_H,
     TRAY_COLS, TRAY_ROWS, TRAY_W, TRAY_H, ARENA_W, ARENA_H,
     BOARD_X, BOARD_Y, TRAY_X, TRAY_Y, SNAP_DIST;
 
@@ -1372,38 +1372,45 @@ function computeLayout(){
     TRAY_GAP = 10;
     TRAY_PAD = 10;
 
-    // ---- Pioche : vignettes assez grandes pour être bien distinguées, disposées en
-    //      grille compacte (proche d'un carré) pour que TOUTES les pièces soient visibles
-    //      sans aucun défilement (l'enfant doit pouvoir choisir librement, rien de caché) ----
-    const itemsPerRow = Math.max(3, Math.ceil(Math.sqrt(TOTAL)));
-    TRAY_THUMB = Math.floor(Math.min(130, Math.max(70, (availW - 20 - (itemsPerRow-1)*TRAY_GAP) / itemsPerRow)));
-    const trayRowsVisual = Math.ceil(TOTAL / itemsPerRow);
-    TRAY_H = 24 + trayRowsVisual * (TRAY_THUMB + TRAY_GAP) + 6;
+    // Budget de hauteur réservé à la pioche (bandeau fixe en bas) : une fraction fixe de
+    // l'écran, indépendante de la forme des pièces (pas de dépendance circulaire).
+    TRAY_H = Math.max(160, Math.min(280, window.innerHeight * 0.32));
 
-    // Emplacement des pièces : la bosse d'emboîtement dépasse de CELL/4 (25%),
+    // Emplacement des pièces : la bosse d'emboîtement dépasse de 25% de la longueur du bord,
     // il faut donc une marge au moins aussi grande pour ne jamais la couper.
     const TAB_RATIO = 0.29;
     const availH = Math.max(200, window.innerHeight - topbarH - infoH - TRAY_H - MARGIN);
 
-    // Plateau CARRÉ : on prend le plus grand carré qui rentre à la fois en largeur et en hauteur.
-    const cellByWidth = Math.floor((availW - 2*MARGIN) / (COLS + 2*TAB_RATIO));
-    const cellByHeight = Math.floor((availH - MARGIN) / (ROWS + 2*TAB_RATIO));
-    let cell = Math.max(50, Math.min(cellByWidth, cellByHeight, 340));
+    // Plateau CARRÉ (même si la grille est 2x4) : on cherche le plus grand carré qui
+    // rentre à la fois en largeur et en hauteur, puis on répartit COLS/ROWS dedans
+    // (cellules rectangulaires : CELL_W = carré/COLS, CELL_H = carré/ROWS).
+    const boardByWidth = Math.floor((availW - 2*MARGIN) / (1 + 2*TAB_RATIO/COLS));
+    const boardByHeight = Math.floor((availH - MARGIN) / (1 + 2*TAB_RATIO/ROWS));
+    const boardSize = Math.max(200, Math.min(boardByWidth, boardByHeight, 620));
 
-    CELL = cell;
-    TAB = Math.round(cell * TAB_RATIO);
-    BOARD_W = COLS * CELL;
-    BOARD_H = ROWS * CELL;
-    PIECE_BOX = CELL + 2 * TAB;
+    CELL_W = boardSize / COLS;
+    CELL_H = boardSize / ROWS;
+    TAB_X = Math.round(CELL_W * TAB_RATIO);
+    TAB_Y = Math.round(CELL_H * TAB_RATIO);
+    BOARD_W = Math.round(COLS * CELL_W);
+    BOARD_H = Math.round(ROWS * CELL_H);
+    PIECE_BOX_W = Math.round(CELL_W + 2 * TAB_X);
+    PIECE_BOX_H = Math.round(CELL_H + 2 * TAB_Y);
 
-    TRAY_ROWS = trayRowsVisual;
-    TRAY_COLS = itemsPerRow;
+    // ---- Pioche : vignettes qui gardent les proportions réelles des pièces (pas de
+    //      déformation), assez grandes pour être bien distinguées. Le flex-wrap CSS
+    //      s'occupe de la disposition en grille automatiquement (rien de cachė). ----
+    const maxDim = Math.max(PIECE_BOX_W, PIECE_BOX_H);
+    const thumbTargetMax = Math.max(80, Math.min(190, TRAY_H * 0.56));
+    const thumbScale = thumbTargetMax / maxDim;
+    TRAY_THUMB_W = Math.round(PIECE_BOX_W * thumbScale);
+    TRAY_THUMB_H = Math.round(PIECE_BOX_H * thumbScale);
 
     ARENA_W = window.innerWidth;
     ARENA_H = window.innerHeight;
     BOARD_X = (ARENA_W - BOARD_W) / 2;
-    BOARD_Y = topbarH + infoH + TAB + 4;
-    SNAP_DIST = Math.round(CELL * 0.6);
+    BOARD_Y = topbarH + infoH + TAB_Y + 4;
+    SNAP_DIST = Math.round(Math.min(CELL_W, CELL_H) * 0.6);
 }
 
 let currentPuzzle = 0;
@@ -1418,13 +1425,13 @@ function getSquareCrop(img){
 
 function renderPieceCanvas(canvas, edges, r, c, withOutline){
     const pctx = canvas.getContext('2d');
-    pctx.clearRect(0, 0, PIECE_BOX, PIECE_BOX);
+    pctx.clearRect(0, 0, PIECE_BOX_W, PIECE_BOX_H);
     pctx.save();
     pctx.beginPath();
     tracePiecePath(pctx, edges);
     pctx.clip();
     const crop = getSquareCrop(puzzleSrcImg);
-    pctx.drawImage(puzzleSrcImg, crop.sx, crop.sy, crop.ssize, crop.ssize, TAB - c*CELL, TAB - r*CELL, BOARD_W, BOARD_H);
+    pctx.drawImage(puzzleSrcImg, crop.sx, crop.sy, crop.ssize, crop.ssize, TAB_X - c*CELL_W, TAB_Y - r*CELL_H, BOARD_W, BOARD_H);
     pctx.restore();
     if(withOutline){
         pctx.beginPath();
@@ -1527,17 +1534,7 @@ function edgeSeg(A, B, v){
     return `L ${pax},${pay} A ${r},${r} 0 0,${sweep} ${pbx},${pby} L ${B.x},${B.y} `;
 }
 
-function buildPiecePath(edges){
-    const p = TAB;
-    const TL={x:p,y:p}, TR={x:p+CELL,y:p}, BR={x:p+CELL,y:p+CELL}, BL={x:p,y:p+CELL};
-    let d = `M ${TL.x},${TL.y} `;
-    d += edgeSeg(TL, TR, edges.top);
-    d += edgeSeg(TR, BR, edges.right);
-    d += edgeSeg(BR, BL, edges.bottom);
-    d += edgeSeg(BL, TL, edges.left);
-    d += 'Z';
-    return d;
-}
+
 
 /* --- Trace un bord (avec cran éventuel) directement sur un contexte canvas ---
    Équivalent canvas-natif de edgeSeg(), sans dépendre de Path2D (compatibilité maximale). --- */
@@ -1561,8 +1558,7 @@ function edgeSegCanvas(ctx, A, B, v){
 
 /* --- Trace le contour complet d'une pièce directement sur un contexte canvas --- */
 function tracePiecePath(ctx, edges){
-    const p = TAB;
-    const TL={x:p,y:p}, TR={x:p+CELL,y:p}, BR={x:p+CELL,y:p+CELL}, BL={x:p,y:p+CELL};
+    const TL={x:TAB_X,y:TAB_Y}, TR={x:TAB_X+CELL_W,y:TAB_Y}, BR={x:TAB_X+CELL_W,y:TAB_Y+CELL_H}, BL={x:TAB_X,y:TAB_Y+CELL_H};
     ctx.moveTo(TL.x, TL.y);
     edgeSegCanvas(ctx, TL, TR, edges.top);
     edgeSegCanvas(ctx, TR, BR, edges.right);
@@ -1653,14 +1649,14 @@ function createPuzzle(){
             const div = document.createElement('div');
             div.className = 'jz-piece inTray';
             div.dataset.id = id;
-            div.style.width = TRAY_THUMB + 'px';
-            div.style.height = TRAY_THUMB + 'px';
+            div.style.width = TRAY_THUMB_W + 'px';
+            div.style.height = TRAY_THUMB_H + 'px';
             div.style.flex = '0 0 auto';
             div.style.animationDelay = (Math.random()*2).toFixed(2) + 's';
 
             const canvas = document.createElement('canvas');
-            canvas.width = PIECE_BOX;
-            canvas.height = PIECE_BOX;
+            canvas.width = PIECE_BOX_W;
+            canvas.height = PIECE_BOX_H;
             canvas.style.cssText = 'position:absolute; left:0; top:0; width:100%; height:100%; display:block; pointer-events:none;';
             div.appendChild(canvas);
             renderPieceCanvas(canvas, edges, r, c, true);
@@ -1669,8 +1665,8 @@ function createPuzzle(){
             div._r = r; div._c = c;
 
             // Position correcte (coin haut-gauche de la boîte de la pièce) sur le plateau
-            const correctX = BOARD_X + c*CELL - TAB;
-            const correctY = BOARD_Y + r*CELL - TAB;
+            const correctX = BOARD_X + c*CELL_W - TAB_X;
+            const correctY = BOARD_Y + r*CELL_H - TAB_Y;
             div.dataset.cx = correctX;
             div.dataset.cy = correctY;
 
@@ -1736,12 +1732,12 @@ function attachDragHandlers(div){
             const cxCenter = r.left + r.width/2, cyCenter = r.top + r.height/2;
             div._poppedOut = true;
             div.classList.remove('inTray');
-            div.style.width = PIECE_BOX + 'px';
-            div.style.height = PIECE_BOX + 'px';
+            div.style.width = PIECE_BOX_W + 'px';
+            div.style.height = PIECE_BOX_H + 'px';
             div.style.position = 'absolute';
             // recentrée sur l'endroit où le doigt l'a attrapée, à sa vraie taille
-            div.style.left = (cxCenter - PIECE_BOX/2 - arenaRect.left) + 'px';
-            div.style.top = (cyCenter - PIECE_BOX/2 - arenaRect.top) + 'px';
+            div.style.left = (cxCenter - PIECE_BOX_W/2 - arenaRect.left) + 'px';
+            div.style.top = (cyCenter - PIECE_BOX_H/2 - arenaRect.top) + 'px';
             div.style.flex = 'none';
             arena.appendChild(div);
         }
@@ -1793,6 +1789,7 @@ function updateScore(){
     const ok = pieceEls.filter(d => d.classList.contains('placed')).length;
 
     document.getElementById("pzScore").textContent = ok;
+    document.getElementById("pzTotal").textContent = TOTAL;
 
     const banner = document.getElementById("puzzleWinBanner");
 
