@@ -354,7 +354,7 @@
     filter:drop-shadow(0 4px 7px rgba(0,0,0,.45));
     transition:filter .15s, transform .15s;
     animation:pieceFloat 2.6s ease-in-out infinite;
-    transform:scale(1.018);
+    transform:scale(1.045);
     transform-origin:center center;
   }
   .jz-piece:active{filter:drop-shadow(0 4px 7px rgba(0,0,0,.45)) brightness(1.12);}
@@ -362,7 +362,7 @@
   .jz-piece.placed{cursor:default; filter:drop-shadow(0 1px 2px rgba(0,0,0,.3)); animation:none;}
   .jz-piece.placed > svg{opacity:0; transition:opacity .25s ease;}
   .jz-piece > svg{transition:opacity .25s ease;}
-  @keyframes pieceFloat{0%,100%{transform:scale(1.018) translateY(0);} 50%{transform:scale(1.018) translateY(-4px);}}
+  @keyframes pieceFloat{0%,100%{transform:scale(1.045) translateY(0);} 50%{transform:scale(1.045) translateY(-4px);}}
 
   .puzzle-topbar-info{color:#fff; font-weight:900; text-align:center; margin:8px 0 4px; font-size:15px; text-shadow:0 2px 3px rgba(0,0,0,.3);}
 
@@ -1540,7 +1540,7 @@ function createPuzzle(){
     target.style.height = BOARD_H + 'px';
     target.style.backgroundImage = `url(${PUZZLE_IMAGES[currentPuzzle]})`;
     target.style.backgroundSize = `${BOARD_W}px ${BOARD_H}px`;
-    target.style.opacity = '.32';
+    target.style.opacity = '.16';
     target.style.pointerEvents = 'none';
     arena.appendChild(target);
 
