@@ -1378,10 +1378,15 @@ function computeLayout(){
     //      jamais couper une 2e ligne de pièces en bas de l'écran. Le ratio largeur/hauteur
     //      d'une pièce ne dépend que de ROWS/COLS (pas de la taille du plateau), donc on
     //      peut le connaître à l'avance sans dépendance circulaire. ----
-    const pieceAspectHW = ROWS / COLS; // hauteur/largeur d'une pièce (~constant quel que soit boardSize)
-    const itemsPerRow = Math.max(2, Math.min(TOTAL, Math.floor((availW - 2*TRAY_PAD) / 90)));
-    const thumbW = Math.floor((availW - 2*TRAY_PAD - (itemsPerRow-1)*TRAY_GAP) / itemsPerRow);
-    const thumbH = Math.round(thumbW * pieceAspectHW * 1.35); // *1.35 : marge du tenon (TAB) qui dépasse
+    const pieceAspectHW = COLS / ROWS; // hauteur/largeur d'une pièce (~constant quel que soit boardSize)
+    const itemsPerRow = Math.max(2, Math.min(TOTAL, 4));
+    // Les pièces sont hautes (2 lignes x 4 colonnes) : on plafonne par la HAUTEUR de vignette
+    // (dimension dominante), pas par la largeur, sinon la pioche devient énorme sur les écrans larges.
+    const thumbHMax = Math.max(90, Math.min(140, window.innerHeight * 0.15));
+    const thumbWByHeight = Math.floor(thumbHMax / pieceAspectHW);
+    const thumbWByWidth = Math.floor((availW - 2*TRAY_PAD - (itemsPerRow-1)*TRAY_GAP) / itemsPerRow);
+    const thumbW = Math.max(45, Math.min(thumbWByHeight, thumbWByWidth));
+    const thumbH = Math.round(thumbW * pieceAspectHW);
     const trayRows = Math.ceil(TOTAL / itemsPerRow);
     TRAY_H = labelH + trayRows * thumbH + (trayRows - 1) * TRAY_GAP + 2*TRAY_PAD + 10;
     TRAY_H = Math.min(TRAY_H, window.innerHeight * 0.55); // garde-fou : jamais plus de la moitié de l'écran
