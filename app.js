@@ -870,6 +870,11 @@ function startConstruction(){
     window.location.href = 'construction.html';
 }
 
+/* --- Bouton Lego : ouvre le jeu Lego avec zoom/pan (fichier séparé) --- */
+function startLego(){
+    window.location.href = 'lego.html';
+}
+
 /* --- Génère un contour de pièce de puzzle (avec crans) en chemin SVG --- */
 function edgeSeg(A, B, v){
     if (v === 0) return `L ${B.x},${B.y} `;
