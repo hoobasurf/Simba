@@ -47,11 +47,12 @@
 
   #tray{
     position:absolute; left:0; bottom:0; width:100%; z-index:50;
-    display:flex; align-items:flex-start; gap:8px;
+    display:flex; flex-wrap:wrap; align-content:flex-start; align-items:flex-start; justify-content:center; gap:6px;
     padding:26px 10px calc(8px + env(safe-area-inset-bottom)) 10px;
-    overflow-x:auto; -webkit-overflow-scrolling:touch; touch-action:pan-x;
-    background:linear-gradient(0deg, rgba(20,40,70,.35), rgba(20,40,70,0) 90%);
+    overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y;
+    background:linear-gradient(0deg, rgba(20,40,70,.45), rgba(20,40,70,0) 90%);
     border-top:3px dashed rgba(255,255,255,.6);
+    box-sizing:border-box;
   }
   .trayLabel{
     position:absolute; top:4px; left:0; width:100%; text-align:center;
@@ -180,7 +181,16 @@
     BOARD_W_PX = BOARD_COLS * UNIT;
     BOARD_X = Math.round((window.innerWidth - BOARD_W_PX) / 2);
 
-    const trayH = Math.max(110, Math.min(150, window.innerHeight * 0.16));
+    // Pioche : grille complète avec TOUTES les pièces (comme le puzzle), pas de pièce cachée.
+    // On calcule la hauteur exacte nécessaire pour un nombre de colonnes raisonnable ; si ça
+    // dépasse la place disponible, un scroll vertical (facile à découvrir) prend le relais.
+    const labelH = 22, pad = 10, gap = 6;
+    TRAY_THUMB = Math.max(40, Math.min(60, Math.floor(availW / 7)));
+    const itemsPerRow = Math.max(4, Math.floor((availW - 2*pad) / (TRAY_THUMB+gap)));
+    const rows = Math.ceil(BRICK_TYPES.length / itemsPerRow);
+    let trayH = labelH + rows*(TRAY_THUMB+gap) + 2*pad;
+    trayH = Math.min(trayH, window.innerHeight * 0.46); // au-delà, ça défile verticalement
+    trayH = Math.max(trayH, 130);
     BOARD_Y = window.innerHeight - trayH;
 
     BRICK_TYPES.forEach(computeBrickPixelSize);
