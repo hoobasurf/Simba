@@ -316,20 +316,19 @@
   .puzzle-pick-card .pp-label{color:#fff; font-weight:900; text-align:center; padding:7px 2px; font-size:14px; background:linear-gradient(135deg,#ff6fa5,#8a5cff);}
   @keyframes ppPop{ from{transform:scale(.6); opacity:0;} to{transform:scale(1); opacity:1;} }
 
-  .puzzle-board-wrap{position:absolute; inset:0; touch-action:pan-x;}
+  .puzzle-board-wrap{position:absolute; inset:0; touch-action:pan-y;}
   #puzzleArena{position:absolute; inset:0; pointer-events:none;}
   #pieceTray{
     position:fixed; left:0; bottom:0; width:100%; z-index:50;
-    display:flex; align-items:center; gap:10px;
-    padding:10px 14px calc(10px + env(safe-area-inset-bottom));
-    overflow-x:auto; -webkit-overflow-scrolling:touch; touch-action:pan-x;
+    display:flex; flex-wrap:wrap; align-content:flex-start; align-items:flex-start; justify-content:center; gap:8px;
+    padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+    box-sizing:border-box; touch-action:auto;
     background:linear-gradient(0deg, rgba(20,40,70,.35), rgba(20,40,70,0) 90%);
     border-top:3px dashed rgba(255,255,255,.6);
   }
   .pz-tray-label2{
-    flex:0 0 auto; color:#fff; font-weight:900; font-size:13px;
-    text-shadow:0 2px 3px rgba(0,0,0,.35); background:rgba(0,0,0,.2);
-    padding:6px 12px; border-radius:20px; white-space:nowrap;
+    flex:1 0 100%; color:#fff; font-weight:900; font-size:13px; text-align:center;
+    text-shadow:0 2px 3px rgba(0,0,0,.35);
   }
 
   #puzzleTarget{
@@ -1358,7 +1357,7 @@ const TOTAL = ROWS * COLS;
 
 // Ces valeurs sont recalculées à chaque ouverture du puzzle par computeLayout()
 // pour toujours tenir dans la largeur de l'écran du téléphone, quelle que soit sa taille.
-let CELL, TAB, BOARD_W, BOARD_H, PIECE_BOX, MARGIN, TRAY_GAP, TRAY_PAD,
+let CELL, TAB, BOARD_W, BOARD_H, PIECE_BOX, MARGIN, TRAY_GAP, TRAY_PAD, TRAY_THUMB,
     TRAY_COLS, TRAY_ROWS, TRAY_W, TRAY_H, ARENA_W, ARENA_H,
     BOARD_X, BOARD_Y, TRAY_X, TRAY_Y, SNAP_DIST;
 
@@ -1370,21 +1369,24 @@ function computeLayout(){
     const infoH = 34;     // bandeau "fais glisser les pièces..."
 
     MARGIN = 10;
-    TRAY_GAP = 10;
+    TRAY_GAP = 8;
     TRAY_PAD = 10;
+
+    // ---- Pioche : vignettes compactes pour que TOUTES les pièces soient visibles
+    //      sans défilement (l'enfant doit pouvoir choisir librement, rien de caché) ----
+    const itemsPerRow = Math.max(3, Math.min(TOTAL, Math.ceil(Math.sqrt(TOTAL * (availW/140)))));
+    TRAY_THUMB = Math.floor(Math.min(84, Math.max(44, (availW - 2*10 - (itemsPerRow-1)*TRAY_GAP) / itemsPerRow)));
+    const trayRowsVisual = Math.ceil(TOTAL / itemsPerRow);
+    TRAY_H = 22 + trayRowsVisual * (TRAY_THUMB + TRAY_GAP) + 6;
 
     // Emplacement des pièces : la bosse d'emboîtement dépasse de CELL/4 (25%),
     // il faut donc une marge au moins aussi grande pour ne jamais la couper.
     const TAB_RATIO = 0.29;
-
-    // Estimation de la hauteur de pioche (bandeau fixe en bas), pour calculer la place
-    // restante pour le plateau ; recalculée ensuite avec la vraie valeur de PIECE_BOX.
-    const estTrayH = Math.max(90, Math.min(150, availW * 0.22));
-    const availH = Math.max(200, window.innerHeight - topbarH - infoH - estTrayH - 2*MARGIN);
+    const availH = Math.max(200, window.innerHeight - topbarH - infoH - TRAY_H - 2*MARGIN);
 
     const cellByWidth = Math.floor((availW - 2*MARGIN) / (COLS + 2*TAB_RATIO));
     const cellByHeight = Math.floor(availH / (ROWS + 2*TAB_RATIO));
-    let cell = Math.max(50, Math.min(cellByWidth, cellByHeight, 220));
+    let cell = Math.max(50, Math.min(cellByWidth, cellByHeight, 260));
 
     CELL = cell;
     TAB = Math.round(cell * TAB_RATIO);
@@ -1392,10 +1394,8 @@ function computeLayout(){
     BOARD_H = ROWS * CELL;
     PIECE_BOX = CELL + 2 * TAB;
 
-    // La pioche est un bandeau fixe en bas de l'écran, en défilement horizontal (une seule ligne)
-    TRAY_ROWS = 1;
-    TRAY_COLS = TOTAL;
-    TRAY_H = PIECE_BOX + 2*TRAY_PAD + 24; // + place pour le libellé "Pioche"
+    TRAY_ROWS = trayRowsVisual;
+    TRAY_COLS = itemsPerRow;
 
     ARENA_W = window.innerWidth;
     ARENA_H = window.innerHeight;
@@ -1641,10 +1641,10 @@ function createPuzzle(){
             const edges = pieceEdges(r, c, vEdges, hEdges);
 
             const div = document.createElement('div');
-            div.className = 'jz-piece';
+            div.className = 'jz-piece inTray';
             div.dataset.id = id;
-            div.style.width = PIECE_BOX + 'px';
-            div.style.height = PIECE_BOX + 'px';
+            div.style.width = TRAY_THUMB + 'px';
+            div.style.height = TRAY_THUMB + 'px';
             div.style.flex = '0 0 auto';
             div.style.animationDelay = (Math.random()*2).toFixed(2) + 's';
 
@@ -1719,14 +1719,19 @@ function attachDragHandlers(div){
         const arena = document.getElementById('puzzleArena');
         const arenaRect = arena.getBoundingClientRect();
 
-        // Première prise en main : on "sort" la pièce du flux de la pioche pour la
-        // positionner en absolu (par-dessus le plateau), à l'endroit exact où elle était.
+        // Première prise en main : on "sort" la pièce du flux de la pioche, on lui redonne
+        // sa vraie taille, et on la positionne en absolu (par-dessus le plateau).
         if (!div._poppedOut) {
             const r = div.getBoundingClientRect();
+            const cxCenter = r.left + r.width/2, cyCenter = r.top + r.height/2;
             div._poppedOut = true;
+            div.classList.remove('inTray');
+            div.style.width = PIECE_BOX + 'px';
+            div.style.height = PIECE_BOX + 'px';
             div.style.position = 'absolute';
-            div.style.left = (r.left - arenaRect.left) + 'px';
-            div.style.top = (r.top - arenaRect.top) + 'px';
+            // recentrée sur l'endroit où le doigt l'a attrapée, à sa vraie taille
+            div.style.left = (cxCenter - PIECE_BOX/2 - arenaRect.left) + 'px';
+            div.style.top = (cyCenter - PIECE_BOX/2 - arenaRect.top) + 'px';
             div.style.flex = 'none';
             arena.appendChild(div);
         }
