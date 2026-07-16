@@ -316,8 +316,21 @@
   .puzzle-pick-card .pp-label{color:#fff; font-weight:900; text-align:center; padding:7px 2px; font-size:14px; background:linear-gradient(135deg,#ff6fa5,#8a5cff);}
   @keyframes ppPop{ from{transform:scale(.6); opacity:0;} to{transform:scale(1); opacity:1;} }
 
-  .puzzle-board-wrap{display:flex; flex-direction:column; align-items:center; padding:20px 10px 14px; overflow-x:auto; max-width:100vw; box-sizing:border-box; touch-action:pan-x pan-y;}
-  #puzzleArena{position:relative;}
+  .puzzle-board-wrap{position:absolute; inset:0; touch-action:pan-x;}
+  #puzzleArena{position:absolute; inset:0; pointer-events:none;}
+  #pieceTray{
+    position:fixed; left:0; bottom:0; width:100%; z-index:50;
+    display:flex; align-items:center; gap:10px;
+    padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+    overflow-x:auto; -webkit-overflow-scrolling:touch; touch-action:pan-x;
+    background:linear-gradient(0deg, rgba(20,40,70,.35), rgba(20,40,70,0) 90%);
+    border-top:3px dashed rgba(255,255,255,.6);
+  }
+  .pz-tray-label2{
+    flex:0 0 auto; color:#fff; font-weight:900; font-size:13px;
+    text-shadow:0 2px 3px rgba(0,0,0,.35); background:rgba(0,0,0,.2);
+    padding:6px 12px; border-radius:20px; white-space:nowrap;
+  }
 
   #puzzleTarget{
     background-repeat:no-repeat;
@@ -350,6 +363,7 @@
     position:absolute;
     touch-action:none;
     cursor:grab;
+    pointer-events:auto;
     filter:drop-shadow(0 4px 7px rgba(0,0,0,.45));
     transition:filter .15s, transform .15s;
     animation:pieceFloat 2.6s ease-in-out infinite;
@@ -571,15 +585,9 @@
 
     <div class="puzzle-board-wrap" id="puzzleBoardWrap" style="display:none;">
       <div class="puzzle-topbar-info" id="puzzleInfo">👉 Fais glisser les pièces dans l'image ! 👈</div>
-      <div id="puzzleArena">
-        <div class="puzzle-win-banner" id="puzzleWinBanner">
-          <div class="win-card">
-            <div class="win-title">🎉 Bravo Malo ! 🎉</div>
-            <div class="win-emojis">⭐🎊✨🎊⭐</div>
-            <button class="pill" onclick="startPuzzle()" style="pointer-events:auto;">🔁 Rejouer</button>
-          </div>
-        </div>
-        <div class="pz-toast" id="pzToast"></div>
+      <div id="puzzleArena"></div>
+      <div id="pieceTray">
+        <div class="pz-tray-label2">🧺 Pioche</div>
       </div>
     </div>
   </div>
@@ -1356,18 +1364,27 @@ let CELL, TAB, BOARD_W, BOARD_H, PIECE_BOX, MARGIN, TRAY_GAP, TRAY_PAD,
 
 function computeLayout(){
 
-    // Largeur réellement disponible sur l'écran (marge de sécurité un peu plus large pour ne JAMAIS rien tronquer)
-    const availW = Math.max(260, Math.min(window.innerWidth - 30, 560));
+    // Largeur/hauteur réellement disponibles sur l'écran
+    const availW = Math.max(260, window.innerWidth - 24);
+    const topbarH = 76;   // pills du haut (retour / nouveau / score)
+    const infoH = 34;     // bandeau "fais glisser les pièces..."
 
-    MARGIN = 12;
-    TRAY_GAP = 8;
+    MARGIN = 10;
+    TRAY_GAP = 10;
     TRAY_PAD = 10;
 
     // Emplacement des pièces : la bosse d'emboîtement dépasse de CELL/4 (25%),
     // il faut donc une marge au moins aussi grande pour ne jamais la couper.
     const TAB_RATIO = 0.29;
-    let cell = Math.floor((availW - 2*MARGIN - 6) / (COLS + 2*TAB_RATIO));
-    cell = Math.max(60, Math.min(cell, 140));
+
+    // Estimation de la hauteur de pioche (bandeau fixe en bas), pour calculer la place
+    // restante pour le plateau ; recalculée ensuite avec la vraie valeur de PIECE_BOX.
+    const estTrayH = Math.max(90, Math.min(150, availW * 0.22));
+    const availH = Math.max(200, window.innerHeight - topbarH - infoH - estTrayH - 2*MARGIN);
+
+    const cellByWidth = Math.floor((availW - 2*MARGIN) / (COLS + 2*TAB_RATIO));
+    const cellByHeight = Math.floor(availH / (ROWS + 2*TAB_RATIO));
+    let cell = Math.max(50, Math.min(cellByWidth, cellByHeight, 220));
 
     CELL = cell;
     TAB = Math.round(cell * TAB_RATIO);
@@ -1375,19 +1392,15 @@ function computeLayout(){
     BOARD_H = ROWS * CELL;
     PIECE_BOX = CELL + 2 * TAB;
 
-    // La pioche s'adapte : autant de colonnes que la largeur le permet, et s'étale sur plusieurs lignes si besoin
-    TRAY_COLS = Math.max(2, Math.floor((availW - 2*TRAY_PAD - 6 + TRAY_GAP) / (PIECE_BOX + TRAY_GAP)));
-    TRAY_COLS = Math.min(TRAY_COLS, TOTAL);
-    TRAY_ROWS = Math.ceil(TOTAL / TRAY_COLS);
+    // La pioche est un bandeau fixe en bas de l'écran, en défilement horizontal (une seule ligne)
+    TRAY_ROWS = 1;
+    TRAY_COLS = TOTAL;
+    TRAY_H = PIECE_BOX + 2*TRAY_PAD + 24; // + place pour le libellé "Pioche"
 
-    TRAY_W = TRAY_COLS * PIECE_BOX + (TRAY_COLS - 1) * TRAY_GAP + 2 * TRAY_PAD;
-    TRAY_H = TRAY_ROWS * PIECE_BOX + (TRAY_ROWS - 1) * TRAY_GAP + 2 * TRAY_PAD;
-    ARENA_W = Math.max(BOARD_W + 2 * TAB, TRAY_W) + 2 * MARGIN;
+    ARENA_W = window.innerWidth;
+    ARENA_H = window.innerHeight;
     BOARD_X = (ARENA_W - BOARD_W) / 2;
-    BOARD_Y = MARGIN + 16;                 // un peu d'air au-dessus de l'image
-    TRAY_X = (ARENA_W - TRAY_W) / 2;
-    TRAY_Y = BOARD_Y + BOARD_H + MARGIN * 2;
-    ARENA_H = TRAY_Y + TRAY_H + MARGIN;
+    BOARD_Y = topbarH + infoH + TAB + 10;
     SNAP_DIST = Math.round(CELL * 0.6);
 }
 
@@ -1579,8 +1592,11 @@ function createPuzzle(){
 
     const arena = document.getElementById('puzzleArena');
     arena.innerHTML = '';
-    arena.style.width = ARENA_W + 'px';
-    arena.style.height = ARENA_H + 'px';
+
+    const tray = document.getElementById('pieceTray');
+    // on retire tout sauf le petit libellé "Pioche" fixe
+    while(tray.children.length > 1) tray.removeChild(tray.lastChild);
+    tray.style.height = TRAY_H + 'px';
 
     // Image cible affichée en transparence, comme guide (à l'échelle des pièces)
     const target = document.createElement('div');
@@ -1595,22 +1611,6 @@ function createPuzzle(){
     target.style.opacity = '.16';
     target.style.pointerEvents = 'none';
     arena.appendChild(target);
-
-    // Carte "pioche" : zone bien délimitée où les pièces sont rangées, une par une
-    const trayCard = document.createElement('div');
-    trayCard.className = 'pz-tray-card';
-    trayCard.style.left = TRAY_X + 'px';
-    trayCard.style.top = TRAY_Y + 'px';
-    trayCard.style.width = TRAY_W + 'px';
-    trayCard.style.height = TRAY_H + 'px';
-    arena.appendChild(trayCard);
-
-    const trayLabel = document.createElement('div');
-    trayLabel.className = 'pz-tray-label';
-    trayLabel.textContent = '🧺 Pioche';
-    trayLabel.style.left = (TRAY_X + 10) + 'px';
-    trayLabel.style.top = (TRAY_Y - 14) + 'px';
-    arena.appendChild(trayLabel);
 
     // ---- Découpe des pièces en CANVAS (plus fiable que clip-path CSS sur Safari) ----
     // On charge l'image source une fois, puis chaque pièce est un <canvas> qui se
@@ -1632,6 +1632,8 @@ function createPuzzle(){
     pieceEls = [];
 
     function buildAllPieces(){
+    // Ordre d'affichage dans la pioche (rangement mélangé), rempli au fil de la boucle
+    const byId = {};
     for(let r=0;r<ROWS;r++){
         for(let c=0;c<COLS;c++){
 
@@ -1643,6 +1645,7 @@ function createPuzzle(){
             div.dataset.id = id;
             div.style.width = PIECE_BOX + 'px';
             div.style.height = PIECE_BOX + 'px';
+            div.style.flex = '0 0 auto';
             div.style.animationDelay = (Math.random()*2).toFixed(2) + 's';
 
             const canvas = document.createElement('canvas');
@@ -1661,21 +1664,17 @@ function createPuzzle(){
             div.dataset.cx = correctX;
             div.dataset.cy = correctY;
 
-            // Position de départ : bien rangée dans la grille de la pioche (pas de chevauchement)
-            const slot = order.indexOf(id);
-            const trayR = Math.floor(slot / TRAY_COLS);
-            const trayC = slot % TRAY_COLS;
-            const startX = TRAY_X + TRAY_PAD + trayC * (PIECE_BOX + TRAY_GAP);
-            const startY = TRAY_Y + TRAY_PAD + trayR * (PIECE_BOX + TRAY_GAP);
-            div.style.left = startX + 'px';
-            div.style.top = startY + 'px';
-
             attachDragHandlers(div);
 
-            arena.appendChild(div);
+            byId[id] = div;
             pieceEls.push(div);
         }
     }
+    // Insère les pièces dans la pioche selon l'ordre mélangé (défilement horizontal)
+    for(const id of order){
+        tray.appendChild(byId[id]);
+    }
+
     }
 
     if(puzzleSrcImg.complete && puzzleSrcImg.naturalWidth){
@@ -1717,7 +1716,21 @@ function attachDragHandlers(div){
         if (div.classList.contains('placed')) return;
         e.preventDefault();
         div.setPointerCapture(e.pointerId);
-        const arenaRect = document.getElementById('puzzleArena').getBoundingClientRect();
+        const arena = document.getElementById('puzzleArena');
+        const arenaRect = arena.getBoundingClientRect();
+
+        // Première prise en main : on "sort" la pièce du flux de la pioche pour la
+        // positionner en absolu (par-dessus le plateau), à l'endroit exact où elle était.
+        if (!div._poppedOut) {
+            const r = div.getBoundingClientRect();
+            div._poppedOut = true;
+            div.style.position = 'absolute';
+            div.style.left = (r.left - arenaRect.left) + 'px';
+            div.style.top = (r.top - arenaRect.top) + 'px';
+            div.style.flex = 'none';
+            arena.appendChild(div);
+        }
+
         dragEl = div;
         dragOffX = e.clientX - arenaRect.left - parseFloat(div.style.left);
         dragOffY = e.clientY - arenaRect.top - parseFloat(div.style.top);
