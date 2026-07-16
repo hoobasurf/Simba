@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Lego - Le Monde de Malo</title>
+<style>
+  html,body{ margin:0; padding:0; overflow:hidden; background:#bfe6ff; touch-action:none; overscroll-behavior:none;
+    -webkit-user-select:none;user-select:none;-moz-user-select:none;-ms-user-select:none;
+    -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent; }
+  *{-webkit-tap-highlight-color:transparent;}
+  ::selection{background:transparent;}
+  #gameWrap{
+    position:relative; width:100vw; height:100vh;
+    overflow:hidden; background:linear-gradient(180deg,#bfe6ff,#eaf7ff 60%,#dff0d8);
+  }
+  canvas{ display:block; touch-action:none; }
+  #backHome{
+    position:absolute; top:14px; left:14px; z-index:40;
+    width:44px; height:44px; border-radius:50%;
+    background:rgba(255,255,255,.65); border:3px solid rgba(255,255,255,.9);
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; font-weight:900; color:#3a4a5a; text-decoration:none;
+    box-shadow:0 4px 10px rgba(0,0,0,.25);
+  }
+  #backHome:active{ background:rgba(255,255,255,.9); transform:scale(.94); }
+
+  #hint{
+    position:absolute; top:14px; left:50%; transform:translateX(-50%);
+    background:rgba(255,255,255,.85); border-radius:20px; padding:8px 18px;
+    font-family:'Comic Sans MS','Trebuchet MS',sans-serif;
+    font-size:clamp(12px,3.2vw,16px); font-weight:800; color:#3a4a5a;
+    box-shadow:0 4px 10px rgba(0,0,0,.2); z-index:30; text-align:center; white-space:nowrap;
+    transition:opacity .5s ease;
+  }
+
+  #resetBtn{
+    position:absolute; top:14px; right:14px; z-index:40;
+    background:linear-gradient(180deg,#ff9d6a,#e6612c);
+    color:#fff; border:3px solid #fff; border-radius:24px;
+    padding:10px 16px; font-size:clamp(12px,3vw,15px); font-weight:900;
+    font-family:'Comic Sans MS','Trebuchet MS',sans-serif;
+    box-shadow:0 5px 12px rgba(0,0,0,.3);
+  }
+  #resetBtn:active{ transform:scale(.95); }
+
+  #tray{
+    position:absolute; bottom:0; left:0; width:100%;
+    display:flex; gap:10px; padding:12px 10px calc(12px + env(safe-area-inset-bottom));
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
+    background:linear-gradient(0deg, rgba(255,255,255,.55), rgba(255,255,255,0));
+    z-index:35;
+  }
+  .pieceBtn{
+    flex:0 0 auto; width:60px; height:60px; border-radius:14px;
+    background:rgba(255,255,255,.9); border:3px solid #fff;
+    box-shadow:0 4px 8px rgba(0,0,0,.3);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .pieceBtn.selected{ border-color:#ffd83d; box-shadow:0 0 0 4px rgba(255,216,61,.6), 0 4px 8px rgba(0,0,0,.3); }
+  .pieceBtn:active{ transform:scale(.92); }
+  .pieceBtn canvas{ width:100%; height:100%; }
+</style>
+</head>
+<body>
+<div id="gameWrap">
+  <a id="backHome" href="index.html">←</a>
+  <div id="hint">👆 Touche pour poser • ✌️ Pince pour zoomer • ✋ Glisse pour te déplacer</div>
+  <button id="resetBtn">🗑️ Effacer</button>
+  <canvas id="game"></canvas>
+  <div id="tray"></div>
+</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  let CW=0, CH=0;
+
+  function fitCanvas(){
+    const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 3));
+    CW = window.innerWidth; CH = window.innerHeight;
+    canvas.style.width = CW+'px'; canvas.style.height = CH+'px';
+    canvas.width = CW*dpr; canvas.height = CH*dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  fitCanvas();
+  window.addEventListener('resize', fitCanvas);
+  window.addEventListener('orientationchange', fitCanvas);
+
+  // ---- Monde large : une grande plaque de base, on peut construire très loin sur la droite ----
+  const UNIT = 46; // largeur d'une "colonne" de la plaque (unité lego)
+  const WORLD_COLS = 60; // plaque large : on peut construire beaucoup plus large que l'écran
+  const WORLD_W = UNIT * WORLD_COLS;
+  const BASE_Y = 40; // hauteur (monde) du dessus de la plaque de base
+
+  // ---- Caméra : décalage + zoom, pilotée par pincer/glisser ----
+  let camX = WORLD_W/2 - (CW/2), camY = BASE_Y - CH*0.65, scale = 1;
+  const MIN_SCALE = 0.4, MAX_SCALE = 2.6;
+
+  function worldToScreen(wx, wy){ return { x:(wx-camX)*scale, y:(wy-camY)*scale }; }
+  function screenToWorld(sx, sy){ return { x: sx/scale + camX, y: sy/scale + camY }; }
+
+  // ---- Briques Lego dessinées : plusieurs tailles/couleurs, plots réalistes ----
+  const BRICK_COLORS = {
+    red:{top:'#ff5a4d',side:'#d43c30',dark:'#a52a20'},
+    blue:{top:'#4a90ff',side:'#2f68d6',dark:'#1e4aa8'},
+    yellow:{top:'#ffd23d',side:'#f0ae00',dark:'#c98e00'},
+    green:{top:'#5ed045',side:'#39a828',dark:'#227016'},
+    white:{top:'#f5f5f5',side:'#d8d8d8',dark:'#b0b0b0'},
+    orange:{top:'#ff9a3d',side:'#e6741a',dark:'#b85810'}
+  };
+  const BRICK_TYPES = [
+    {studs:2, color:'red'},
+    {studs:2, color:'blue'},
+    {studs:2, color:'yellow'},
+    {studs:2, color:'green'},
+    {studs:4, color:'red'},
+    {studs:4, color:'blue'},
+    {studs:4, color:'yellow'},
+    {studs:1, color:'white'},
+    {studs:1, color:'orange'},
+    {studs:6, color:'green'},
+  ];
+  const STUD_W = UNIT; // largeur d'un plot = 1 unité
+  const BRICK_H = UNIT * 0.62;
+
+  function drawBrick(g, type, x, topY, u){
+    const c = BRICK_COLORS[type.color];
+    const w = type.studs * STUD_W * u;
+    const h = BRICK_H * u;
+    const studR = STUD_W*u*0.22;
+    g.save();
+    g.translate(x, topY);
+    // corps
+    g.fillStyle = c.side;
+    g.fillRect(0, h*0.22, w, h*0.78);
+    // face du dessus
+    g.fillStyle = c.top;
+    g.fillRect(0, 0, w, h*0.26);
+    // ombre latérale droite
+    g.fillStyle = c.dark;
+    g.fillRect(w-Math.max(3,w*0.035), h*0.22, Math.max(3,w*0.035), h*0.78);
+    // plots
+    g.fillStyle = c.top;
+    for(let i=0;i<type.studs;i++){
+      const sx = (i+0.5) * STUD_W * u;
+      g.beginPath();
+      g.ellipse(sx, -studR*0.55, studR, studR*0.62, 0, 0, Math.PI*2);
+      g.fill();
+      g.fillStyle = c.side;
+      g.fillRect(sx-studR*0.72, -studR*0.55, studR*1.44, studR*0.9);
+      g.fillStyle = c.top;
+    }
+    // liseré clair en haut du corps
+    g.fillStyle = 'rgba(255,255,255,.25)';
+    g.fillRect(0, h*0.22, w, 3*u);
+    g.restore();
+  }
+
+  // ---- Palette ----
+  const tray = document.getElementById('tray');
+  let selectedIdx = 0;
+  const trayBtns = [];
+  BRICK_TYPES.forEach((t, idx)=>{
+    const btn = document.createElement('div');
+    btn.className = 'pieceBtn' + (idx===0 ? ' selected' : '');
+    const c = document.createElement('canvas');
+    c.width = 60; c.height = 60;
+    const g = c.getContext('2d');
+    const u = Math.min(50/(t.studs*STUD_W), 34/BRICK_H);
+    drawBrick(g, t, 30 - (t.studs*STUD_W*u)/2, 30 - (BRICK_H*u)/2, u);
+    btn.appendChild(c);
+    btn.addEventListener('pointerdown', (ev)=>{
+      ev.preventDefault();
+      selectedIdx = idx;
+      trayBtns.forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+    }, {passive:false});
+    tray.appendChild(btn);
+    trayBtns.push(btn);
+  });
+
+  // ---- Colonnes de la plaque : chaque colonne empile ses briques indépendamment ----
+  const columns = Array.from({length: WORLD_COLS}, ()=> ({ h: 0, bricks: [] }));
+
+  function placeBrickAt(worldX){
+    const t = BRICK_TYPES[selectedIdx];
+    const colStart = Math.max(0, Math.min(WORLD_COLS - t.studs, Math.round(worldX / UNIT - t.studs/2)));
+    // hauteur = le plus haut empilement parmi les colonnes couvertes (pour une pose stable et réaliste)
+    let maxH = 0;
+    for(let i=0;i<t.studs;i++) maxH = Math.max(maxH, columns[colStart+i].h);
+    const brick = { type:t, colStart, y: maxH };
+    for(let i=0;i<t.studs;i++){
+      columns[colStart+i].h = maxH + BRICK_H;
+      columns[colStart+i].bricks.push(brick);
+    }
+    allBricks.push(brick);
+  }
+  const allBricks = [];
+
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    allBricks.length = 0;
+    for(const c of columns){ c.h = 0; c.bricks = []; }
+  });
+
+  // ---- Gestes : glisser pour déplacer, pincer pour zoomer, tap simple pour poser ----
+  let pointers = new Map();
+  let pinchStartDist = 0, pinchStartScale = 1, pinchStartMid = null, pinchStartCam = null;
+  let dragStart = null, dragMoved = false, hadMultiTouch = false;
+
+  function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+  function mid(a,b){ return {x:(a.x+b.x)/2, y:(a.y+b.y)/2}; }
+
+  canvas.addEventListener('pointerdown', (ev)=>{
+    canvas.setPointerCapture(ev.pointerId);
+    const rect = canvas.getBoundingClientRect();
+    pointers.set(ev.pointerId, {x:ev.clientX-rect.left, y:ev.clientY-rect.top});
+    document.getElementById('hint').style.opacity = '1';
+
+    if(pointers.size === 1){
+      const p = [...pointers.values()][0];
+      dragStart = {x:p.x, y:p.y, camX, camY};
+      dragMoved = false;
+      if(pointers.size === 1 && !hadMultiTouch){ /* première pression : rien à faire de plus */ }
+    } else if(pointers.size === 2){
+      hadMultiTouch = true;
+      const [a,b] = [...pointers.values()];
+      pinchStartDist = dist(a,b);
+      pinchStartScale = scale;
+      pinchStartMid = mid(a,b);
+      pinchStartCam = {x:camX, y:camY};
+      dragStart = null;
+    }
+  }, {passive:false});
+
+  canvas.addEventListener('pointermove', (ev)=>{
+    if(!pointers.has(ev.pointerId)) return;
+    const rect = canvas.getBoundingClientRect();
+    pointers.set(ev.pointerId, {x:ev.clientX-rect.left, y:ev.clientY-rect.top});
+
+    if(pointers.size === 2){
+      const [a,b] = [...pointers.values()];
+      const d = dist(a,b);
+      const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, pinchStartScale * (d/pinchStartDist)));
+      const m = mid(a,b);
+      // le point sous les doigts doit rester fixe dans le monde pendant le zoom
+      const worldAtStart = { x: pinchStartMid.x/pinchStartScale + pinchStartCam.x, y: pinchStartMid.y/pinchStartScale + pinchStartCam.y };
+      camX = worldAtStart.x - m.x/newScale;
+      camY = worldAtStart.y - m.y/newScale;
+      scale = newScale;
+      dragMoved = true;
+    } else if(pointers.size === 1 && dragStart){
+      const p = [...pointers.values()][0];
+      const dx = p.x - dragStart.x, dy = p.y - dragStart.y;
+      if(Math.hypot(dx,dy) > 6) dragMoved = true;
+      camX = dragStart.camX - dx/scale;
+      camY = dragStart.camY - dy/scale;
+    }
+  }, {passive:false});
+
+  function onUp(ev){
+    const rect = canvas.getBoundingClientRect();
+    const wasSingle = pointers.size === 1;
+    const p = pointers.get(ev.pointerId);
+    pointers.delete(ev.pointerId);
+
+    if(wasSingle && !dragMoved && !hadMultiTouch && p){
+      const w = screenToWorld(p.x, p.y);
+      if(w.y > BASE_Y - UNIT*10 && w.x >= 0 && w.x <= WORLD_W){
+        placeBrickAt(w.x);
+      }
+    }
+    if(pointers.size < 2){ pinchStartDist = 0; }
+    if(pointers.size === 0){ dragStart = null; hadMultiTouch = false; }
+    else if(pointers.size === 1){
+      const rest = [...pointers.values()][0];
+      dragStart = {x:rest.x, y:rest.y, camX, camY};
+      dragMoved = false;
+    }
+  }
+  canvas.addEventListener('pointerup', onUp, {passive:false});
+  canvas.addEventListener('pointercancel', onUp, {passive:false});
+
+  // ---- Dessin ----
+  function draw(){
+    ctx.clearRect(0,0,CW,CH);
+
+    // ciel + herbe simples (le monde est une grande plaque verte)
+    const groundScreenY = worldToScreen(0, BASE_Y).y;
+    ctx.fillStyle = '#eaf7ff';
+    ctx.fillRect(0,0,CW, Math.max(0,groundScreenY));
+    ctx.fillStyle = '#6fae4a';
+    ctx.fillRect(0, Math.max(0,groundScreenY), CW, CH);
+
+    // plaque de base (bordure visible)
+    const platTL = worldToScreen(0, BASE_Y);
+    const platTR = worldToScreen(WORLD_W, BASE_Y);
+    ctx.fillStyle = '#4f9a3a';
+    ctx.fillRect(platTL.x, platTL.y - 6*scale, platTR.x - platTL.x, 6*scale);
+
+    // briques, triées par hauteur pour un rendu correct (bas -> haut)
+    const sorted = [...allBricks].sort((a,b)=> b.y - a.y);
+    for(const b of sorted){
+      const wx = b.colStart * UNIT;
+      const wy = BASE_Y - b.y - BRICK_H;
+      const s = worldToScreen(wx, wy);
+      drawBrick(ctx, b.type, s.x, s.y, scale);
+    }
+  }
+
+  function loop(){
+    draw();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  setTimeout(()=>{ document.getElementById('hint').style.opacity = '0'; }, 4500);
+})();
+</script>
+</body>
+</html>
