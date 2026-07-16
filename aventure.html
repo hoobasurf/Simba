@@ -10,9 +10,12 @@
     width:100%;height:100%;
     background:#7ec8f2;
     font-family:'Segoe UI', system-ui, sans-serif;
-    touch-action:none;
-    -webkit-user-select:none;user-select:none;
+    touch-action:none; overscroll-behavior:none;
+    -webkit-user-select:none;user-select:none;-moz-user-select:none;-ms-user-select:none;
+    -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent;
   }
+  *{-webkit-tap-highlight-color:transparent;}
+  ::selection{background:transparent;}
   #gameWrap{
     position:relative;
     width:100vw;height:100vh;
