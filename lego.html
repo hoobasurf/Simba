@@ -49,7 +49,7 @@
   #tray{
     position:absolute; bottom:0; left:0; width:100%;
     display:flex; gap:10px; padding:12px 10px calc(12px + env(safe-area-inset-bottom));
-    overflow-x:auto; -webkit-overflow-scrolling:touch;
+    overflow-x:auto; -webkit-overflow-scrolling:touch; touch-action:pan-x;
     background:linear-gradient(0deg, rgba(255,255,255,.55), rgba(255,255,255,0));
     z-index:35;
   }
@@ -103,61 +103,38 @@
   function worldToScreen(wx, wy){ return { x:(wx-camX)*scale, y:(wy-camY)*scale }; }
   function screenToWorld(sx, sy){ return { x: sx/scale + camX, y: sy/scale + camY }; }
 
-  // ---- Briques Lego dessinées : plusieurs tailles/couleurs, plots réalistes ----
-  const BRICK_COLORS = {
-    red:{top:'#ff5a4d',side:'#d43c30',dark:'#a52a20'},
-    blue:{top:'#4a90ff',side:'#2f68d6',dark:'#1e4aa8'},
-    yellow:{top:'#ffd23d',side:'#f0ae00',dark:'#c98e00'},
-    green:{top:'#5ed045',side:'#39a828',dark:'#227016'},
-    white:{top:'#f5f5f5',side:'#d8d8d8',dark:'#b0b0b0'},
-    orange:{top:'#ff9a3d',side:'#e6741a',dark:'#b85810'}
-  };
-  const BRICK_TYPES = [
-    {studs:2, color:'red'},
-    {studs:2, color:'blue'},
-    {studs:2, color:'yellow'},
-    {studs:2, color:'green'},
-    {studs:4, color:'red'},
-    {studs:4, color:'blue'},
-    {studs:4, color:'yellow'},
-    {studs:1, color:'white'},
-    {studs:1, color:'orange'},
-    {studs:6, color:'green'},
+  // ---- Pièces Lego : vraies images découpées dans les photos fournies ----
+  const PIECE_DEFS = [
+    {file:'piece_lego_brique_rouge.png', studs:2},
+    {file:'piece_lego_brique_bleue.png', studs:2},
+    {file:'piece_lego_brique_jaune.png', studs:2},
+    {file:'piece_lego_brique_verte.png', studs:2},
+    {file:'piece_lego_brique_blanche.png', studs:2},
+    {file:'piece_lego_toit_bleu.png', studs:2},
+    {file:'piece_lego_toit_rouge.png', studs:2},
+    {file:'piece_lego_fenetre3.png', studs:2},
+    {file:'piece_lego_porte3.png', studs:2},
+    {file:'piece_lego_cloture3.png', studs:3},
+    {file:'piece_lego_rocher3.png', studs:2},
+    {file:'piece_lego_fleur3.png', studs:1},
+    {file:'piece_lego_dinosaure3.png', studs:3},
   ];
   const STUD_W = UNIT; // largeur d'un plot = 1 unité
-  const BRICK_H = UNIT * 0.62;
+  const BRICK_TYPES = PIECE_DEFS.map(def=>{
+    const img = new Image();
+    img.src = 'images/' + def.file;
+    const t = { img, studs: def.studs, w: def.studs*STUD_W, h: def.studs*STUD_W*0.7, ready:false };
+    img.onload = ()=>{
+      t.ready = true;
+      t.w = def.studs * STUD_W;
+      t.h = t.w * (img.naturalHeight / img.naturalWidth);
+    };
+    return t;
+  });
 
   function drawBrick(g, type, x, topY, u){
-    const c = BRICK_COLORS[type.color];
-    const w = type.studs * STUD_W * u;
-    const h = BRICK_H * u;
-    const studR = STUD_W*u*0.22;
-    g.save();
-    g.translate(x, topY);
-    // corps
-    g.fillStyle = c.side;
-    g.fillRect(0, h*0.22, w, h*0.78);
-    // face du dessus
-    g.fillStyle = c.top;
-    g.fillRect(0, 0, w, h*0.26);
-    // ombre latérale droite
-    g.fillStyle = c.dark;
-    g.fillRect(w-Math.max(3,w*0.035), h*0.22, Math.max(3,w*0.035), h*0.78);
-    // plots
-    g.fillStyle = c.top;
-    for(let i=0;i<type.studs;i++){
-      const sx = (i+0.5) * STUD_W * u;
-      g.beginPath();
-      g.ellipse(sx, -studR*0.55, studR, studR*0.62, 0, 0, Math.PI*2);
-      g.fill();
-      g.fillStyle = c.side;
-      g.fillRect(sx-studR*0.72, -studR*0.55, studR*1.44, studR*0.9);
-      g.fillStyle = c.top;
-    }
-    // liseré clair en haut du corps
-    g.fillStyle = 'rgba(255,255,255,.25)';
-    g.fillRect(0, h*0.22, w, 3*u);
-    g.restore();
+    if(!type.ready) return;
+    g.drawImage(type.img, x, topY, type.w*u, type.h*u);
   }
 
   // ---- Palette ----
@@ -170,8 +147,15 @@
     const c = document.createElement('canvas');
     c.width = 60; c.height = 60;
     const g = c.getContext('2d');
-    const u = Math.min(50/(t.studs*STUD_W), 34/BRICK_H);
-    drawBrick(g, t, 30 - (t.studs*STUD_W*u)/2, 30 - (BRICK_H*u)/2, u);
+    function paintThumb(){
+      g.clearRect(0,0,60,60);
+      if(t.ready){
+        const u = Math.min(50/t.w, 50/t.h);
+        drawBrick(g, t, 30 - (t.w*u)/2, 30 - (t.h*u)/2, u);
+      }
+    }
+    t.img.addEventListener('load', paintThumb);
+    paintThumb();
     btn.appendChild(c);
     btn.addEventListener('pointerdown', (ev)=>{
       ev.preventDefault();
@@ -192,9 +176,9 @@
     // hauteur = le plus haut empilement parmi les colonnes couvertes (pour une pose stable et réaliste)
     let maxH = 0;
     for(let i=0;i<t.studs;i++) maxH = Math.max(maxH, columns[colStart+i].h);
-    const brick = { type:t, colStart, y: maxH };
+    const brick = { type:t, colStart, y: maxH, h: t.h };
     for(let i=0;i<t.studs;i++){
-      columns[colStart+i].h = maxH + BRICK_H;
+      columns[colStart+i].h = maxH + t.h;
       columns[colStart+i].bricks.push(brick);
     }
     allBricks.push(brick);
@@ -210,6 +194,7 @@
   let pointers = new Map();
   let pinchStartDist = 0, pinchStartScale = 1, pinchStartMid = null, pinchStartCam = null;
   let dragStart = null, dragMoved = false, hadMultiTouch = false;
+  let ghostPos = null; // position écran du fantôme de pièce pendant l'appui
 
   function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
   function mid(a,b){ return {x:(a.x+b.x)/2, y:(a.y+b.y)/2}; }
@@ -224,9 +209,10 @@
       const p = [...pointers.values()][0];
       dragStart = {x:p.x, y:p.y, camX, camY};
       dragMoved = false;
-      if(pointers.size === 1 && !hadMultiTouch){ /* première pression : rien à faire de plus */ }
+      ghostPos = {x:p.x, y:p.y};
     } else if(pointers.size === 2){
       hadMultiTouch = true;
+      ghostPos = null;
       const [a,b] = [...pointers.values()];
       pinchStartDist = dist(a,b);
       pinchStartScale = scale;
@@ -258,6 +244,7 @@
       if(Math.hypot(dx,dy) > 6) dragMoved = true;
       camX = dragStart.camX - dx/scale;
       camY = dragStart.camY - dy/scale;
+      ghostPos = dragMoved ? null : {x:p.x, y:p.y};
     }
   }, {passive:false});
 
@@ -273,6 +260,7 @@
         placeBrickAt(w.x);
       }
     }
+    ghostPos = null;
     if(pointers.size < 2){ pinchStartDist = 0; }
     if(pointers.size === 0){ dragStart = null; hadMultiTouch = false; }
     else if(pointers.size === 1){
@@ -284,14 +272,31 @@
   canvas.addEventListener('pointerup', onUp, {passive:false});
   canvas.addEventListener('pointercancel', onUp, {passive:false});
 
+  // ---- Fond du jeu : l'image fournie, répétée horizontalement pour couvrir la plaque large ----
+  const bgImg = new Image();
+  bgImg.src = 'images/lego_bg.jpg';
+  let bgReady = false;
+  bgImg.onload = ()=>{ bgReady = true; };
+
   // ---- Dessin ----
   function draw(){
     ctx.clearRect(0,0,CW,CH);
 
-    // ciel + herbe simples (le monde est une grande plaque verte)
     const groundScreenY = worldToScreen(0, BASE_Y).y;
-    ctx.fillStyle = '#eaf7ff';
-    ctx.fillRect(0,0,CW, Math.max(0,groundScreenY));
+
+    if(bgReady){
+      // l'image est étirée en hauteur sur la zone ciel+horizon, et répétée en largeur au défilement
+      const bgDrawH = Math.max(1, groundScreenY);
+      const tileScreenW = bgDrawH * (bgImg.width / bgImg.height);
+      let x0 = (-camX*0.4) % tileScreenW; if(x0 > 0) x0 -= tileScreenW;
+      for(let x = x0; x < CW; x += tileScreenW){
+        ctx.drawImage(bgImg, x, 0, tileScreenW, bgDrawH);
+      }
+    } else {
+      ctx.fillStyle = '#bfe6ff';
+      ctx.fillRect(0,0,CW, Math.max(0,groundScreenY));
+    }
+
     ctx.fillStyle = '#6fae4a';
     ctx.fillRect(0, Math.max(0,groundScreenY), CW, CH);
 
@@ -305,10 +310,22 @@
     const sorted = [...allBricks].sort((a,b)=> b.y - a.y);
     for(const b of sorted){
       const wx = b.colStart * UNIT;
-      const wy = BASE_Y - b.y - BRICK_H;
+      const wy = BASE_Y - b.y - b.h;
       const s = worldToScreen(wx, wy);
       drawBrick(ctx, b.type, s.x, s.y, scale);
     }
+
+    drawGhost();
+  }
+
+  function drawGhost(){
+    if(!ghostPos) return;
+    const t = BRICK_TYPES[selectedIdx];
+    if(!t.ready) return;
+    ctx.save();
+    ctx.globalAlpha = 0.65;
+    drawBrick(ctx, t, ghostPos.x - (t.w*scale)/2, ghostPos.y - (t.h*scale)/2, scale);
+    ctx.restore();
   }
 
   function loop(){
