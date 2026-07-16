@@ -1438,6 +1438,13 @@ function renderPieceCanvas(canvas, edges, r, c, withOutline){
     const pctx = canvas.getContext('2d');
     pctx.clearRect(0, 0, PIECE_BOX_W, PIECE_BOX_H);
     pctx.save();
+    // Léger agrandissement du contour de découpe (centré sur la pièce) pour que les pièces
+    // voisines se chevauchent vraiment de quelques pixels, et masquent le léger anti-aliasing
+    // du bord incurvé (sinon un mince liseré transparent laisse voir l'image-guide en dessous).
+    const cx = PIECE_BOX_W/2, cy = PIECE_BOX_H/2;
+    pctx.translate(cx, cy);
+    pctx.scale(1.035, 1.035);
+    pctx.translate(-cx, -cy);
     pctx.beginPath();
     tracePiecePath(pctx, edges);
     pctx.clip();
