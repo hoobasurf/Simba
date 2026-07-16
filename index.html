@@ -1351,8 +1351,8 @@ const PUZZLE_IMAGES = [
     "fondmalo.PNG",
     "malo-toutou.png"
 ];
-const ROWS = 2;
-const COLS = 4;
+const ROWS = 3;
+const COLS = 3;
 const TOTAL = ROWS * COLS;
 
 // Ces valeurs sont recalculées à chaque ouverture du puzzle par computeLayout()
@@ -1365,28 +1365,30 @@ function computeLayout(){
 
     // Largeur/hauteur réellement disponibles sur l'écran
     const availW = Math.max(260, window.innerWidth - 24);
-    const topbarH = 76;   // pills du haut (retour / nouveau / score)
-    const infoH = 34;     // bandeau "fais glisser les pièces..."
+    const topbarH = 70;   // pills du haut (retour / nouveau / score)
+    const infoH = 30;     // bandeau "fais glisser les pièces..."
 
-    MARGIN = 10;
-    TRAY_GAP = 8;
+    MARGIN = 8;
+    TRAY_GAP = 10;
     TRAY_PAD = 10;
 
-    // ---- Pioche : vignettes compactes pour que TOUTES les pièces soient visibles
-    //      sans défilement (l'enfant doit pouvoir choisir librement, rien de caché) ----
-    const itemsPerRow = Math.max(3, Math.min(TOTAL, Math.ceil(Math.sqrt(TOTAL * (availW/140)))));
-    TRAY_THUMB = Math.floor(Math.min(84, Math.max(44, (availW - 2*10 - (itemsPerRow-1)*TRAY_GAP) / itemsPerRow)));
+    // ---- Pioche : vignettes assez grandes pour être bien distinguées, disposées en
+    //      grille compacte (proche d'un carré) pour que TOUTES les pièces soient visibles
+    //      sans aucun défilement (l'enfant doit pouvoir choisir librement, rien de caché) ----
+    const itemsPerRow = Math.max(3, Math.ceil(Math.sqrt(TOTAL)));
+    TRAY_THUMB = Math.floor(Math.min(130, Math.max(70, (availW - 20 - (itemsPerRow-1)*TRAY_GAP) / itemsPerRow)));
     const trayRowsVisual = Math.ceil(TOTAL / itemsPerRow);
-    TRAY_H = 22 + trayRowsVisual * (TRAY_THUMB + TRAY_GAP) + 6;
+    TRAY_H = 24 + trayRowsVisual * (TRAY_THUMB + TRAY_GAP) + 6;
 
     // Emplacement des pièces : la bosse d'emboîtement dépasse de CELL/4 (25%),
     // il faut donc une marge au moins aussi grande pour ne jamais la couper.
     const TAB_RATIO = 0.29;
-    const availH = Math.max(200, window.innerHeight - topbarH - infoH - TRAY_H - 2*MARGIN);
+    const availH = Math.max(200, window.innerHeight - topbarH - infoH - TRAY_H - MARGIN);
 
+    // Plateau CARRÉ : on prend le plus grand carré qui rentre à la fois en largeur et en hauteur.
     const cellByWidth = Math.floor((availW - 2*MARGIN) / (COLS + 2*TAB_RATIO));
-    const cellByHeight = Math.floor(availH / (ROWS + 2*TAB_RATIO));
-    let cell = Math.max(50, Math.min(cellByWidth, cellByHeight, 260));
+    const cellByHeight = Math.floor((availH - MARGIN) / (ROWS + 2*TAB_RATIO));
+    let cell = Math.max(50, Math.min(cellByWidth, cellByHeight, 340));
 
     CELL = cell;
     TAB = Math.round(cell * TAB_RATIO);
@@ -1400,7 +1402,7 @@ function computeLayout(){
     ARENA_W = window.innerWidth;
     ARENA_H = window.innerHeight;
     BOARD_X = (ARENA_W - BOARD_W) / 2;
-    BOARD_Y = topbarH + infoH + TAB + 10;
+    BOARD_Y = topbarH + infoH + TAB + 4;
     SNAP_DIST = Math.round(CELL * 0.6);
 }
 
@@ -1408,6 +1410,12 @@ let currentPuzzle = 0;
 let puzzleSrcImg = null;
 
 // Dessine (ou redessine) une pièce sur son canvas ; withOutline=false une fois posée
+/* --- Calcule un recadrage carré centré de l'image source (comme "object-fit:cover") --- */
+function getSquareCrop(img){
+    const s = Math.min(img.naturalWidth, img.naturalHeight);
+    return { sx: (img.naturalWidth - s)/2, sy: (img.naturalHeight - s)/2, ssize: s };
+}
+
 function renderPieceCanvas(canvas, edges, r, c, withOutline){
     const pctx = canvas.getContext('2d');
     pctx.clearRect(0, 0, PIECE_BOX, PIECE_BOX);
@@ -1415,7 +1423,8 @@ function renderPieceCanvas(canvas, edges, r, c, withOutline){
     pctx.beginPath();
     tracePiecePath(pctx, edges);
     pctx.clip();
-    pctx.drawImage(puzzleSrcImg, TAB - c*CELL, TAB - r*CELL, BOARD_W, BOARD_H);
+    const crop = getSquareCrop(puzzleSrcImg);
+    pctx.drawImage(puzzleSrcImg, crop.sx, crop.sy, crop.ssize, crop.ssize, TAB - c*CELL, TAB - r*CELL, BOARD_W, BOARD_H);
     pctx.restore();
     if(withOutline){
         pctx.beginPath();
@@ -1607,7 +1616,8 @@ function createPuzzle(){
     target.style.width = BOARD_W + 'px';
     target.style.height = BOARD_H + 'px';
     target.style.backgroundImage = `url(${PUZZLE_IMAGES[currentPuzzle]})`;
-    target.style.backgroundSize = `${BOARD_W}px ${BOARD_H}px`;
+    target.style.backgroundSize = `cover`;
+    target.style.backgroundPosition = 'center';
     target.style.opacity = '.16';
     target.style.pointerEvents = 'none';
     arena.appendChild(target);
