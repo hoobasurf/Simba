@@ -37,7 +37,7 @@
   }
 
   #stopBtn{
-    position:absolute; top:14px; right:14px; z-index:40;
+    position:absolute; top:64px; right:14px; z-index:40;
     background:linear-gradient(180deg,#7be06a,#3fae2c);
     color:#fff; border:3px solid #fff; border-radius:24px;
     padding:10px 18px; font-size:clamp(13px,3.2vw,17px); font-weight:900;
@@ -118,7 +118,6 @@
   let bgReady = false;
   bgImg.onload = ()=>{ bgReady = true; };
 
-  // ---- Le fond ne doit jamais défiler au-delà de son propre haut (sinon : vide au-dessus) ----
   function maxCameraY(){
     if(!bgReady) return Infinity;
     const scale = bgScaleFactor();
@@ -126,37 +125,122 @@
     return Math.max(0, drawH - CH);
   }
 
-  // ---- Types de pièces : vraies images découpées dans la photo fournie par l'utilisateur ----
-  const PIECE_FILES = [
-    'piece_cube_wood.png','piece_cube_red.png','piece_cube_blue.png','piece_cube_yellow.png','piece_cube_green.png',
-    'piece_rect_wood.png','piece_rect_red.png','piece_rect_blue.png','piece_rect_yellow.png','piece_rect_green.png',
-    'piece_cyl_wood.png','piece_cyl_red.png','piece_cyl_blue.png','piece_cyl_yellow.png','piece_cyl_green.png',
-    'piece_arch_wood.png','piece_arch_red.png','piece_arch_blue.png','piece_arch_yellow.png','piece_arch_green.png',
-    'piece_brick_red.png','piece_brick_blue.png','piece_brick_yellow.png','piece_brick_green.png','piece_brick_red2.png',
-    'piece_cone_wood.png'
+  // ---- Formes de pièces dessinées (plus d'images externes -> plus de bug "tout pareil") ----
+  const SHAPES = ['cube','rect','cyl','arch','cone'];
+  const SHAPE_ASPECT = { cube:1, rect:1.9, cyl:0.72, arch:1.35, cone:0.9 };
+  const COLOR_DEFS = [
+    { name:'wood',   top:'#e2b579', side:'#b8814a' },
+    { name:'red',    top:'#ff7a72', side:'#e2453f' },
+    { name:'blue',   top:'#6badf5', side:'#3f76c9' },
+    { name:'yellow', top:'#ffe066', side:'#eeab1f' },
+    { name:'green',  top:'#8fe06a', side:'#4fae2c' }
   ];
-  const PIECE_DISPLAY_H = 62; // hauteur d'empilement uniforme (la largeur suit le ratio réel de l'image)
-  const PIECE_TYPES = PIECE_FILES.map(file=>{
-    const img = new Image();
-    img.src = 'images/' + file;
-    return { img, w: PIECE_DISPLAY_H, h: PIECE_DISPLAY_H, ready:false };
-  });
-  PIECE_TYPES.forEach(p=>{
-    p.img.onload = ()=>{
-      p.ready = true;
-      p.w = PIECE_DISPLAY_H * (p.img.naturalWidth / p.img.naturalHeight);
-      p.h = PIECE_DISPLAY_H;
-    };
+  const PIECE_DISPLAY_H = 60;
+
+  const PIECE_TYPES = [];
+  SHAPES.forEach(shape=>{
+    COLOR_DEFS.forEach(colors=>{
+      PIECE_TYPES.push({
+        shape, colors,
+        w: PIECE_DISPLAY_H * SHAPE_ASPECT[shape],
+        h: PIECE_DISPLAY_H
+      });
+    });
   });
 
-  // ---- Dessin d'une pièce = simplement l'image découpée, centrée en x, alignée par le haut ----
-  function drawPiece(g, p, cx, topY, wOverride, hOverride){
-    if(!p.ready) return;
-    const w = wOverride || p.w, h = hOverride || p.h;
-    g.drawImage(p.img, cx - w/2, topY, w, h);
+  function roundRectPath(g,x,y,w,h,r){
+    g.beginPath();
+    g.moveTo(x+r,y);
+    g.arcTo(x+w,y,x+w,y+h,r);
+    g.arcTo(x+w,y+h,x,y+h,r);
+    g.arcTo(x,y+h,x,y,r);
+    g.arcTo(x,y,x+w,y,r);
+    g.closePath();
   }
 
-  // ---- Tray (palette) : sélectionne une pièce, puis glisse sur la scène pour la poser ----
+  function drawGrain(g,x,y,w,h){
+    g.strokeStyle='rgba(110,65,20,.28)';
+    g.lineWidth=1.4;
+    for(let i=1;i<3;i++){
+      g.beginPath();
+      g.moveTo(x+4, y+h*(i/3));
+      g.quadraticCurveTo(x+w/2, y+h*(i/3)+4, x+w-4, y+h*(i/3));
+      g.stroke();
+    }
+  }
+
+  // ---- Dessin d'une pièce = une vraie forme (cube / planche / cylindre / arche / cône) ----
+  function drawPiece(g, p, cx, topY, wOverride, hOverride){
+    const w = wOverride || p.w, h = hOverride || p.h;
+    const shape = p.shape, colors = p.colors;
+    const left = cx - w/2, right = cx + w/2, bottom = topY + h;
+    g.save();
+    switch(shape){
+      case 'cube':
+      case 'rect': {
+        const r = Math.min(10, w*0.14, h*0.14);
+        roundRectPath(g, left, topY, w, h, r);
+        const grad = g.createLinearGradient(0, topY, 0, bottom);
+        grad.addColorStop(0, colors.top);
+        grad.addColorStop(1, colors.side);
+        g.fillStyle = grad; g.fill();
+        g.lineWidth = 2; g.strokeStyle = 'rgba(0,0,0,.25)'; g.stroke();
+        g.fillStyle = 'rgba(255,255,255,.35)';
+        roundRectPath(g, left+4, topY+3, w-8, h*0.26, r*0.6); g.fill();
+        if(colors.name==='wood') drawGrain(g,left,topY,w,h);
+        break;
+      }
+      case 'cyl': {
+        const rx = w/2;
+        roundRectPath(g, left, topY+h*0.16, w, h*0.84, rx*0.5);
+        const grad = g.createLinearGradient(left,0,right,0);
+        grad.addColorStop(0, colors.side); grad.addColorStop(0.5, colors.top); grad.addColorStop(1, colors.side);
+        g.fillStyle = grad; g.fill();
+        g.lineWidth=2; g.strokeStyle='rgba(0,0,0,.25)'; g.stroke();
+        g.beginPath();
+        g.ellipse(cx, topY+h*0.16, rx, h*0.14, 0, 0, Math.PI*2);
+        g.fillStyle = colors.top; g.fill(); g.stroke();
+        if(colors.name==='wood') drawGrain(g,left,topY+h*0.16,w,h*0.7);
+        break;
+      }
+      case 'arch': {
+        roundRectPath(g, left, topY, w, h, 8);
+        const grad = g.createLinearGradient(0, topY, 0, bottom);
+        grad.addColorStop(0, colors.top); grad.addColorStop(1, colors.side);
+        g.fillStyle = grad; g.fill();
+        g.save();
+        roundRectPath(g, left, topY, w, h, 8);
+        g.clip();
+        g.globalCompositeOperation = 'destination-out';
+        g.beginPath();
+        g.arc(cx, bottom, w*0.34, Math.PI, 0);
+        g.lineTo(right*0 + cx + w*0.34, bottom);
+        g.lineTo(cx - w*0.34, bottom);
+        g.closePath();
+        g.fill();
+        g.restore();
+        g.lineWidth=2; g.strokeStyle='rgba(0,0,0,.25)';
+        roundRectPath(g,left,topY,w,h,8); g.stroke();
+        if(colors.name==='wood') drawGrain(g,left,topY,w,h*0.5);
+        break;
+      }
+      case 'cone': {
+        g.beginPath();
+        g.moveTo(cx, topY);
+        g.lineTo(right, bottom);
+        g.lineTo(left, bottom);
+        g.closePath();
+        const grad = g.createLinearGradient(left,0,right,0);
+        grad.addColorStop(0, colors.side); grad.addColorStop(0.5, colors.top); grad.addColorStop(1, colors.side);
+        g.fillStyle = grad; g.fill();
+        g.lineWidth=2; g.strokeStyle='rgba(0,0,0,.25)'; g.stroke();
+        break;
+      }
+    }
+    g.restore();
+  }
+
+  // ---- Tray (palette) ----
   const tray = document.getElementById('tray');
   let selectedIdx = 0;
   const trayBtns = [];
@@ -166,36 +250,24 @@
     const c = document.createElement('canvas');
     c.width = 64; c.height = 64;
     const g = c.getContext('2d');
-    function paintThumb(){
-      g.clearRect(0,0,64,64);
-      if(p.ready){
-        const scale = Math.min(52/p.w, 52/p.h);
-        drawPiece(g, p, 32, 32 - (p.h*scale)/2, p.w*scale, p.h*scale);
-      }
-    }
-    p.img.addEventListener('load', paintThumb);
-    paintThumb();
+    const scale = Math.min(50/p.w, 50/p.h);
+    g.clearRect(0,0,64,64);
+    drawPiece(g, p, 32, 32 - (p.h*scale)/2, p.w*scale, p.h*scale);
     btn.appendChild(c);
-    btn.addEventListener('pointerdown', (ev)=>{
-      ev.preventDefault();
-      selectedIdx = idx;
-      trayBtns.forEach(b=>b.classList.remove('selected'));
-      btn.classList.add('selected');
-    }, {passive:false});
     tray.appendChild(btn);
     trayBtns.push(btn);
   });
 
   // ---- Etat de la tour ----
-  let stack = []; // {type, x, wobble}
+  let stack = [];
   let placedCount = 0;
   let cameraY = 0, targetCameraY = 0;
-  let swayT = 0, swaying = false, swayStart = 0;
-  let mode = 'building'; // building | reveal | collapsing | done
+  let swaying = false, swayStart = 0;
+  let mode = 'building';
   let fallingPieces = [];
-  let dropAnim = null; // animation d'une pièce qui tombe sur la pile
+  let dropAnim = null;
 
-  const BASE_Y = ()=> CH * 0.86; // niveau du "sol" (tapis) dans la chambre
+  const BASE_Y = ()=> CH * 0.86;
   const STACK_X = ()=> CW/2;
 
   function addPiece(typeIdx, xOffset){
@@ -203,10 +275,9 @@
     const p = PIECE_TYPES[typeIdx];
     const prevTop = stack.length ? stack[stack.length-1].topY : BASE_Y();
     const h = p.h;
-    const maxOffset = 60;
+    const maxOffset = 70;
     const jitter = xOffset !== undefined ? Math.max(-maxOffset, Math.min(maxOffset, xOffset)) : (Math.random()-0.5) * 10;
     const piece = { p, x: jitter, topY: prevTop - h, h };
-    // petite animation de chute depuis le point de lâcher jusqu'à sa place
     dropAnim = { piece, fromY: -60, t: 0 };
     stack.push(piece);
     placedCount++;
@@ -218,14 +289,12 @@
     if(placedCount % 5 === 0){
       swaying = true; swayStart = performance.now();
     }
-    // caméra : on garde le sommet de la pile visible avec une marge
     const topWorldY = stack[stack.length-1].topY;
     targetCameraY = Math.min(maxCameraY(), Math.max(0, (BASE_Y() - topWorldY) - CH*0.55));
   }
 
-  // ---- Glisser pour poser : on choisit la pièce dans la pioche, puis on la fait glisser
-  //      sur la scène pour choisir où elle atterrit sur le dessus de la tour ----
-  let placeDrag = null; // {x} position courante du fantôme pendant le glisser
+  // ---- Ancien mode: sélectionner puis glisser directement sur la scène (toujours dispo) ----
+  let placeDrag = null;
 
   canvas.addEventListener('pointerdown', (ev)=>{
     if(mode !== 'building') return;
@@ -248,6 +317,64 @@
   canvas.addEventListener('pointerup', finishPlaceDrag, {passive:true});
   canvas.addEventListener('pointercancel', ()=>{ placeDrag = null; }, {passive:true});
 
+  // ---- Nouveau: vrai glisser depuis la pioche (comme le puzzle) ----
+  let dragState = null;
+
+  function pieceGhostSize(p){
+    const maxDim = 74;
+    const scale = Math.min(maxDim/p.w, maxDim/p.h);
+    return { w: p.w*scale, h: p.h*scale };
+  }
+
+  trayBtns.forEach((btn, idx)=>{
+    btn.addEventListener('pointerdown', (ev)=>{
+      ev.preventDefault();
+      selectedIdx = idx;
+      trayBtns.forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+      if(mode !== 'building') return;
+
+      const p = PIECE_TYPES[idx];
+      const size = pieceGhostSize(p);
+      const ghost = document.createElement('canvas');
+      const dpr = Math.max(1, Math.min(window.devicePixelRatio||1, 3));
+      ghost.width = size.w*dpr; ghost.height = size.h*dpr;
+      ghost.style.cssText = 'position:fixed;left:'+(ev.clientX-size.w/2)+'px;top:'+(ev.clientY-size.h/2)+'px;'+
+        'width:'+size.w+'px;height:'+size.h+'px;pointer-events:none;z-index:200;opacity:.92;'+
+        'filter:drop-shadow(0 4px 6px rgba(0,0,0,.4));';
+      const gg = ghost.getContext('2d');
+      gg.scale(dpr,dpr);
+      drawPiece(gg, p, size.w/2, 0, size.w, size.h);
+      document.body.appendChild(ghost);
+      dragState = { idx, ghost, size, pointerId: ev.pointerId, moved:false };
+    }, {passive:false});
+  });
+
+  window.addEventListener('pointermove', (ev)=>{
+    if(!dragState || ev.pointerId !== dragState.pointerId) return;
+    dragState.moved = true;
+    dragState.ghost.style.left = (ev.clientX - dragState.size.w/2) + 'px';
+    dragState.ghost.style.top = (ev.clientY - dragState.size.h/2) + 'px';
+  }, {passive:true});
+
+  function endDrag(ev){
+    if(!dragState || ev.pointerId !== dragState.pointerId) return;
+    const rect = canvas.getBoundingClientRect();
+    const trayTop = tray.getBoundingClientRect().top;
+    const overCanvas = ev.clientX >= rect.left && ev.clientX <= rect.right &&
+                        ev.clientY >= rect.top && ev.clientY <= trayTop;
+    if(dragState.moved && overCanvas && mode === 'building'){
+      const xOffset = (ev.clientX - rect.left) - STACK_X();
+      addPiece(dragState.idx, xOffset);
+    }
+    dragState.ghost.remove();
+    dragState = null;
+  }
+  window.addEventListener('pointerup', endDrag, {passive:true});
+  window.addEventListener('pointercancel', ()=>{
+    if(dragState){ dragState.ghost.remove(); dragState = null; }
+  }, {passive:true});
+
   // ---- Bouton stop / voir le résultat ----
   document.getElementById('stopBtn').addEventListener('click', ()=>{
     if(mode !== 'building') return;
@@ -255,7 +382,6 @@
     document.getElementById('stopBtn').style.display = 'none';
     document.getElementById('pieceCounter').style.display = 'none';
     tray.style.display = 'none';
-    // cadrer toute la tour + le fond
     const topWorldY = stack.length ? stack[stack.length-1].topY : BASE_Y();
     const towerHeight = BASE_Y() - topWorldY + 80;
     targetCameraY = Math.min(maxCameraY(), Math.max(0, towerHeight - CH*0.9));
@@ -264,12 +390,10 @@
     }, 900);
   });
 
-  // ---- Toucher la tour en mode reveal = écroulement ----
   canvas.addEventListener('pointerdown', (ev)=>{
     if(mode !== 'reveal') return;
     const rect = canvas.getBoundingClientRect();
-    const px = ev.clientX - rect.left, py = ev.clientY - rect.top;
-    // zone approx de la tour (colonne centrale)
+    const px = ev.clientX - rect.left;
     if(Math.abs(px - CW/2) < 140){
       collapseTower();
     }
@@ -326,31 +450,28 @@
     }
     if(mode === 'collapsing'){
       for(const f of fallingPieces){
-        f.vy += 0.9; // gravité
+        f.vy += 0.9;
         f.x += f.vx; f.y += f.vy; f.rot += f.vrot;
       }
     }
   }
 
   function bgScaleFactor(){
-    // L'image doit toujours être nettement plus haute que l'écran (sinon : pas de place pour
-    // défiler du tout, et le haut de la tour sort de l'écran sans que rien ne se révèle).
+    // Moins zoomé qu'avant : juste assez de hauteur en plus pour permettre un léger
+    // défilement quand la tour grandit, sans recadrer la pièce de façon trop serrée.
     const scaleByWidth = CW / bgImg.width;
-    const scaleByMinHeight = (CH * 2.4) / bgImg.height;
+    const scaleByMinHeight = (CH * 1.35) / bgImg.height;
     return Math.max(scaleByWidth, scaleByMinHeight);
   }
 
   function drawBackground(){
     if(!bgReady){ ctx.fillStyle = '#3a2a18'; ctx.fillRect(0,0,CW,CH); return; }
-    // l'image de fond est étirée pour couvrir une hauteur "virtuelle" plus grande que l'écran,
-    // et on la décale vers le bas selon cameraY pour révéler le haut (fenêtre/plafond) en montant
     const scale = bgScaleFactor();
     const drawW = bgImg.width * scale;
     const drawH = bgImg.height * scale;
-    const x = (CW - drawW) / 2; // centrée horizontalement (peut dépasser l'écran, c'est voulu)
-    const y = (CH - drawH) + cameraY; // le bas de l'image correspond au sol au départ
+    const x = (CW - drawW) / 2;
+    const y = (CH - drawH) + cameraY;
     ctx.drawImage(bgImg, x, y, drawW, drawH);
-    // léger voile en haut/bas pour la lisibilité du HUD
   }
 
   function drawStack(){
@@ -359,9 +480,9 @@
     ctx.translate(STACK_X(), BASE_Y() + cameraY);
     ctx.rotate(sway);
     for(const s of stack){
-      const localTopY = s.topY - BASE_Y(); // négatif = plus haut que le sol
+      const localTopY = s.topY - BASE_Y();
       let drawY = localTopY;
-      let drawX = s.x;
+      const drawX = s.x;
       if(dropAnim && dropAnim.piece === s){
         const e = 1 - Math.pow(1-dropAnim.t, 3);
         drawY = dropAnim.fromY + (localTopY - dropAnim.fromY) * e;
@@ -391,7 +512,6 @@
     ctx.globalAlpha = 0.6;
     drawPiece(ctx, p, placeDrag.x, ghostScreenY, undefined, undefined);
     ctx.restore();
-    // petit repère de chute
     ctx.strokeStyle = 'rgba(255,255,255,.8)';
     ctx.setLineDash([5,5]);
     ctx.beginPath();
