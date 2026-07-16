@@ -585,6 +585,7 @@
 
     <div class="puzzle-board-wrap" id="puzzleBoardWrap" style="display:none;">
       <div class="puzzle-topbar-info" id="puzzleInfo">👉 Fais glisser les pièces dans l'image ! 👈</div>
+      <div style="position:absolute; top:2px; right:6px; font-size:9px; color:rgba(255,255,255,.55); z-index:99;">v20260716-3</div>
       <div id="puzzleArena"></div>
       <div id="pieceTray">
         <div class="pz-tray-label2">🧺 Pioche</div>
@@ -1443,7 +1444,7 @@ function renderPieceCanvas(canvas, edges, r, c, withOutline){
     // du bord incurvé (sinon un mince liseré transparent laisse voir l'image-guide en dessous).
     const cx = PIECE_BOX_W/2, cy = PIECE_BOX_H/2;
     pctx.translate(cx, cy);
-    pctx.scale(1.035, 1.035);
+    pctx.scale(1.06, 1.06);
     pctx.translate(-cx, -cy);
     pctx.beginPath();
     tracePiecePath(pctx, edges);
