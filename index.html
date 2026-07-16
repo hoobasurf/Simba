@@ -359,7 +359,6 @@
   }
 
   .jz-piece{
-    position:absolute;
     touch-action:none;
     cursor:grab;
     pointer-events:auto;
@@ -367,6 +366,7 @@
     transition:filter .15s, transform .15s;
     animation:pieceFloat 2.6s ease-in-out infinite;
   }
+  .jz-piece.inTray{ position:relative; }
   .jz-piece:active{filter:drop-shadow(0 4px 7px rgba(0,0,0,.45)) brightness(1.12);}
   .jz-piece.dragging{cursor:grabbing; filter:drop-shadow(0 10px 16px rgba(0,0,0,.55)) brightness(1.12); transition:none; animation:none; transform:scale(1.08); z-index:100;}
   .jz-piece.placed{cursor:default; filter:drop-shadow(0 1px 2px rgba(0,0,0,.3)); animation:none;}
@@ -1388,14 +1388,14 @@ function computeLayout(){
     const boardByHeight = Math.floor((availH - MARGIN) / (1 + 2*TAB_RATIO/ROWS));
     const boardSize = Math.max(200, Math.min(boardByWidth, boardByHeight, 620));
 
-    CELL_W = boardSize / COLS;
-    CELL_H = boardSize / ROWS;
+    CELL_W = Math.round(boardSize / COLS);
+    CELL_H = Math.round(boardSize / ROWS);
     TAB_X = Math.round(CELL_W * TAB_RATIO);
     TAB_Y = Math.round(CELL_H * TAB_RATIO);
-    BOARD_W = Math.round(COLS * CELL_W);
-    BOARD_H = Math.round(ROWS * CELL_H);
-    PIECE_BOX_W = Math.round(CELL_W + 2 * TAB_X);
-    PIECE_BOX_H = Math.round(CELL_H + 2 * TAB_Y);
+    BOARD_W = COLS * CELL_W;
+    BOARD_H = ROWS * CELL_H;
+    PIECE_BOX_W = CELL_W + 2 * TAB_X;
+    PIECE_BOX_H = CELL_H + 2 * TAB_Y;
 
     // ---- Pioche : vignettes qui gardent les proportions réelles des pièces (pas de
     //      déformation), assez grandes pour être bien distinguées. Le flex-wrap CSS
@@ -1408,7 +1408,7 @@ function computeLayout(){
 
     ARENA_W = window.innerWidth;
     ARENA_H = window.innerHeight;
-    BOARD_X = (ARENA_W - BOARD_W) / 2;
+    BOARD_X = Math.round((ARENA_W - BOARD_W) / 2);
     BOARD_Y = topbarH + infoH + TAB_Y + 4;
     SNAP_DIST = Math.round(Math.min(CELL_W, CELL_H) * 0.6);
 }
