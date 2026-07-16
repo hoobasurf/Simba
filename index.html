@@ -585,7 +585,7 @@
 
     <div class="puzzle-board-wrap" id="puzzleBoardWrap" style="display:none;">
       <div class="puzzle-topbar-info" id="puzzleInfo">👉 Fais glisser les pièces dans l'image ! 👈</div>
-      <div style="position:absolute; top:2px; right:6px; font-size:9px; color:rgba(255,255,255,.55); z-index:99;">v20260716-3</div>
+      <div style="position:absolute; top:2px; right:6px; font-size:9px; color:rgba(255,255,255,.55); z-index:99;">v20260716-TABFIX</div>
       <div id="puzzleArena"></div>
       <div id="pieceTray">
         <div class="pz-tray-label2">🧺 Pioche</div>
@@ -1392,22 +1392,24 @@ function computeLayout(){
     TRAY_H = labelH + trayRows * thumbH + (trayRows - 1) * TRAY_GAP + 2*TRAY_PAD + 10;
     TRAY_H = Math.min(TRAY_H, window.innerHeight * 0.55); // garde-fou : jamais plus de la moitié de l'écran
 
-    // Emplacement des pièces : la bosse d'emboîtement dépasse de 25% de la longueur du bord,
-    // il faut donc une marge au moins aussi grande pour ne jamais la couper.
+    // Emplacement des pièces : la bosse d'emboîtement dépasse de 25% de la LONGUEUR DU BORD,
+    // et un bord vertical (gauche/droite) a pour longueur CELL_H, un bord horizontal (haut/bas)
+    // a pour longueur CELL_W. La marge doit donc suivre la dimension DE L'AUTRE axe :
+    // TAB_X (marge horizontale) dépend de CELL_H, TAB_Y (marge verticale) dépend de CELL_W.
     const TAB_RATIO = 0.29;
     const availH = Math.max(200, window.innerHeight - topbarH - infoH - TRAY_H - MARGIN);
 
     // Plateau CARRÉ (même si la grille est 2x4) : on cherche le plus grand carré qui
     // rentre à la fois en largeur et en hauteur, puis on répartit COLS/ROWS dedans
     // (cellules rectangulaires : CELL_W = carré/COLS, CELL_H = carré/ROWS).
-    const boardByWidth = Math.floor((availW - 2*MARGIN) / (1 + 2*TAB_RATIO/COLS));
-    const boardByHeight = Math.floor((availH - MARGIN) / (1 + 2*TAB_RATIO/ROWS));
+    const boardByWidth = Math.floor((availW - 2*MARGIN) / (1 + 2*TAB_RATIO/ROWS));
+    const boardByHeight = Math.floor((availH - MARGIN) / (1 + 2*TAB_RATIO/COLS));
     const boardSize = Math.max(200, Math.min(boardByWidth, boardByHeight, 620));
 
     CELL_W = Math.round(boardSize / COLS);
     CELL_H = Math.round(boardSize / ROWS);
-    TAB_X = Math.round(CELL_W * TAB_RATIO);
-    TAB_Y = Math.round(CELL_H * TAB_RATIO);
+    TAB_X = Math.round(CELL_H * TAB_RATIO);
+    TAB_Y = Math.round(CELL_W * TAB_RATIO);
     BOARD_W = COLS * CELL_W;
     BOARD_H = ROWS * CELL_H;
     PIECE_BOX_W = CELL_W + 2 * TAB_X;
@@ -1439,13 +1441,6 @@ function renderPieceCanvas(canvas, edges, r, c, withOutline){
     const pctx = canvas.getContext('2d');
     pctx.clearRect(0, 0, PIECE_BOX_W, PIECE_BOX_H);
     pctx.save();
-    // Léger agrandissement du contour de découpe (centré sur la pièce) pour que les pièces
-    // voisines se chevauchent vraiment de quelques pixels, et masquent le léger anti-aliasing
-    // du bord incurvé (sinon un mince liseré transparent laisse voir l'image-guide en dessous).
-    const cx = PIECE_BOX_W/2, cy = PIECE_BOX_H/2;
-    pctx.translate(cx, cy);
-    pctx.scale(1.06, 1.06);
-    pctx.translate(-cx, -cy);
     pctx.beginPath();
     tracePiecePath(pctx, edges);
     pctx.clip();
