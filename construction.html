@@ -121,7 +121,7 @@
   // ---- Le fond ne doit jamais défiler au-delà de son propre haut (sinon : vide au-dessus) ----
   function maxCameraY(){
     if(!bgReady) return Infinity;
-    const scale = CW / bgImg.width;
+    const scale = bgScaleFactor();
     const drawH = bgImg.height * scale;
     return Math.max(0, drawH - CH);
   }
@@ -332,14 +332,24 @@
     }
   }
 
+  function bgScaleFactor(){
+    // L'image doit toujours être nettement plus haute que l'écran (sinon : pas de place pour
+    // défiler du tout, et le haut de la tour sort de l'écran sans que rien ne se révèle).
+    const scaleByWidth = CW / bgImg.width;
+    const scaleByMinHeight = (CH * 2.4) / bgImg.height;
+    return Math.max(scaleByWidth, scaleByMinHeight);
+  }
+
   function drawBackground(){
     if(!bgReady){ ctx.fillStyle = '#3a2a18'; ctx.fillRect(0,0,CW,CH); return; }
     // l'image de fond est étirée pour couvrir une hauteur "virtuelle" plus grande que l'écran,
     // et on la décale vers le bas selon cameraY pour révéler le haut (fenêtre/plafond) en montant
-    const scale = CW / bgImg.width;
+    const scale = bgScaleFactor();
+    const drawW = bgImg.width * scale;
     const drawH = bgImg.height * scale;
+    const x = (CW - drawW) / 2; // centrée horizontalement (peut dépasser l'écran, c'est voulu)
     const y = (CH - drawH) + cameraY; // le bas de l'image correspond au sol au départ
-    ctx.drawImage(bgImg, 0, y, CW, drawH);
+    ctx.drawImage(bgImg, x, y, drawW, drawH);
     // léger voile en haut/bas pour la lisibilité du HUD
   }
 
