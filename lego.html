@@ -420,7 +420,16 @@
     if(!placeDrag) return;
     const t = BRICK_TYPES[selectedIdx];
     if(!t.ready) return;
-    if(placeDrag.y >= BOARD_Y) return; // doigt encore dans la pioche : rien à montrer sur la plaque
+
+    if(placeDrag.y >= BOARD_Y){
+      // Le doigt est encore au-dessus de la pioche : on montre quand même la pièce
+      // directement sous le doigt, pour un retour visuel continu pendant tout le geste.
+      ctx.save();
+      ctx.globalAlpha = 0.9;
+      drawBrick(ctx, t, placeDrag.x - t.w/2, placeDrag.y - t.h/2, 1);
+      ctx.restore();
+      return;
+    }
 
     let colStart = colRangeFor(Math.round((placeDrag.x - BOARD_X) / UNIT - t.studs/2), t.studs);
     let maxH = 0;
