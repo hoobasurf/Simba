@@ -107,11 +107,20 @@
     font-size:32px; pointer-events:auto;  
   }  
   #jumpBtn:active{ background:rgba(255,150,30,.95); transform:scale(.94); }  
+  #soundToggle{
+    position:absolute; top:14px; right:14px; z-index:40;
+    width:44px; height:44px; border-radius:50%;
+    background:rgba(255,255,255,.65); border:3px solid rgba(255,255,255,.9);
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; box-shadow:0 4px 10px rgba(0,0,0,.25); cursor:pointer;
+  }
+  #soundToggle:active{ background:rgba(255,255,255,.9); transform:scale(.94); }
 </style>  
 </head>  
 <body>  
 <div id="gameWrap">  
   <canvas id="game" width="900" height="500"></canvas>  
+  <button id="soundToggle">🔊</button>  
   
   <div id="missionBanner">🍬 Trouve les bonbons !</div>  
   <div id="hud">  
@@ -153,6 +162,24 @@ const MALO_SHEET_SRC = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABSgAAASGCA
 (function(){  
   const canvas = document.getElementById('game');  
   const ctx = canvas.getContext('2d');  
+
+  // ---- Musique de fond ----
+  let muted = false;
+  const bgMusic = new Audio('sounds/aventure_musique.mp3');
+  bgMusic.loop = true;
+  bgMusic.volume = 0.25;
+  let bgStarted = false;
+  function startBgMusic(){
+    if(bgStarted) return;
+    bgStarted = true;
+    if(!muted) bgMusic.play().catch(()=>{});
+  }
+  window.addEventListener('pointerdown', startBgMusic, {once:true});
+  document.getElementById('soundToggle').addEventListener('click', ()=>{
+    muted = !muted;
+    document.getElementById('soundToggle').textContent = muted ? '🔇' : '🔊';
+    if(muted){ bgMusic.pause(); } else if(bgStarted){ bgMusic.play().catch(()=>{}); }
+  });
   
   // Le jeu est VRAIMENT responsive : le canvas fait exactement la taille de l'écran du  
   // téléphone/tablette (CW x CH = window.innerWidth x window.innerHeight), donc jamais de  
