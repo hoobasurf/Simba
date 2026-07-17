@@ -16,7 +16,7 @@
   ::selection{background:transparent;}
   #wrap{
     position:relative; width:100vw; height:100vh; overflow:hidden;
-    background:linear-gradient(180deg,#8fd3ff 0%,#bfe9c0 45%,#e8d9a0 100%);
+    background:#e8d9a0 url('images/safari_bg.jpg') center/cover no-repeat;
     display:flex; flex-direction:column;
   }
 
@@ -171,7 +171,7 @@ function playAnimalSound(a){
 
 const bgMusic = new Audio('sounds/musique_fond.mp3');
 bgMusic.loop = true;
-bgMusic.volume = 0.18;
+bgMusic.volume = 0.09;
 let bgStarted = false;
 function startBgMusic(){
   if(bgStarted) return;
