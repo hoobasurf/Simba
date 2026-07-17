@@ -273,8 +273,7 @@ window.addEventListener('pointermove', (ev)=>{
   dragState.moved = true;
   dragState.ghost.style.left = (ev.clientX-42)+'px';
   dragState.ghost.style.top = (ev.clientY-42)+'px';
-  const selector = dragState.cat==='drink' ? '.glass-zone' : '.plate-zone';
-  document.querySelectorAll(selector).forEach(z=>{
+  document.querySelectorAll('.plate-zone').forEach(z=>{
     const r = z.getBoundingClientRect();
     const over = ev.clientX>=r.left && ev.clientX<=r.right && ev.clientY>=r.top && ev.clientY<=r.bottom;
     z.classList.toggle('hover', over);
@@ -284,8 +283,7 @@ window.addEventListener('pointermove', (ev)=>{
 function endFoodDrag(ev){
   if(!dragState || ev.pointerId !== dragState.pointerId) return;
   let landed = null;
-  const selector = dragState.cat==='drink' ? '.glass-zone' : '.plate-zone';
-  document.querySelectorAll(selector).forEach(z=>{
+  document.querySelectorAll('.plate-zone').forEach(z=>{
     z.classList.remove('hover');
     const r = z.getBoundingClientRect();
     const over = ev.clientX>=r.left && ev.clientX<=r.right && ev.clientY>=r.top && ev.clientY<=r.bottom;
@@ -321,14 +319,9 @@ function feedCharacter(zone, emoji, cat){
   foodEl.className = 'plate-food' + (cat==='drink' ? ' drink-placed' : '');
   foodEl.textContent = emoji;
 
-  if(cat==='drink'){
-    zone.innerHTML = ''; // un verre ne contient qu'une boisson à la fois
-  }
   zone.appendChild(foodEl);
-  if(cat!=='drink'){
-    // on garde au maximum 3 aliments visibles par assiette (pour rester gros et lisible)
-    while(zone.children.length > 3) zone.removeChild(zone.firstChild);
-  }
+  // on garde au maximum 3 éléments visibles par zone (pour rester gros et lisible)
+  while(zone.children.length > 3) zone.removeChild(zone.firstChild);
 
   tone(520,.09,'triangle',.12); // petit "plop" quand on pose l'aliment
   const charKey = zone.dataset.char;
