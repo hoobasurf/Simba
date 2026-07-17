@@ -194,58 +194,33 @@ box(document.getElementById('char-lion'),  0,  8, 35, 62);
 box(document.getElementById('char-malo'),  32, 0, 36, 68);
 box(document.getElementById('char-chien'), 65, 8, 35, 62);
 
-/* ================= Son (Web Audio, aucun fichier) ================= */
-let actx, muted=false;
-function ac(){ actx = actx || new (window.AudioContext||window.webkitAudioContext)(); return actx; }
-function tone(freq,dur,type,vol,delay){
+/* ================= Son (vrais fichiers audio, dossier sounds/) ================= */
+let muted=false;
+const SFX_FILES = {
+  pickup: 'sounds/pickup.wav',
+  plop:   'sounds/plop.wav',
+  miss:   'sounds/miss.wav',
+  chime:  'sounds/chime.wav',
+  roar:   'sounds/roar.wav',
+  bark:   'sounds/bark.wav',
+  giggle: 'sounds/giggle.wav',
+  win:    'sounds/win.wav',
+};
+const SFX = {};
+Object.keys(SFX_FILES).forEach(name=>{
+  const a = new Audio(SFX_FILES[name]);
+  a.preload = 'auto';
+  SFX[name] = a;
+});
+function playSfx(name){
   if(muted) return;
-  setTimeout(()=>{
-    try{
-      const a=ac(); const o=a.createOscillator(); const g=a.createGain();
-      o.type=type||'sine'; o.frequency.value=freq;
-      g.gain.setValueAtTime(0.0001,a.currentTime);
-      g.gain.exponentialRampToValueAtTime(vol||.2,a.currentTime+.02);
-      g.gain.exponentialRampToValueAtTime(0.0001,a.currentTime+dur);
-      o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime+dur+.02);
-    }catch(e){}
-  }, delay||0);
-}
-function happyChord(){ [520,660,780].forEach((f,i)=>setTimeout(()=>tone(f,.25,'triangle',.2), i*90)); }
-function soundRoar(){
-  if(muted) return;
+  const src = SFX[name];
+  if(!src) return;
   try{
-    const a=ac(); const o=a.createOscillator(); const g=a.createGain();
-    o.type='sawtooth';
-    o.frequency.setValueAtTime(110,a.currentTime);
-    o.frequency.exponentialRampToValueAtTime(70,a.currentTime+.35);
-    o.frequency.exponentialRampToValueAtTime(150,a.currentTime+.55);
-    g.gain.setValueAtTime(.0001,a.currentTime);
-    g.gain.exponentialRampToValueAtTime(.25,a.currentTime+.12);
-    g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+.8);
-    o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime+.85);
+    const a = src.cloneNode(); // permet de rejouer même si le son précédent n'est pas fini
+    a.volume = 0.65; // plafond de sécurité, même si un fichier remplacé plus tard est fort
+    a.play().catch(()=>{});
   }catch(e){}
-}
-function soundBark(){
-  if(muted) return;
-  [0,160].forEach(delay=>{
-    setTimeout(()=>{
-      try{
-        const a=ac(); const o=a.createOscillator(); const g=a.createGain();
-        o.type='square';
-        o.frequency.setValueAtTime(320,a.currentTime);
-        o.frequency.exponentialRampToValueAtTime(180,a.currentTime+.13);
-        g.gain.setValueAtTime(.0001,a.currentTime);
-        g.gain.exponentialRampToValueAtTime(.22,a.currentTime+.02);
-        g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+.16);
-        o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime+.18);
-      }catch(e){}
-    }, delay);
-  });
-}
-function soundGiggle(){
-  [0,110,220].forEach((delay,i)=>{
-    setTimeout(()=>tone(700+i*90,.12,'triangle',.16), delay);
-  });
 }
 function toggleMute(){ muted=!muted; document.getElementById('soundToggle').textContent = muted?'🔇':'🔊'; }
 function toast(msg){
@@ -254,21 +229,18 @@ function toast(msg){
   clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),1400);
 }
 
-/* ================= Petite musique de fond (boucle légère, respecte le bouton son) ================= */
-const BG_MELODY = [523,0,659,0,784,659,0,523,0,784,880,784,659,0,0,0];
-let bgStep = 0, bgTimer = null, bgStarted = false;
+/* ================= Musique de fond (fichier audio en boucle, respecte le bouton son) ================= */
+const bgMusic = new Audio('sounds/musique_fond.mp3');
+bgMusic.loop = true;
+bgMusic.volume = 0.25;
+let bgStarted = false;
 function startBgMusic(){
   if(bgStarted) return;
   bgStarted = true;
-  bgTimer = setInterval(()=>{
-    if(!muted){
-      const note = BG_MELODY[bgStep % BG_MELODY.length];
-      if(note) tone(note, .35, 'sine', .045);
-    }
-    bgStep++;
-  }, 420);
+  if(!muted) bgMusic.play().catch(()=>{});
 }
 window.addEventListener('pointerdown', startBgMusic, {once:true});
+
 
 /* ================= La pioche : 10 aliments (entrée -> dessert) + 4 boissons ================= */
 const FOODS = [
@@ -309,7 +281,7 @@ let dragState = null;
 function attachFoodDrag(el, emoji, cat){
   el.addEventListener('pointerdown', (ev)=>{
     ev.preventDefault();
-    tone(700,.06,'triangle',.1); // petit son quand on attrape l'aliment
+    playSfx('pickup'); // petit son quand on attrape l'aliment
     const ghost = document.createElement('div');
     ghost.className = 'ghost-item';
     ghost.textContent = emoji;
@@ -345,7 +317,7 @@ function endFoodDrag(ev){
     feedCharacter(landed, dragState.emoji, dragState.cat);
     dragState.ghost.remove();
   } else {
-    tone(240,.12,'sine',.09); // petit son "raté" quand ça ne tombe pas au bon endroit
+    playSfx('miss'); // petit son "raté" quand ça ne tombe pas au bon endroit
     dragState.ghost.style.transition = 'transform .25s ease-in, opacity .25s ease-in';
     dragState.ghost.style.transform = 'scale(.3)';
     dragState.ghost.style.opacity = '0';
@@ -378,14 +350,14 @@ function pickNewObjective(){
   );
   if(target) target.classList.add('target');
 
-  [660,880].forEach((f,i)=> setTimeout(()=> tone(f,.14,'triangle',.14), i*110)); // carillon nouvel objectif
+  playSfx('chime'); // carillon nouvel objectif
 }
 
 function checkObjective(charKey, emoji){
   if(!objective) return;
   if(objective.char === charKey && objective.item.emoji === emoji){
     toast("🎉 Bravo, c'est exactement ce qu'il fallait !");
-    tone(900,.18,'triangle',.18);
+    playSfx('win');
     setTimeout(pickNewObjective, 900);
   }
 }
@@ -396,9 +368,9 @@ pickNewObjective();
 let mealCount = 0;
 const photoFrame = document.getElementById('photoFrame');
 const CHAR_MSG = {
-  lion:  { sound: soundRoar,   msgs: ['Miam, le lion adore ça ! 🦁', 'Le lion rugit de bonheur !'] },
-  malo:  { sound: soundGiggle, msgs: ['Malo se régale ! 😋', 'Miam miam dit Malo !'] },
-  chien: { sound: soundBark,   msgs: ['Le chiot remue la queue ! 🐶', 'Wouf wouf, encore !'] },
+  lion:  { sound: () => playSfx('roar'),   msgs: ['Miam, le lion adore ça ! 🦁', 'Le lion rugit de bonheur !'] },
+  malo:  { sound: () => playSfx('giggle'), msgs: ['Malo se régale ! 😋', 'Miam miam dit Malo !'] },
+  chien: { sound: () => playSfx('bark'),   msgs: ['Le chiot remue la queue ! 🐶', 'Wouf wouf, encore !'] },
 };
 
 function feedCharacter(zone, emoji, cat){
@@ -410,7 +382,7 @@ function feedCharacter(zone, emoji, cat){
   // on garde au maximum 3 éléments visibles par zone (pour rester gros et lisible)
   while(zone.children.length > 3) zone.removeChild(zone.firstChild);
 
-  tone(520,.09,'triangle',.12); // petit "plop" quand on pose l'aliment
+  playSfx('plop'); // petit "plop" quand on pose l'aliment
   const charKey = zone.dataset.char;
   const charZone = document.getElementById('char-'+charKey);
   if(charZone) charZone.classList.add('ready');
@@ -424,7 +396,7 @@ function eatCharacter(charKey){
 
   if(items.length === 0){
     toast("Donne-lui à manger ou à boire d'abord ! 🍽️");
-    tone(300,.1,'sine',.1);
+    playSfx('miss');
     return;
   }
 
@@ -457,7 +429,7 @@ function eatCharacter(charKey){
   }
   if(mealCount >= 12){
     setTimeout(()=>{
-      happyChord();
+      playSfx('win');
       document.getElementById('endBanner').classList.add('show');
     }, 500);
   }
