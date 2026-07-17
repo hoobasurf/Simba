@@ -249,6 +249,7 @@
   .room-btn:nth-child(4){animation-delay:.5s, .95s, .5s;}
   .room-btn:nth-child(5){animation-delay:.65s, 1.25s, .65s;}
   .room-btn:nth-child(6){animation-delay:.8s, 1.55s, .8s;}
+  .room-btn:nth-child(7){animation-delay:.95s, 1.85s, .95s;}
   @keyframes roomPop{0%{transform:scale(.3) rotate(-8deg); opacity:0;} 100%{transform:scale(1) rotate(0); opacity:1;}}
   @keyframes roomBounce{0%,100%{transform:translateY(0) scale(1);} 50%{transform:translateY(-6px) scale(1.04);}}
   .room-btn:active{transform:translateY(3px) scale(.94) !important; animation-play-state:paused;}
@@ -259,6 +260,7 @@
   .room-btn.aventure{--neon:120,220,90; --c1:#a6ea6a; --c2:#4fae2c;}
   .room-btn.construction{--neon:230,160,70; --c1:#ffc36b; --c2:#c9832a;}
   .room-btn.lego{--neon:70,130,255; --c1:#6ea8ff; --c2:#2f5fd6;}
+  .room-btn.animaux{--neon:255,180,60; --c1:#ffcf6b; --c2:#e0932a;}
   @keyframes neonBlink{
     0%,100%{box-shadow:0 6px 0 rgba(0,0,0,.2), 0 8px 18px rgba(0,0,0,.25), 0 0 10px 2px rgba(var(--neon),.55), 0 0 3px rgba(var(--neon),.8);}
     50%{box-shadow:0 6px 0 rgba(0,0,0,.2), 0 8px 18px rgba(0,0,0,.25), 0 0 26px 8px rgba(var(--neon),1), 0 0 10px rgba(var(--neon),1);}
@@ -486,6 +488,13 @@
         <span class="room-text">
           <span class="room-label">Lego</span>
           <span class="room-sub">Construis large !</span>
+        </span>
+      </button>
+      <button class="room-btn animaux" onclick="window.location.href='animaux.html'">
+        <span class="room-emoji">🐾</span>
+        <span class="room-text">
+          <span class="room-label">Animaux</span>
+          <span class="room-sub">Devine le son !</span>
         </span>
       </button>
     </div>
