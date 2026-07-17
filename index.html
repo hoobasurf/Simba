@@ -5,1339 +5,563 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Les copains de Malo">
-<meta name="theme-color" content="#2b1c10">
-<title>Les copains de Malo</title>
-<link rel="icon" href="images/icon.png">
-<link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+<title>Construction - Le Monde de Malo</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap');
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; -moz-user-select:none; -ms-user-select:none; -webkit-touch-callout:none; -webkit-user-drag:none;}
-  img{-webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:auto;}
+  html,body{ margin:0; padding:0; overflow:hidden; background:#2b1c10; touch-action:manipulation; overscroll-behavior:none;
+    -webkit-user-select:none;user-select:none;-moz-user-select:none;-ms-user-select:none;
+    -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent; }
+  *{-webkit-tap-highlight-color:transparent;}
   ::selection{background:transparent;}
-  html,body{margin:0;padding:0;height:100%;overflow:hidden;font-family:'Baloo 2',sans-serif;background:#2b1c10; touch-action:manipulation; overscroll-behavior:none;}
-  #wrap{position:relative; width:100%; height:100%; overflow:hidden; display:flex; flex-direction:column; background:#3c2513;}
-  #stage{position:relative; width:100%; flex:1; overflow:hidden; display:flex; align-items:center; justify-content:center;}
-  .photo-frame{position:relative; height:100%; aspect-ratio:650/1154; max-width:100%; max-height:100%;}
-  @media (max-aspect-ratio:650/1154){
-    .photo-frame{ height:auto; width:100%; }
+  #gameWrap{
+    position:relative; width:100vw; height:100vh;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden; background:#3a2a18;
   }
-  #stage img.photo, #stage img.overlay-photo{
-    position:absolute; inset:0; width:100%; height:100%; display:block;
+  canvas{ display:block; touch-action:none; }
+  #backHome{
+    position:absolute; top:14px; left:14px; z-index:40;
+    width:44px; height:44px; border-radius:50%;
+    background:rgba(255,255,255,.65); border:3px solid rgba(255,255,255,.9);
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; font-weight:900; color:#3a4a5a; text-decoration:none;
+    box-shadow:0 4px 10px rgba(0,0,0,.25);
   }
-  .overlay-photo{ opacity:0; transition:opacity .4s ease; pointer-events:none; z-index:2; }
-  .overlay-photo.shown{ opacity:1; }
+  #backHome:active{ background:rgba(255,255,255,.9); transform:scale(.94); }
 
-  .topbar{position:absolute; top:0; left:0; width:100%; display:flex; justify-content:space-between; padding:14px; z-index:100; pointer-events:none;}
-  .topbar > *{pointer-events:auto;}
-  .pill{background:rgba(255,255,255,.92); border:none; border-radius:30px; padding:10px 18px; font-family:inherit; font-weight:800; color:#7a4a26; box-shadow:0 4px 10px rgba(0,0,0,.25); font-size:14px; cursor:pointer; display:flex; align-items:center; gap:6px;}
-  .pill:active{transform:scale(.96);}
-
-  .hotspot{position:absolute; cursor:pointer; z-index:10; background:transparent; border:none;}
-  .hotspot .sparkle{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:14px; opacity:.35; animation:sp 2s ease-in-out infinite; pointer-events:none;}
-  @keyframes sp{0%,100%{opacity:.15;transform:translate(-50%,-50%) scale(.8);} 50%{opacity:.5;transform:translate(-50%,-50%) scale(1.05);}}
-  .hotspot.shown .sparkle{display:none;}
-
-  /* ---- evier ---- */
-  .water-stream{position:absolute; top:0; left:50%; width:5px; height:0; background:linear-gradient(180deg, rgba(180,225,255,.95), rgba(140,200,250,.7)); border-radius:0 0 4px 4px; transform:translateX(-50%); transition:height .25s; pointer-events:none; z-index:5;}
-  .sink-scene.on .water-stream{height:60px; animation:wiggle .35s ease-in-out infinite;}
-  @keyframes wiggle{0%,100%{transform:translateX(-50%) scaleX(1);}50%{transform:translateX(-50%) scaleX(1.4);}}
-  .bubble{position:absolute; bottom:6px; left:50%; width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.85); opacity:0; pointer-events:none; z-index:5;}
-  .sink-scene.on .bubble{animation:bub 1.1s ease-in infinite;}
-  @keyframes bub{0%{opacity:.9; transform:translate(-50%,0) scale(.4);}100%{opacity:0; transform:translate(calc(-50% + 10px),-38px) scale(1);}}
-
-  /* ---- tapis (petit effet, pas de triche visuelle) ---- */
-  .dust{position:absolute; font-size:14px; pointer-events:none; z-index:6; opacity:.9;}
-
-  /* ---- suspensions ---- */
-  .lamp{transform-origin:top center; z-index:10;}
-  .lamp.swing{animation:pend 1.6s ease-in-out 2;}
-  @keyframes pend{0%,100%{transform:rotate(0deg);}25%{transform:rotate(10deg);}75%{transform:rotate(-10deg);}}
-  .lamp-glow{position:absolute; inset:-60% -140%; border-radius:50%; background:radial-gradient(circle, rgba(255,220,140,.55), transparent 70%); opacity:0; transition:opacity .35s; pointer-events:none; z-index:-1;}
-  .lamp.lit .lamp-glow{opacity:1;}
-
-  /* ---- hotte ---- */
-  .fan-icon{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:20px; opacity:0; transition:opacity .3s; pointer-events:none;}
-  .hood-scene.on .fan-icon{opacity:.85; animation:spin .5s linear infinite;}
-  @keyframes spin{from{transform:rotate(0);}to{transform:rotate(360deg);}}
-
-  /* ---- planche a decouper ---- */
-  #board{transition:transform .5s cubic-bezier(.4,.3,.2,1.3); transform-origin:top center; z-index:10;}
-  #board.fallen{transform:translateY(210%) rotate(78deg);}
-
-  /* ---- coupelle fruits ---- */
-  .lemon{position:absolute; font-size:20px; pointer-events:none; z-index:20;}
-
-  /* ---- objets qui tombent et se cassent ---- */
-  .falling-item{position:absolute; font-size:26px; z-index:30; pointer-events:none;}
-  .shard{position:absolute; width:8px; height:8px; background:rgba(210,230,245,.85); pointer-events:none; z-index:15;}
-
-  .toast{position:absolute; left:50%; top:14px; transform:translateX(-50%); background:#fff; padding:8px 18px; border-radius:20px; font-weight:700; color:#a5672f; box-shadow:0 4px 10px rgba(0,0,0,.2); opacity:0; transition:opacity .3s; z-index:200; font-size:13px; pointer-events:none;}
-  .toast.show{opacity:1;}
-
-  .footer{flex:0 0 auto; background:#2b1c10; color:#e8c99a; text-align:center; font-size:11px; padding:6px; opacity:.7;}
-
-  /* ================= ECRANS (accueil / cuisine) ================= */
-  :root{
-    --sky1:#bfe9ff; --sky2:#eafff6; --grass:#8fd694; --grass-dk:#6fbf7b;
-    --pink:#ff6f9c; --pink-dark:#e0507f; --cream:#fff8ea; --lion:#ff9142; --dog:#a5672f;
+  #soundToggle{
+    position:absolute; top:14px; right:14px; z-index:40;
+    width:44px; height:44px; border-radius:50%;
+    background:rgba(255,255,255,.65); border:3px solid rgba(255,255,255,.9);
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; box-shadow:0 4px 10px rgba(0,0,0,.25); cursor:pointer;
   }
-  html,body{background:var(--sky1);}
-  #app{position:absolute; inset:0; overflow:hidden; font-family:'Baloo 2',sans-serif;}
-  .screen{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; opacity:0; pointer-events:none; transition:opacity .45s ease; overflow:hidden;}
-  .screen.active{opacity:1; pointer-events:auto;}
+  #soundToggle:active{ background:rgba(255,255,255,.9); transform:scale(.94); }
 
-  /* ---- accueil ---- */
-  #home{background: linear-gradient(180deg, var(--sky1) 0%, var(--sky2) 55%, var(--grass) 100%);}
-  .sun{position:absolute; top:5%; right:8%; width:90px; height:90px; border-radius:50%; background:radial-gradient(circle at 35% 35%, #fff2c4, #ffd166); box-shadow:0 0 40px 10px rgba(255,209,102,.6); animation:pulse 4s ease-in-out infinite;}
-  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-  .cloud{position:absolute; background:#fff; border-radius:50px; opacity:.92;}
-  .cloud::before,.cloud::after{content:"";position:absolute;background:#fff;border-radius:50%;}
-  .c1{width:74px;height:26px; top:10%; left:-20%; animation:driftA 22s linear infinite;}
-  .c1::before{width:34px;height:34px; top:-18px; left:8px;}
-  .c1::after{width:24px;height:24px; top:-12px; left:38px;}
-  .c2{width:56px;height:20px; top:22%; left:-20%; animation:driftA 30s linear infinite 6s;}
-  .c2::before{width:26px;height:26px; top:-14px; left:6px;}
-  .c2::after{width:18px;height:18px; top:-9px; left:28px;}
-  .c3{width:46px;height:18px; top:16%; left:-20%; animation:driftA 26s linear infinite 14s;}
-  .c3::before{width:22px;height:22px; top:-12px; left:5px;}
-  @keyframes driftA{from{transform:translateX(0);}to{transform:translateX(140vw);}}
-  .bird{position:absolute; font-size:16px; opacity:.75; animation:driftB 16s linear infinite;}
-  .bird.b2{animation-duration:20s; animation-delay:4s; top:28% !important; font-size:13px;}
-  @keyframes driftB{0%{transform:translate(-10vw,0);}50%{transform:translate(55vw,-14px);}100%{transform:translate(120vw,0);}}
-  .butterfly{position:absolute; font-size:20px; animation:flutter 5.5s ease-in-out infinite;}
-  @keyframes flutter{0%,100%{transform:translate(0,0) rotate(-6deg);}25%{transform:translate(10px,-14px) rotate(8deg);}50%{transform:translate(-4px,-26px) rotate(-4deg);}75%{transform:translate(-14px,-10px) rotate(6deg);}}
-  .grass-row{position:absolute; bottom:0; left:0; width:100%; height:10vh; display:flex; align-items:flex-end; justify-content:space-around; pointer-events:none;}
-  .blade{width:0; height:0; border-left:7px solid transparent; border-right:7px solid transparent; border-bottom:26px solid var(--grass-dk); border-radius:4px; transform-origin:bottom center; animation:sway 2.6s ease-in-out infinite;}
-  .blade:nth-child(odd){animation-delay:.4s; border-bottom-color:#7fce8a;}
-  .blade:nth-child(3n){border-bottom-width:18px;}
-  @keyframes sway{0%,100%{transform:rotate(-6deg);}50%{transform:rotate(6deg);}}
-  .flower{position:absolute; bottom:6vh; font-size:18px; animation:sway 3.2s ease-in-out infinite;}
-  h1.title{font-weight:800; color:var(--pink-dark); -webkit-text-stroke:2px #fff; paint-order:stroke fill; text-shadow:0 4px 0 rgba(0,0,0,.08); font-size:clamp(28px,8vw,44px); margin:4vh 0 0 0; text-align:center; letter-spacing:.5px; position:relative; z-index:3;}
-  .subtitle{color:#436155; font-weight:600; font-size:15px; margin-top:4px; text-align:center; position:relative; z-index:3;}
-  #home .roster{flex:1; width:100%; display:flex; align-items:center; justify-content:center; position:relative; z-index:2;}
-  .float-char{position:absolute; animation:floaty 3.4s ease-in-out infinite; filter:drop-shadow(0 10px 12px rgba(0,0,0,.18));}
-  .float-char img{display:block; width:100%; height:auto;}
-  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
-  #lionHome{width:32vw; max-width:170px; left:6%; top:34%; animation-delay:.2s;}
-  #chienHome{width:34vw; max-width:180px; right:5%; top:40%; animation-delay:.9s;}
-  #maloHome{width:34vw; max-width:170px; left:50%; top:12%; transform:translateX(-50%); animation-delay:.5s;}
-  #maloHome .medallion{width:100%; aspect-ratio:1/1; border-radius:50%; overflow:hidden; border:6px solid #fff; background:var(--cream); box-shadow:0 8px 20px rgba(0,0,0,.15); position:relative;}
-  #maloHome .medallion img{position:absolute; top:0; left:50%; transform:translateX(-50%); width:150%; max-width:none; height:auto;}
-  .play-btn{margin:3vh 0 6vh 0; position:relative; z-index:3; background:linear-gradient(180deg,#ffe08a,#ffd166); border:none; border-bottom:5px solid #d99a1f; color:#7a4a26; font-family:inherit; font-weight:800; font-size:22px; padding:16px 56px; border-radius:40px; letter-spacing:1px; box-shadow:0 6px 0 rgba(0,0,0,.05); cursor:pointer; transition:transform .12s;}
-  .play-btn:active{transform:translateY(4px); border-bottom-width:1px;}
-
-  /* ---- jeu des gamelles (par-dessus la cuisine) ---- */
-  .char-row{position:absolute; left:0; bottom:0; width:100%; height:24%; display:flex; align-items:flex-end; justify-content:space-around; pointer-events:none; z-index:8;}
-  .k-char{position:relative; filter:drop-shadow(0 10px 10px rgba(0,0,0,.25)); transition:transform .2s; width:20%; max-width:110px;}
-  .k-char img{width:100%; display:block;}
-  .k-char.chomp{animation:chomp .5s ease-in-out 3;}
-  @keyframes chomp{0%,100%{transform:scaleY(1);}50%{transform:scaleY(.92) translateY(4px);}}
-  .k-char.reactshake{animation:reactshake .5s ease-in-out;}
-  @keyframes reactshake{0%,100%{transform:translateX(0) rotate(0);}25%{transform:translateX(-6px) rotate(-4deg);}75%{transform:translateX(6px) rotate(4deg);}}
-  .dropzone{position:absolute; bottom:2%; width:17%; max-width:78px; aspect-ratio:1/1; border-radius:50%; border:5px dashed #999; display:flex; align-items:center; justify-content:center; font-size:32px; background:rgba(255,255,255,.65); z-index:9; opacity:0; transform:scale(.4); pointer-events:none; transition:opacity .35s ease, transform .35s cubic-bezier(.2,.8,.3,1.3);}
-  .dropzone.ready{opacity:1; transform:scale(1); pointer-events:auto;}
-  .dropzone.food{border-color:#e53935; background:rgba(255,205,203,.75); box-shadow:0 0 0 5px rgba(229,57,53,.18);}
-  .dropzone.water{border-color:#4fc3f7; background:rgba(199,236,252,.75); box-shadow:0 0 0 5px rgba(79,195,247,.18);}
-  .dropzone.filled{border-style:solid; background:#fff; box-shadow:0 4px 10px rgba(0,0,0,.2);}
-  .dropzone.hover{transform:scale(1.15);}
-  .dz-lion-food{left:3%;}
-  .dz-lion-water{left:22%;}
-  .dz-chien-food{right:22%;}
-  .dz-chien-water{right:3%;}
-  .reveal-bowl{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(0); font-size:22px; transition:transform .35s cubic-bezier(.2,.8,.3,1.4) .15s, opacity .35s .15s; z-index:12; filter:drop-shadow(0 3px 4px rgba(0,0,0,.5)); opacity:0; pointer-events:none;}
-  .hotspot.gamelle-shown .reveal-bowl{transform:translate(-50%,-50%) scale(1); opacity:1;}
-  .tray{position:relative; left:0; width:100%; height:13vh; flex:0 0 auto; background:#fff8ea; border-top:3px solid #f1dcb0; display:flex; align-items:center; justify-content:center; gap:14px; z-index:40; box-shadow:0 -4px 10px rgba(0,0,0,.06); flex-wrap:wrap; padding:6px 10px;}
-  .tray-hint{position:absolute; color:#a08a63; font-size:12px; font-weight:600; top:-16px;}
-  .bowl{width:66px; height:66px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:30px; box-shadow:0 4px 8px rgba(0,0,0,.25); cursor:grab; touch-action:none; position:relative;}
-  .bowl.food-lion{background:radial-gradient(circle at 35% 30%, #ffc789, var(--lion));}
-  .bowl.water-lion{background:radial-gradient(circle at 35% 30%, #bfe6ff, #4fb3e0);}
-  .bowl.food-chien{background:radial-gradient(circle at 35% 30%, #d8a56b, var(--dog));}
-  .bowl.water-chien{background:radial-gradient(circle at 35% 30%, #bfe6ff, #4fb3e0);}
-  .dragging{position:fixed; z-index:999; pointer-events:none;}
-  .back-pill{font-size:18px; font-weight:800;}
-  .score-pill{background:rgba(255,255,255,.92); border-radius:30px; padding:10px 16px; font-weight:800; color:#7a4a26; box-shadow:0 4px 10px rgba(0,0,0,.25); font-size:14px; display:flex; align-items:center; gap:6px;}
-  .end-banner{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(255,255,255,.94); opacity:0; pointer-events:none; transition:opacity .3s; text-align:center; padding:0 8vw; z-index:60;}
-  .end-banner.show{opacity:1; pointer-events:auto;}
-  .end-banner .big{font-size:56px; margin-bottom:6px;}
-  .end-banner h2{color:var(--pink-dark); font-size:30px; margin:0 0 6px 0;}
-  .end-banner p{color:#5a7a67; font-weight:500; margin:0 0 20px 0;}
-  .again-btn{background:linear-gradient(180deg,#ffe08a,#ffd166); border:none; border-bottom:5px solid #d99a1f; border-radius:40px; padding:14px 40px; font-family:inherit; font-weight:800; font-size:18px; color:#7a4a26; cursor:pointer;}
-  .again-btn:active{transform:translateY(3px); border-bottom-width:1px;}
-  .confetti-piece{position:absolute; pointer-events:none; border-radius:2px; z-index:70;}
-
-  /* ================= SALLE DE BAIN ================= */
-  #bathWrap{background:#0e2a2f;}
-  #bathStage{position:relative; width:100%; flex:1; overflow:hidden; display:block; padding:0; margin:0;}
-  #bathPhotoFrame{position:absolute; inset:0; width:100%; height:100%; overflow:hidden;}
-  #bathPhotoFrame img.bath-photo{position:absolute; inset:0; width:100%; height:100%; display:block; object-fit:cover; object-position:center center;}
-
-  .shower-hotspot{position:absolute; left:32%; top:0%; width:30%; height:16%; z-index:25; border-radius:0 0 50% 50%/0 0 40% 40%; cursor:pointer; touch-action:manipulation; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none;}
-  .shower-hotspot.active{animation:hotspotGlow 1s ease-in-out infinite;}
-  .shower-hotspot:not(.active){pointer-events:none;}
-  @keyframes hotspotGlow{
-    0%,100%{box-shadow:0 0 0 0 rgba(255,224,138,.65), inset 0 0 0 0 rgba(255,255,255,.4);}
-    50%{box-shadow:0 0 0 14px rgba(255,224,138,0), inset 0 0 22px 6px rgba(255,255,255,.55);}
+  #pieceCounter{
+    position:absolute; top:14px; left:50%; transform:translateX(-50%);
+    background:rgba(255,255,255,.85); border-radius:20px; padding:8px 20px;
+    font-family:'Comic Sans MS','Trebuchet MS',sans-serif;
+    font-size:clamp(14px,3.6vw,19px); font-weight:800; color:#5a3a1c;
+    box-shadow:0 4px 10px rgba(0,0,0,.2); z-index:30; white-space:nowrap;
   }
 
-  .action-row{position:relative; z-index:5; display:flex; gap:12px; justify-content:center; align-items:flex-end;
-    padding:12px 12px calc(12px + env(safe-area-inset-bottom,0px)); overflow-x:auto; -webkit-overflow-scrolling:touch;
-    background:linear-gradient(180deg,#0e2a2f,#0a2024);}
-  .action-btn{flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:2px; border:none; cursor:pointer;
-    width:78px; padding:10px 4px 8px; border-radius:24px; font-family:inherit; font-weight:800;
-    border-bottom:6px solid rgba(0,0,0,.22); transition:transform .12s, opacity .2s, filter .2s;
-    box-shadow:0 4px 0 rgba(0,0,0,.08), 0 8px 14px rgba(0,0,0,.25); color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.25);}
-  .action-btn .ic{font-size:32px; filter:drop-shadow(0 2px 2px rgba(0,0,0,.25));}
-  .action-btn .lb{font-size:11.5px; letter-spacing:.2px;}
-  .action-btn:active{transform:translateY(4px); border-bottom-width:2px;}
-  .action-btn.savon{background:linear-gradient(180deg,#ffd76b,#ff9f43); border-bottom-color:#c9711a;}
-  .action-btn.brosse{background:linear-gradient(180deg,#7ee3ff,#2fb5e0); border-bottom-color:#1c7fa3;}
-  .action-btn.gobelet{background:linear-gradient(180deg,#8fe3c0,#28b487); border-bottom-color:#178562;}
-  .action-btn.seche{background:linear-gradient(180deg,#ff9ecb,#ee5c9c); border-bottom-color:#b73770;}
-  .action-btn.disabled{opacity:.38; filter:grayscale(.5); pointer-events:none; transform:none;}
-  .action-btn.ready{animation:btnBounce 1s ease-in-out infinite;}
-  @keyframes btnBounce{0%,100%{transform:translateY(0) scale(1);} 50%{transform:translateY(-6px) scale(1.06);}}
-
-  .hold-bar-wrap{position:absolute; left:50%; bottom:14px; transform:translateX(-50%); width:78%; max-width:360px;
-    z-index:60; display:none; align-items:center; gap:10px; pointer-events:none;}
-  .hold-bar-wrap.show{display:flex;}
-  .hold-emoji{font-size:26px; filter:drop-shadow(0 2px 3px rgba(0,0,0,.4));}
-  .hold-track{flex:1; height:22px; border-radius:14px; background:rgba(10,30,35,.55); border:3px solid rgba(255,255,255,.8);
-    overflow:hidden; box-shadow:inset 0 2px 4px rgba(0,0,0,.35);}
-  .hold-fill{height:100%; width:0%; border-radius:14px; background:linear-gradient(90deg,#7ee3ff,#4fd1ff,#7effc7); transition:width .05s linear;}
-
-  .bath-action-icon{position:absolute; font-size:34px; transform:translate(-50%,-50%); z-index:45; pointer-events:none;
-    filter:drop-shadow(0 3px 4px rgba(0,0,0,.35));}
-
-  .foam-bit{position:absolute; border-radius:50%; background:radial-gradient(circle at 30% 30%, #ffffff, #dff3fb);
-    opacity:0; animation:foamPop .6s ease-out forwards; box-shadow:0 2px 4px rgba(0,0,0,.08); z-index:44; pointer-events:none;}
-  @keyframes foamPop{0%{transform:scale(.2); opacity:0;} 45%{opacity:.95;} 100%{transform:scale(1); opacity:.85;}}
-
-  .water-drop{position:absolute; top:-20px; width:6px; height:16px; border-radius:0 0 50% 50% / 0 0 60% 60%;
-    background:linear-gradient(180deg, rgba(190,230,255,.9), rgba(140,200,250,.7)); z-index:41; pointer-events:none;}
-
-  .wind-swirl{position:absolute; font-size:26px; z-index:44; pointer-events:none; opacity:.9;
-    filter:drop-shadow(0 2px 3px rgba(0,0,0,.25));}
-
-  .happy-pulse{animation:happyGlow .6s ease-out;}
-  @keyframes happyGlow{0%{filter:brightness(1);} 40%{filter:brightness(1.2) saturate(1.25);} 100%{filter:brightness(1);}}
-  .happy-float{position:absolute; font-size:30px; z-index:55; pointer-events:none; opacity:1;
-    transition:transform .9s ease-out, opacity .9s;}
-
-  .home-btn-row{display:flex; gap:14px; margin:1.5vh 0 3.5vh 0; position:relative; z-index:3; flex-wrap:wrap; justify-content:center;}
-
-  .room-btn{
-    position:relative; border:none; cursor:pointer; font-family:inherit;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
-    width:104px; height:118px; padding:8px 6px;
-    border-radius:28px; color:#fff; font-weight:900; letter-spacing:.3px;
-    text-shadow:0 2px 0 rgba(0,0,0,.35), 0 0 6px rgba(0,0,0,.25);
-    background:linear-gradient(160deg, var(--c1), var(--c2));
-    border:4px solid #fff;
-    box-shadow:0 6px 0 rgba(0,0,0,.2), 0 8px 18px rgba(0,0,0,.25);
-    transition:transform .12s;
-    overflow:visible;
-    animation:roomPop .5s cubic-bezier(.34,1.56,.64,1) backwards, roomBounce 2.4s ease-in-out infinite, neonBlink 1.6s ease-in-out infinite;
+  #stopBtn{
+    position:absolute; top:64px; right:14px; z-index:40;
+    background:linear-gradient(180deg,#7be06a,#3fae2c);
+    color:#fff; border:3px solid #fff; border-radius:24px;
+    padding:10px 18px; font-size:clamp(13px,3.2vw,17px); font-weight:900;
+    font-family:'Comic Sans MS','Trebuchet MS',sans-serif;
+    box-shadow:0 5px 12px rgba(0,0,0,.3);
+    display:none;
   }
-  .room-btn:nth-child(1){animation-delay:.05s, .05s, .05s;}
-  .room-btn:nth-child(2){animation-delay:.2s, .35s, .2s;}
-  .room-btn:nth-child(3){animation-delay:.35s, .65s, .35s;}
-  .room-btn:nth-child(4){animation-delay:.5s, .95s, .5s;}
-  .room-btn:nth-child(5){animation-delay:.65s, 1.25s, .65s;}
-  .room-btn:nth-child(6){animation-delay:.8s, 1.55s, .8s;}
-  @keyframes roomPop{0%{transform:scale(.3) rotate(-8deg); opacity:0;} 100%{transform:scale(1) rotate(0); opacity:1;}}
-  @keyframes roomBounce{0%,100%{transform:translateY(0) scale(1);} 50%{transform:translateY(-6px) scale(1.04);}}
-  .room-btn:active{transform:translateY(3px) scale(.94) !important; animation-play-state:paused;}
+  #stopBtn:active{ transform:scale(.95); }
 
-  .room-btn.kitchen{--neon:255,140,60; --c1:#ffb347; --c2:#ff7a3d;}
-  .room-btn.bath{--neon:70,190,255; --c1:#7fd8ff; --c2:#2fa8ff;}
-  .room-btn.puzzle{--neon:200,120,255; --c1:#c98fff; --c2:#8a4fe0;}
-  .room-btn.aventure{--neon:120,220,90; --c1:#a6ea6a; --c2:#4fae2c;}
-  .room-btn.construction{--neon:230,160,70; --c1:#ffc36b; --c2:#c9832a;}
-  .room-btn.lego{--neon:70,130,255; --c1:#6ea8ff; --c2:#2f5fd6;}
-  @keyframes neonBlink{
-    0%,100%{box-shadow:0 6px 0 rgba(0,0,0,.2), 0 8px 18px rgba(0,0,0,.25), 0 0 10px 2px rgba(var(--neon),.55), 0 0 3px rgba(var(--neon),.8);}
-    50%{box-shadow:0 6px 0 rgba(0,0,0,.2), 0 8px 18px rgba(0,0,0,.25), 0 0 26px 8px rgba(var(--neon),1), 0 0 10px rgba(var(--neon),1);}
+  #tray{
+    position:absolute; bottom:0; left:0; width:100%;
+    display:flex; gap:10px; padding:12px 10px calc(30px + env(safe-area-inset-bottom));
+    overflow-x:auto; -webkit-overflow-scrolling:touch; touch-action:pan-x;
+    background:linear-gradient(0deg, rgba(30,18,8,.85), rgba(30,18,8,0));
+    z-index:35;
   }
-
-  .room-btn .room-emoji{font-size:46px; line-height:1; filter:drop-shadow(0 3px 4px rgba(0,0,0,.35));}
-  .room-btn .room-text{display:flex; flex-direction:column; align-items:center; line-height:1.1;}
-  .room-btn .room-label{font-size:17px;}
-  .room-btn .room-sub{font-size:10px; font-weight:800; opacity:.9; letter-spacing:.3px;}
-
-  /* ---- puzzle ---- */
-  #puzzleScreen{
-    background: linear-gradient(180deg,#6ec6ff 0%, #a6e2ff 45%, #ffe9a8 78%, #ffd66b 100%);
-    overflow-y:auto;
-    touch-action:pan-y;
+  .pieceBtn{
+    flex:0 0 auto; width:64px; height:64px; border-radius:14px;
+    background:rgba(255,255,255,.9); border:3px solid #fff;
+    box-shadow:0 4px 8px rgba(0,0,0,.3);
+    display:flex; align-items:center; justify-content:center;
   }
+  .pieceBtn.selected{ border-color:#ffd83d; box-shadow:0 0 0 4px rgba(255,216,61,.6), 0 4px 8px rgba(0,0,0,.3); }
+  .pieceBtn:active{ transform:scale(.92); }
+  .pieceBtn canvas{ width:100%; height:100%; }
 
-  /* petite scène animée façon dessin animé : soleil, nuages, arc-en-ciel, colline */
-  .pz-bg-decor{position:absolute; inset:0; z-index:-1; overflow:hidden; pointer-events:none;}
-
-  .pz-sun{position:absolute; top:26px; right:34px; width:64px; height:64px; border-radius:50%;
-    background:radial-gradient(circle,#fff6c8 0%,#ffd93d 55%,#ffb43d 100%);
-    box-shadow:0 0 30px 10px rgba(255,214,60,.55);
-    animation:pzSunPulse 3.2s ease-in-out infinite;}
-  @keyframes pzSunPulse{0%,100%{transform:scale(1);} 50%{transform:scale(1.08);}}
-
-  .pz-cloud{position:absolute; background:#fff; border-radius:50px; opacity:.9; animation:pzDrift linear infinite;}
-  .pz-cloud::before, .pz-cloud::after{content:''; position:absolute; background:#fff; border-radius:50%;}
-  .pz-cloud::before{width:55%; height:140%; top:-60%; left:8%;}
-  .pz-cloud::after{width:65%; height:120%; top:-45%; right:6%;}
-  @keyframes pzDrift{ from{transform:translateX(-140px);} to{transform:translateX(calc(100vw + 140px));} }
-
-  .pz-rainbow{position:absolute; left:50%; bottom:-70px; width:340px; height:170px; transform:translateX(-50%);
-    border-radius:340px 340px 0 0;
-    border:14px solid transparent;
-    border-top-color:#ff6b6b;
-    box-shadow:0 -14px 0 -0px #ffd23f inset;
-    opacity:.85;
-    animation:pzRainbowFade 5s ease-in-out infinite;}
-  .pz-rainbow::before{content:''; position:absolute; inset:14px; border-radius:340px 340px 0 0; border:14px solid transparent; border-top-color:#6fd6ff;}
-  .pz-rainbow::after{content:''; position:absolute; inset:28px; border-radius:340px 340px 0 0; border:14px solid transparent; border-top-color:#8affa0;}
-  @keyframes pzRainbowFade{0%,100%{opacity:.7;} 50%{opacity:.95;}}
-
-  .pz-hill{position:absolute; left:-10%; bottom:-40px; width:120%; height:110px; background:#8fe08a; border-radius:50% 50% 0 0/70px 70px 0 0;}
-
-  .pz-bg-decor span{position:absolute; bottom:-60px; font-size:26px; opacity:.7; animation:pzFloatUp linear infinite; filter:drop-shadow(0 2px 3px rgba(0,0,0,.15));}
-  @keyframes pzFloatUp{
-    0%{transform:translateY(0) translateX(0) rotate(0deg); opacity:0;}
-    10%{opacity:.8;}
-    90%{opacity:.7;}
-    100%{transform:translateY(-112vh) translateX(var(--drift,20px)) rotate(20deg); opacity:0;}
+  #replayBtn2{
+    position:absolute; bottom:6vh; left:50%; transform:translateX(-50%);
+    background:linear-gradient(180deg,#ffce4a,#ff9d1f);
+    color:#fff; border:4px solid #fff; border-radius:30px;
+    padding:14px 30px; font-size:clamp(16px,4vw,22px); font-weight:900;
+    font-family:'Comic Sans MS','Trebuchet MS',sans-serif;
+    box-shadow:0 6px 14px rgba(0,0,0,.35);
+    display:none; z-index:45;
   }
+  #replayBtn2:active{ transform:translateX(-50%) scale(.95); }
 
-  .puzzle-picker{display:flex; flex-wrap:wrap; gap:16px; justify-content:center; padding:18px;}
-  .puzzle-pick-card{width:130px; border-radius:22px; overflow:hidden; background:#fff; cursor:pointer; box-shadow:0 8px 0 rgba(0,0,0,.18), 0 10px 20px rgba(0,0,0,.3); border:5px solid #fff; transition:transform .15s, box-shadow .15s; animation:ppPop .5s ease both;}
-  .puzzle-pick-card:active{transform:scale(.93) translateY(3px); box-shadow:0 3px 0 rgba(0,0,0,.18), 0 4px 10px rgba(0,0,0,.3);}
-  .puzzle-pick-card img{width:100%; height:110px; object-fit:cover; display:block;}
-  .puzzle-pick-card .pp-label{color:#fff; font-weight:900; text-align:center; padding:7px 2px; font-size:14px; background:linear-gradient(135deg,#ff6fa5,#8a5cff);}
-  @keyframes ppPop{ from{transform:scale(.6); opacity:0;} to{transform:scale(1); opacity:1;} }
-
-  .puzzle-board-wrap{position:absolute; inset:0; touch-action:pan-y;}
-  #puzzleArena{position:absolute; inset:0; pointer-events:none;}
-  #pieceTray{
-    position:fixed; left:0; bottom:0; width:100%; z-index:50;
-    display:flex; flex-wrap:wrap; align-content:flex-start; align-items:flex-start; justify-content:center; gap:8px;
-    padding:8px 10px calc(8px + env(safe-area-inset-bottom));
-    box-sizing:border-box; touch-action:auto;
-    overflow-y:auto; -webkit-overflow-scrolling:touch;
-    background:linear-gradient(0deg, rgba(20,40,70,.35), rgba(20,40,70,0) 90%);
-    border-top:3px dashed rgba(255,255,255,.6);
+  #revealMsg{
+    position:absolute; top:14px; left:50%; transform:translateX(-50%);
+    background:rgba(255,255,255,.9); border-radius:20px; padding:10px 22px;
+    font-family:'Comic Sans MS','Trebuchet MS',sans-serif;
+    font-size:clamp(15px,4vw,20px); font-weight:900; color:#5a3a1c;
+    box-shadow:0 4px 10px rgba(0,0,0,.25); z-index:30; display:none; text-align:center;
   }
-  .pz-tray-label2{
-    flex:1 0 100%; color:#fff; font-weight:900; font-size:13px; text-align:center;
-    text-shadow:0 2px 3px rgba(0,0,0,.35);
-  }
-
-  #puzzleTarget{
-    background-repeat:no-repeat;
-    border-radius:16px;
-    outline:none !important;
-    border:6px solid #fff;
-    box-shadow:0 0 0 4px #ffd23f, 0 10px 22px rgba(0,0,0,.3);
-  }
-
-  .pz-tray-card{
-    position:absolute;
-    background:rgba(255,255,255,.22);
-    border:3px dashed rgba(255,255,255,.75);
-    border-radius:22px;
-    backdrop-filter:blur(1px);
-  }
-  .pz-tray-label{
-    position:absolute;
-    color:#fff;
-    font-weight:900;
-    font-size:13px;
-    letter-spacing:.3px;
-    text-shadow:0 2px 3px rgba(0,0,0,.35);
-    background:rgba(0,0,0,.2);
-    padding:3px 10px;
-    border-radius:20px;
-  }
-
-  .jz-piece{
-    touch-action:none;
-    cursor:grab;
-    pointer-events:auto;
-    filter:drop-shadow(0 4px 7px rgba(0,0,0,.45));
-    transition:filter .15s, transform .15s;
-    animation:pieceFloat 2.6s ease-in-out infinite;
-  }
-  .jz-piece.inTray{ position:relative; }
-  .jz-piece:active{filter:drop-shadow(0 4px 7px rgba(0,0,0,.45)) brightness(1.12);}
-  .jz-piece.dragging{cursor:grabbing; filter:drop-shadow(0 10px 16px rgba(0,0,0,.55)) brightness(1.12); transition:none; animation:none; transform:scale(1.08); z-index:100;}
-  .jz-piece.placed{cursor:default; filter:drop-shadow(0 1px 2px rgba(0,0,0,.3)); animation:none;}
-  @keyframes pieceFloat{0%,100%{transform:translateY(0);} 50%{transform:translateY(-4px);}}
-
-  .puzzle-topbar-info{color:#fff; font-weight:900; text-align:center; margin:8px 0 4px; font-size:15px; text-shadow:0 2px 3px rgba(0,0,0,.3);}
-
-  .puzzle-win-banner{
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px;
-    background:rgba(40,10,60,.6);
-    color:#fff; text-align:center; opacity:0; pointer-events:none; transition:opacity .4s; z-index:200;
-  }
-  .puzzle-win-banner.show{opacity:1; pointer-events:auto;}
-  .puzzle-win-banner .win-card{
-    background:linear-gradient(135deg,#ff6fa5,#ffd23f 55%,#8a5cff);
-    padding:22px 26px; border-radius:24px;
-    box-shadow:0 10px 0 rgba(0,0,0,.2), 0 14px 30px rgba(0,0,0,.4);
-    animation:winPop .5s cubic-bezier(.34,1.56,.64,1) both;
-  }
-  .puzzle-win-banner .win-title{font-size:24px; font-weight:900; text-shadow:0 2px 4px rgba(0,0,0,.3); margin-bottom:6px;}
-  .puzzle-win-banner .win-emojis{font-size:26px; margin-bottom:10px; letter-spacing:4px;}
-  @keyframes winPop{ from{transform:scale(.5) rotate(-6deg); opacity:0;} to{transform:scale(1) rotate(0); opacity:1;} }
-
-  .pz-toast{position:absolute; left:50%; top:8px; transform:translateX(-50%); background:rgba(0,0,0,.75); color:#fff; padding:8px 16px; border-radius:20px; font-weight:700; opacity:0; transition:opacity .3s; pointer-events:none; z-index:210;}
-  .pz-toast.show{opacity:1;}
-
-.puzzle-choice{
-    width:180px;
-    border-radius:18px;
-    cursor:pointer;
-    transition:.25s;
-}
-
-.puzzle-choice:hover{
-    transform:scale(1.05);
-}
-
-.piece{
-    border-radius:6px;
-    cursor:pointer;
-    border:1px solid rgba(255,255,255,.2);
-}
-
 </style>
 </head>
 <body>
-<div id="app">
-
-  <!-- ACCUEIL -->
-  <div class="screen active" id="home" style="background-image:url('images/home_bg.jpg'); background-size:cover; background-position:center;">
-    <div class="sun"></div>
-    <div class="cloud c1"></div>
-    <div class="cloud c2"></div>
-    <div class="cloud c3"></div>
-    <div class="bird" style="top:14%;">〰</div>
-    <div class="bird b2" style="top:30%;">〰</div>
-    <div class="butterfly" style="top:52%; left:12%; animation-delay:.3s;">🦋</div>
-    <div class="butterfly" style="top:60%; right:14%; animation-delay:1.6s;">🦋</div>
-
-    <h1 class="title">Les copains de Malo</h1>
-    <div class="subtitle">Touche pour jouer avec eux !</div>
-    <div class="roster"></div>
-
-    <div class="grass-row">
-      <div class="blade"></div><div class="blade"></div><div class="blade"></div>
-      <div class="blade"></div><div class="blade"></div><div class="blade"></div>
-      <div class="blade"></div><div class="blade"></div><div class="blade"></div>
-      <div class="blade"></div><div class="blade"></div><div class="blade"></div>
-    </div>
-    <div class="flower" style="left:10%;">🌼</div>
-    <div class="flower" style="left:30%; animation-delay:.6s;">🌸</div>
-    <div class="flower" style="right:22%; animation-delay:1.1s;">🌼</div>
-    <div class="flower" style="right:6%; animation-delay:1.7s;">🌸</div>
-
-    <div class="home-btn-row">
-      <button class="room-btn kitchen" onclick="window.location.href='repas.html'">
-        <span class="room-emoji">🍽️</span>
-        <span class="room-text">
-          <span class="room-label">Cuisine</span>
-          <span class="room-sub">On va manger !</span>
-        </span>
-      </button>
-      <button class="room-btn bath" onclick="startBath()">
-        <span class="room-emoji">🛁</span>
-        <span class="room-text">
-          <span class="room-label">Bain</span>
-          <span class="room-sub">Au bain !</span>
-        </span>
-      </button>
-      <button class="room-btn puzzle" onclick="startPuzzle()">
-        <span class="room-emoji">🧩</span>
-        <span class="room-text">
-          <span class="room-label">Puzzle</span>
-          <span class="room-sub">24 pièces !</span>
-        </span>
-      </button>
-      <button class="room-btn aventure" onclick="startAventure()">
-        <span class="room-emoji">🗺️</span>
-        <span class="room-text">
-          <span class="room-label">Aventure</span>
-          <span class="room-sub">La prairie !</span>
-        </span>
-      </button>
-      <button class="room-btn construction" onclick="startConstruction()">
-        <span class="room-emoji">🧱</span>
-        <span class="room-text">
-          <span class="room-label">Construction</span>
-          <span class="room-sub">Bâtis la tour !</span>
-        </span>
-      </button>
-      <button class="room-btn lego" onclick="startLego()">
-        <span class="room-emoji">🟦</span>
-        <span class="room-text">
-          <span class="room-label">Lego</span>
-          <span class="room-sub">Construis large !</span>
-        </span>
-      </button>
-    </div>
-  </div>
-
-  <!-- JEU SALLE DE BAIN -->
-  <div class="screen" id="bathroomScreen">
-  <div id="bathWrap" style="position:relative; width:100%; height:100%; display:flex; flex-direction:column;">
-    <div class="topbar">
-      <button class="pill back-pill" onclick="stopBath()">←</button>
-      <button class="pill" id="bSoundToggle" onclick="toggleBathMute()">🔊</button>
-    </div>
-    <div id="bathStage">
-      <div id="bathPhotoFrame">
-        <img class="bath-photo" id="bathPhoto" alt="bain de Malo">
-        <div class="toast" id="bathToast"></div>
-        <div class="shower-hotspot" id="showerHotspot"></div>
-        <div class="hold-bar-wrap" id="holdBarWrap">
-          <div class="hold-emoji" id="holdEmoji">🧼</div>
-          <div class="hold-track"><div class="hold-fill" id="holdFill"></div></div>
-        </div>
-      </div>
-    </div>
-    <div class="action-row" id="actionRow">
-      <button class="action-btn savon" id="btnSavon"><span class="ic">🧼</span><span class="lb">Savon</span></button>
-      <button class="action-btn brosse" id="btnBrosse"><span class="ic">🪥</span><span class="lb">Dents</span></button>
-      <button class="action-btn gobelet" id="btnGobelet"><span class="ic">🥤</span><span class="lb">Rincer</span></button>
-      <button class="action-btn seche" id="btnSeche"><span class="ic">💨</span><span class="lb">Sécher</span></button>
-    </div>
-  </div>
-  </div>
-
-  <!-- JEU PUZZLE -->
-  <div class="screen" id="puzzleScreen">
-    <div class="pz-bg-decor" aria-hidden="true">
-      <div class="pz-sun"></div>
-      <div class="pz-cloud" style="width:90px; height:34px; top:14%; animation-duration:34s;"></div>
-      <div class="pz-cloud" style="width:70px; height:26px; top:30%; animation-duration:26s; animation-delay:-8s;"></div>
-      <div class="pz-cloud" style="width:110px; height:38px; top:6%; animation-duration:42s; animation-delay:-20s;"></div>
-      <div class="pz-rainbow"></div>
-      <div class="pz-hill"></div>
-      <span style="left:20%; --drift:15px; font-size:22px; animation-duration:12s; animation-delay:0s;">🦋</span>
-      <span style="left:50%; --drift:-20px; font-size:20px; animation-duration:15s; animation-delay:3s;">🐦</span>
-      <span style="left:75%; --drift:18px; font-size:24px; animation-duration:13s; animation-delay:6s;">🦋</span>
-      <span style="left:35%; --drift:-15px; font-size:26px; animation-duration:16s; animation-delay:8s;">🎈</span>
-    </div>
-    <div class="topbar">
-      <button class="pill back-pill" onclick="stopPuzzle()">←</button>
-      <button class="pill" id="pzResetBtn" onclick="shufflePuzzle()" style="display:none;">🔀 Nouveau</button>
-      <div class="pill score-pill" id="pzScorePill" style="display:none;">🧩 <span id="pzScore">0</span>/<span id="pzTotal">8</span></div>
-    </div>
-
-    <div id="puzzlePicker">
-      <div class="subtitle" style="position:static; color:#fff; margin:10px 0 0; font-size:20px; text-shadow:0 2px 3px rgba(0,0,0,.3);">🌟 Choisis ton puzzle ! 🌟</div>
-      <div class="puzzle-picker" id="puzzlePickerGrid"></div>
-    </div>
-
-    <div class="puzzle-board-wrap" id="puzzleBoardWrap" style="display:none;">
-      <div class="puzzle-topbar-info" id="puzzleInfo">👉 Fais glisser les pièces dans l'image ! 👈</div>
-      <div style="position:absolute; top:2px; right:6px; font-size:9px; color:rgba(255,255,255,.55); z-index:99;">v20260716-TABFIX</div>
-      <div id="puzzleArena"></div>
-      <div id="pieceTray">
-        <div class="pz-tray-label2">🧺 Pioche</div>
-      </div>
-    </div>
-  </div>
-
+<div id="gameWrap">
+  <a id="backHome" href="index.html">←</a>
+  <button id="soundToggle">🔊</button>
+  <div id="pieceCounter">🧱 0 pièces</div>
+  <button id="stopBtn">✅ Voir le résultat</button>
+  <div id="revealMsg">🏰 Bravo Malo ! Regarde ta tour magique !<br>👉 Touche la tour pour la faire s'écrouler</div>
+  <canvas id="game"></canvas>
+  <div id="tray"></div>
+  <button id="replayBtn2">🔁 Reconstruire</button>
 </div>
 
-
 <script>
-/* =============== Son (Web Audio, aucun fichier) =============== */
-let actx, muted=false;
-function ac(){ actx = actx || new (window.AudioContext||window.webkitAudioContext)(); return actx; }
-function tone(freq,dur,type,vol,delay){
-  if(muted) return;
-  setTimeout(()=>{
-    try{
-      const a=ac(); const o=a.createOscillator(); const g=a.createGain();
-      o.type=type||'sine'; o.frequency.value=freq;
-      g.gain.setValueAtTime(0.0001,a.currentTime);
-      g.gain.exponentialRampToValueAtTime(vol||.2,a.currentTime+.02);
-      g.gain.exponentialRampToValueAtTime(0.0001,a.currentTime+dur);
-      o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime+dur+.02);
-    }catch(e){}
-  }, delay||0);
-}
+(function(){
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  let CW=0, CH=0;
 
-/* =============== Navigation ecrans =============== */
-function goTo(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-
-/* =============== Sons additionnels (victoire) =============== */
-function happyChord(){ [520,660,780].forEach((f,i)=>setTimeout(()=>tone(f,.25,'triangle',.2), i*90)); }
-
-/* =============== SALLE DE BAIN : images (etats) =============== */
-const NORMAL_SRC = "images/normal.jpg";
-const MOUSSE_SRC = "images/mousse.jpg";
-const DOUCHE_SRC = "images/douche.jpg";
-const DENT_SRC = "images/dent.jpg";
-const MOUSSE_DENT_SRC = "images/mousse_dent.jpg";
-const SOURIR_SRC = "images/sourir.jpg";
-const SECHE_SRC = "images/seche.jpg";
-
-document.getElementById('bathPhoto').src = NORMAL_SRC;
-
-/* =============== Petits utilitaires locaux (salle de bain) =============== */
-const bathPhotoFrame = document.getElementById('bathPhotoFrame');
-const bathPhotoEl = document.getElementById('bathPhoto');
-function bathToast(msg){
-  const t = document.getElementById('bathToast');
-  t.textContent = msg; t.classList.add('show');
-  clearTimeout(bathToast._t); bathToast._t = setTimeout(()=>t.classList.remove('show'), 1600);
-}
-function setBathImage(src){ bathPhotoEl.src = src; }
-
-/* =============== Machine a etats =============== */
-let bState = 'normal'; // normal | mousse | douche | dent_ready | dent_mousse | sourire | seche
-let armedAction = null;
-let holdAccum = 0;
-let holdActive = false;
-let holdRAFid = null;
-let lastFrameTime = 0;
-let returnTimer = null;
-
-const HOLD_MS = 4000;
-
-const btnSavon = document.getElementById('btnSavon');
-const btnBrosse = document.getElementById('btnBrosse');
-const btnGobelet = document.getElementById('btnGobelet');
-const btnSeche = document.getElementById('btnSeche');
-const showerHotspot = document.getElementById('showerHotspot');
-const holdBarWrap = document.getElementById('holdBarWrap');
-const holdFill = document.getElementById('holdFill');
-const holdEmoji = document.getElementById('holdEmoji');
-
-const actionIcons = { savon:'🧼', brosse:'🪥', gobelet:'🥤', seche:'💨', douche:'🚿' };
-
-function refreshButtons(){
-  btnSavon.classList.toggle('disabled', bState!=='normal');
-  btnSavon.classList.toggle('ready', bState==='normal' && !armedAction);
-  btnBrosse.classList.toggle('disabled', bState!=='normal');
-  btnBrosse.classList.toggle('ready', false);
-  btnGobelet.classList.toggle('disabled', bState!=='dent_mousse');
-  btnGobelet.classList.toggle('ready', bState==='dent_mousse' && !armedAction);
-  btnSeche.classList.toggle('disabled', bState!=='douche');
-  btnSeche.classList.toggle('ready', bState==='douche' && !armedAction);
-  showerHotspot.classList.toggle('active', bState==='mousse' && !armedAction);
-}
-
-function clearReturnTimer(){ if(returnTimer){ clearTimeout(returnTimer); returnTimer=null; } }
-
-function scheduleReturnNormal(delay){
-  clearReturnTimer();
-  returnTimer = setTimeout(()=>{
-    bState = 'normal';
-    setBathImage(NORMAL_SRC);
-    refreshButtons();
-  }, delay);
-}
-
-function armAction(type){
-  if(armedAction) return;
-  armedAction = type;
-  holdAccum = 0;
-  holdEmoji.textContent = actionIcons[type];
-  holdFill.style.width = '0%';
-  holdBarWrap.classList.add('show');
-  refreshButtons();
-  const hints = {
-    savon:'Frotte ton doigt sur Malo pour savonner ! 🧼',
-    brosse:'Frotte doucement les dents ! 🪥',
-    gobelet:'Tapote pour bien rincer ! 🥤',
-    seche:'Frotte pour sécher les cheveux ! 💨',
-    douche:'Reste sous la douche ! 🚿'
-  };
-  bathToast(hints[type] || 'Continue !');
-}
-
-function cancelArm(){
-  armedAction = null;
-  holdActive = false;
-  holdAccum = 0;
-  holdBarWrap.classList.remove('show');
-  refreshButtons();
-}
-
-function frameLoop(ts){
-  if(!lastFrameTime) lastFrameTime = ts;
-  const dt = ts - lastFrameTime;
-  lastFrameTime = ts;
-  if(holdActive && armedAction){
-    holdAccum += dt;
-    const pct = Math.min(holdAccum / HOLD_MS, 1);
-    holdFill.style.width = (pct*100)+'%';
-    if(holdAccum >= HOLD_MS){
-      const done = armedAction;
-      armedAction = null;
-      holdActive = false;
-      holdBarWrap.classList.remove('show');
-      completeAction(done);
-    }
+  function fitCanvas(){
+    const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 3));
+    CW = window.innerWidth; CH = window.innerHeight;
+    canvas.style.width = CW+'px'; canvas.style.height = CH+'px';
+    canvas.width = CW*dpr; canvas.height = CH*dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
   }
-  holdRAFid = requestAnimationFrame(frameLoop);
-}
-holdRAFid = requestAnimationFrame(frameLoop);
+  fitCanvas();
+  window.addEventListener('resize', fitCanvas);
+  window.addEventListener('orientationchange', fitCanvas);
 
-function completeAction(type){
-  bathHappy();
-  if(type==='savon'){
-    bState = 'mousse';
-    setBathImage(MOUSSE_SRC);
-    bathToast('Ça mousse partout ! 🫧');
-  } else if(type==='douche'){
-    bState = 'douche';
-    setBathImage(DOUCHE_SRC);
-    bathToast('Bien rincé ! 🚿💦');
-  } else if(type==='brosse'){
-    bState = 'dent_mousse';
-    setBathImage(MOUSSE_DENT_SRC);
-    bathToast('Les dents moussent bien ! 🦷🫧');
-  } else if(type==='gobelet'){
-    bState = 'sourire';
-    setBathImage(SOURIR_SRC);
-    bathToast('Dents toutes propres ! 😁✨');
-    scheduleReturnNormal(5000);
-  } else if(type==='seche'){
-    bState = 'seche';
-    setBathImage(SECHE_SRC);
-    bathToast('Cheveux tout secs ! 💨✨');
-    scheduleReturnNormal(5000);
+  // ---- Musique de fond (même fichier que la cuisine) ----
+  let muted = false;
+  const bgMusic = new Audio('sounds/musique_fond.mp3');
+  bgMusic.loop = true;
+  bgMusic.volume = 0.25;
+  let bgStarted = false;
+  function startBgMusic(){
+    if(bgStarted) return;
+    bgStarted = true;
+    if(!muted) bgMusic.play().catch(()=>{});
   }
-  refreshButtons();
-}
+  window.addEventListener('pointerdown', startBgMusic, {once:true});
+  document.getElementById('soundToggle').addEventListener('click', ()=>{
+    muted = !muted;
+    document.getElementById('soundToggle').textContent = muted ? '🔇' : '🔊';
+    if(muted){ bgMusic.pause(); } else if(bgStarted){ bgMusic.play().catch(()=>{}); }
+  });
 
-/* =============== Particules pendant le maintien =============== */
-function spawnParticleFor(type, x, y){
-  if(type==='savon' || type==='brosse'){
-    const f = document.createElement('div');
-    f.className = 'foam-bit';
-    const s = 14+Math.random()*26;
-    f.style.width = s+'px'; f.style.height = s+'px';
-    f.style.left = (x - s/2)+'px'; f.style.top = (y - s/2)+'px';
-    bathPhotoFrame.appendChild(f);
-    setTimeout(()=>{ if(f.parentNode) f.remove(); }, 650);
-  } else if(type==='douche' || type==='gobelet'){
-    const d = document.createElement('div');
-    d.className = 'water-drop';
-    d.style.left = x+'px'; d.style.top = (y-30)+'px';
-    bathPhotoFrame.appendChild(d);
-    const fr = bathPhotoFrame.getBoundingClientRect();
-    requestAnimationFrame(()=>{
-      d.style.transition = 'transform .55s linear, opacity .25s .3s';
-      d.style.transform = 'translateY('+(fr.height)+'px)';
-      d.style.opacity = '0';
-    });
-    setTimeout(()=>{ if(d.parentNode) d.remove(); }, 620);
-  } else if(type==='seche'){
-    const w = document.createElement('div');
-    w.className = 'wind-swirl';
-    w.textContent = Math.random()<0.5 ? '💨' : '✨';
-    w.style.left = x+'px'; w.style.top = y+'px';
-    w.style.transform = 'translate(-50%,-50%)';
-    bathPhotoFrame.appendChild(w);
-    requestAnimationFrame(()=>{
-      w.style.transition = 'transform .5s ease-out, opacity .5s';
-      w.style.transform = 'translate(-50%,-90%) scale(1.3)';
-      w.style.opacity = '0';
-    });
-    setTimeout(()=>{ if(w.parentNode) w.remove(); }, 550);
+  // ---- Fond de la chambre (défile vers le haut quand la tour grandit) ----
+  const bgImg = new Image();
+  bgImg.src = 'images/construction_bg.jpg';
+  let bgReady = false;
+  bgImg.onload = ()=>{ bgReady = true; };
+
+  function maxCameraY(){
+    if(!bgReady) return Infinity;
+    const scale = bgScaleFactor();
+    const drawH = bgImg.height * scale;
+    return Math.max(0, drawH - CH);
   }
-}
 
-let lastToneTime = 0;
-function playHoldTone(){
-  const now = performance.now();
-  if(now - lastToneTime > 90){
-    lastToneTime = now;
-    tone(480+Math.random()*220,.05,'triangle',.05);
-  }
-}
+  // ---- Formes de pièces dessinées (plus d'images externes -> plus de bug "tout pareil") ----
+  const SHAPES = ['cube','rect','cyl','arch','cone'];
+  const SHAPE_ASPECT = { cube:1, rect:1.9, cyl:0.72, arch:1.35, cone:0.9 };
+  const COLOR_DEFS = [
+    { name:'wood',   top:'#e2b579', side:'#b8814a' },
+    { name:'red',    top:'#ff7a72', side:'#e2453f' },
+    { name:'blue',   top:'#6badf5', side:'#3f76c9' },
+    { name:'yellow', top:'#ffe066', side:'#eeab1f' },
+    { name:'green',  top:'#8fe06a', side:'#4fae2c' }
+  ];
+  const PIECE_DISPLAY_H = 60;
 
-/* =============== Reaction "content" =============== */
-function bathHappy(){
-  bathPhotoFrame.classList.remove('happy-pulse'); void bathPhotoFrame.offsetWidth; bathPhotoFrame.classList.add('happy-pulse');
-  happyChord();
-  const icons = ['💛','⭐','😊','✨'];
-  for(let i=0;i<3;i++){
-    setTimeout(()=>{
-      const h = document.createElement('div');
-      h.className = 'happy-float';
-      h.textContent = icons[Math.floor(Math.random()*icons.length)];
-      h.style.left = (35+Math.random()*30)+'%';
-      h.style.top = '58%';
-      bathPhotoFrame.appendChild(h);
-      requestAnimationFrame(()=>{
-        h.style.transform = 'translateY(-100px) scale(1.3)';
-        h.style.opacity = '0';
+  const PIECE_TYPES = [];
+  SHAPES.forEach(shape=>{
+    COLOR_DEFS.forEach(colors=>{
+      PIECE_TYPES.push({
+        shape, colors,
+        w: PIECE_DISPLAY_H * SHAPE_ASPECT[shape],
+        h: PIECE_DISPLAY_H
       });
-      setTimeout(()=>h.remove(), 950);
-    }, i*140);
-  }
-}
-
-/* =============== Interactions : maintien du doigt sur l'image =============== */
-bathPhotoFrame.addEventListener('pointerdown', (ev)=>{
-  if(!armedAction) return;
-  holdActive = true;
-  const fr = bathPhotoFrame.getBoundingClientRect();
-  spawnParticleFor(armedAction, ev.clientX-fr.left, ev.clientY-fr.top);
-  playHoldTone();
-});
-bathPhotoFrame.addEventListener('pointermove', (ev)=>{
-  if(!armedAction || !holdActive) return;
-  if(Math.random()<0.6){
-    const fr = bathPhotoFrame.getBoundingClientRect();
-    spawnParticleFor(armedAction, ev.clientX-fr.left, ev.clientY-fr.top);
-    playHoldTone();
-  }
-});
-window.addEventListener('pointerup', ()=>{ holdActive = false; });
-window.addEventListener('pointercancel', ()=>{ holdActive = false; });
-
-/* =============== Boutons =============== */
-btnSavon.addEventListener('click', ()=>{
-  if(bState!=='normal' || armedAction) return;
-  armAction('savon');
-});
-btnBrosse.addEventListener('click', ()=>{
-  if(bState!=='normal' || armedAction) return;
-  bState = 'dent_ready';
-  setBathImage(DENT_SRC);
-  refreshButtons();
-  armAction('brosse');
-});
-btnGobelet.addEventListener('click', ()=>{
-  if(bState!=='dent_mousse' || armedAction) return;
-  armAction('gobelet');
-});
-btnSeche.addEventListener('click', ()=>{
-  if(bState!=='douche' || armedAction) return;
-  clearReturnTimer();
-  armAction('seche');
-});
-showerHotspot.addEventListener('pointerup', (ev)=>{
-  ev.preventDefault();
-  if(bState!=='mousse' || armedAction) return;
-  armAction('douche');
-});
-showerHotspot.addEventListener('click', (ev)=>{
-  ev.preventDefault();
-});
-
-function resetBath(){
-  clearReturnTimer();
-  cancelArm();
-  bState = 'normal';
-  setBathImage(NORMAL_SRC);
-  document.querySelectorAll('.foam-bit, .water-drop, .wind-swirl, .happy-float').forEach(e=>e.remove());
-  refreshButtons();
-  bathToast('Salle de bain rangée ! ✨');
-}
-
-function startBath(){
-  goTo('bathroomScreen');
-  resetBath();
-}
-function stopBath(){
-  clearReturnTimer();
-  cancelArm();
-  goTo('home');
-}
-function toggleBathMute(){
-  muted = !muted;
-  document.getElementById('bSoundToggle').textContent = muted ? '🔇' : '🔊';
-  const kBtn = document.getElementById('soundToggle'); if(kBtn) kBtn.textContent = muted ? '🔇' : '🔊';
-}
-
-/* =======================
-   PUZZLE 24 PIECES
-======================= */
-
-const PUZZLE_IMAGES = [
-    "dent.png",
-    "fondmalo.PNG",
-    "malo-toutou.png"
-];
-const ROWS = 2;
-const COLS = 4;
-const TOTAL = ROWS * COLS;
-
-// Ces valeurs sont recalculées à chaque ouverture du puzzle par computeLayout()
-// pour toujours tenir dans la largeur de l'écran du téléphone, quelle que soit sa taille.
-let CELL_W, CELL_H, TAB_X, TAB_Y, BOARD_W, BOARD_H, PIECE_BOX_W, PIECE_BOX_H, MARGIN, TRAY_GAP, TRAY_PAD, TRAY_THUMB_W, TRAY_THUMB_H,
-    TRAY_COLS, TRAY_ROWS, TRAY_W, TRAY_H, ARENA_W, ARENA_H,
-    BOARD_X, BOARD_Y, TRAY_X, TRAY_Y, SNAP_DIST;
-
-function computeLayout(){
-
-    // Largeur/hauteur réellement disponibles sur l'écran
-    const availW = Math.max(260, window.innerWidth - 24);
-    const topbarH = 70;   // pills du haut (retour / nouveau / score)
-    const infoH = 30;     // bandeau "fais glisser les pièces..."
-
-    MARGIN = 8;
-    TRAY_GAP = 10;
-    TRAY_PAD = 10;
-    const labelH = 30;
-
-    // ---- Pioche : on calcule sa hauteur EXACTEMENT (pas une estimation), pour ne
-    //      jamais couper une 2e ligne de pièces en bas de l'écran. Le ratio largeur/hauteur
-    //      d'une pièce ne dépend que de ROWS/COLS (pas de la taille du plateau), donc on
-    //      peut le connaître à l'avance sans dépendance circulaire. ----
-    const pieceAspectHW = COLS / ROWS; // hauteur/largeur d'une pièce (~constant quel que soit boardSize)
-    const itemsPerRow = Math.max(2, Math.min(TOTAL, 4));
-    // Les pièces sont hautes (2 lignes x 4 colonnes) : on plafonne par la HAUTEUR de vignette
-    // (dimension dominante), pas par la largeur, sinon la pioche devient énorme sur les écrans larges.
-    const thumbHMax = Math.max(90, Math.min(140, window.innerHeight * 0.15));
-    const thumbWByHeight = Math.floor(thumbHMax / pieceAspectHW);
-    const thumbWByWidth = Math.floor((availW - 2*TRAY_PAD - (itemsPerRow-1)*TRAY_GAP) / itemsPerRow);
-    const thumbW = Math.max(45, Math.min(thumbWByHeight, thumbWByWidth));
-    const thumbH = Math.round(thumbW * pieceAspectHW);
-    const trayRows = Math.ceil(TOTAL / itemsPerRow);
-    TRAY_H = labelH + trayRows * thumbH + (trayRows - 1) * TRAY_GAP + 2*TRAY_PAD + 10;
-    TRAY_H = Math.min(TRAY_H, window.innerHeight * 0.55); // garde-fou : jamais plus de la moitié de l'écran
-
-    // Emplacement des pièces : la bosse d'emboîtement dépasse de 25% de la LONGUEUR DU BORD,
-    // et un bord vertical (gauche/droite) a pour longueur CELL_H, un bord horizontal (haut/bas)
-    // a pour longueur CELL_W. La marge doit donc suivre la dimension DE L'AUTRE axe :
-    // TAB_X (marge horizontale) dépend de CELL_H, TAB_Y (marge verticale) dépend de CELL_W.
-    const TAB_RATIO = 0.29;
-    const availH = Math.max(200, window.innerHeight - topbarH - infoH - TRAY_H - MARGIN);
-
-    // Plateau CARRÉ (même si la grille est 2x4) : on cherche le plus grand carré qui
-    // rentre à la fois en largeur et en hauteur, puis on répartit COLS/ROWS dedans
-    // (cellules rectangulaires : CELL_W = carré/COLS, CELL_H = carré/ROWS).
-    const boardByWidth = Math.floor((availW - 2*MARGIN) / (1 + 2*TAB_RATIO/ROWS));
-    const boardByHeight = Math.floor((availH - MARGIN) / (1 + 2*TAB_RATIO/COLS));
-    const boardSize = Math.max(200, Math.min(boardByWidth, boardByHeight, 620));
-
-    CELL_W = Math.round(boardSize / COLS);
-    CELL_H = Math.round(boardSize / ROWS);
-    TAB_X = Math.round(CELL_H * TAB_RATIO);
-    TAB_Y = Math.round(CELL_W * TAB_RATIO);
-    BOARD_W = COLS * CELL_W;
-    BOARD_H = ROWS * CELL_H;
-    PIECE_BOX_W = CELL_W + 2 * TAB_X;
-    PIECE_BOX_H = CELL_H + 2 * TAB_Y;
-
-    // ---- Vignettes de la pioche : mêmes proportions réelles que les pièces (pas de
-    //      déformation), dimensionnées pour tenir exactement dans la largeur calculée ci-dessus. ----
-    TRAY_THUMB_W = thumbW;
-    TRAY_THUMB_H = Math.round(thumbW * (PIECE_BOX_H / PIECE_BOX_W));
-
-    ARENA_W = window.innerWidth;
-    ARENA_H = window.innerHeight;
-    BOARD_X = Math.round((ARENA_W - BOARD_W) / 2);
-    BOARD_Y = topbarH + infoH + TAB_Y + 4;
-    SNAP_DIST = Math.round(Math.min(CELL_W, CELL_H) * 0.6);
-}
-
-let currentPuzzle = 0;
-let puzzleSrcImg = null;
-
-// Dessine (ou redessine) une pièce sur son canvas ; withOutline=false une fois posée
-/* --- Calcule un recadrage carré centré de l'image source (comme "object-fit:cover") --- */
-function getSquareCrop(img){
-    const s = Math.min(img.naturalWidth, img.naturalHeight);
-    return { sx: (img.naturalWidth - s)/2, sy: (img.naturalHeight - s)/2, ssize: s };
-}
-
-function renderPieceCanvas(canvas, edges, r, c, withOutline){
-    const pctx = canvas.getContext('2d');
-    pctx.clearRect(0, 0, PIECE_BOX_W, PIECE_BOX_H);
-    pctx.save();
-    pctx.beginPath();
-    tracePiecePath(pctx, edges);
-    pctx.clip();
-    const crop = getSquareCrop(puzzleSrcImg);
-    pctx.drawImage(puzzleSrcImg, crop.sx, crop.sy, crop.ssize, crop.ssize, TAB_X - c*CELL_W, TAB_Y - r*CELL_H, BOARD_W, BOARD_H);
-    pctx.restore();
-    if(withOutline){
-        pctx.beginPath();
-        tracePiecePath(pctx, edges);
-        pctx.lineJoin = 'round';
-        pctx.strokeStyle = '#ffffff';
-        pctx.lineWidth = 3;
-        pctx.stroke();
-        pctx.strokeStyle = '#2a1a55';
-        pctx.lineWidth = 1.2;
-        pctx.stroke();
-    }
-}
-let pieceEls = [];
-let dragEl = null;
-let dragOffX = 0, dragOffY = 0;
-
-
-function startPuzzle(index = null) {
-
-const picker = document.getElementById("puzzlePickerGrid");
-const pickerBox = document.getElementById("puzzlePicker");
-const boardWrap = document.getElementById("puzzleBoardWrap");
-
-    // Ouvre l'écran Puzzle
-    goTo("puzzleScreen");
-
-    if (index === null) {
-
-        pickerBox.style.display = "block";
-        boardWrap.style.display = "none";
-        picker.innerHTML = "";
-
-        PUZZLE_IMAGES.forEach((img, i) => {
-
-const card = document.createElement("div");
-card.className = "puzzle-pick-card";
-
-card.innerHTML = `
-    <img src="${img}">
-    <div class="pp-label">Puzzle ${i + 1}</div>
-`;
-
-card.onclick = () => startPuzzle(i);
-
-picker.appendChild(card);
-
-        });
-
-        document.getElementById("pzResetBtn").style.display = "none";
-        document.getElementById("pzScorePill").style.display = "none";
-
-        return;
-    }
-
-    currentPuzzle = index;
-
-    pickerBox.style.display = "none";
-    boardWrap.style.display = "block";
-
-    document.getElementById("pzResetBtn").style.display = "inline-flex";
-    document.getElementById("pzScorePill").style.display = "inline-flex";
-
-    createPuzzle();
-
-}
-function stopPuzzle(){
-
-    goTo('home');
-
-}
-
-/* --- Bouton Aventure : ouvre le jeu "Le Monde de Malo" (fichier séparé) --- */
-function startAventure(){
-    window.location.href = 'aventure.html';
-}
-
-/* --- Bouton Construction : ouvre le jeu de construction (fichier séparé) --- */
-function startConstruction(){
-    window.location.href = 'construction.html';
-}
-
-/* --- Bouton Lego : ouvre le jeu Lego avec zoom/pan (fichier séparé) --- */
-function startLego(){
-    window.location.href = 'lego.html';
-}
-
-/* --- Génère un contour de pièce de puzzle (avec crans) en chemin SVG --- */
-function edgeSeg(A, B, v){
-    if (v === 0) return `L ${B.x},${B.y} `;
-    const dx = B.x - A.x, dy = B.y - A.y;
-    const len = Math.sqrt(dx*dx + dy*dy);
-    const ux = dx/len, uy = dy/len;
-    const chord = len * 0.5;
-    const r = chord / 2;
-    const midx = (A.x+B.x)/2, midy = (A.y+B.y)/2;
-    const pax = midx - ux*chord/2, pay = midy - uy*chord/2;
-    const pbx = midx + ux*chord/2, pby = midy + uy*chord/2;
-    const sweep = v === 1 ? 1 : 0;
-    return `L ${pax},${pay} A ${r},${r} 0 0,${sweep} ${pbx},${pby} L ${B.x},${B.y} `;
-}
-
-
-
-/* --- Trace un bord (avec cran éventuel) directement sur un contexte canvas ---
-   Équivalent canvas-natif de edgeSeg(), sans dépendre de Path2D (compatibilité maximale). --- */
-function edgeSegCanvas(ctx, A, B, v){
-    if (v === 0){ ctx.lineTo(B.x, B.y); return; }
-    const dx = B.x - A.x, dy = B.y - A.y;
-    const len = Math.sqrt(dx*dx + dy*dy);
-    const ux = dx/len, uy = dy/len;
-    const chord = len * 0.5;
-    const r = chord / 2;
-    const midx = (A.x+B.x)/2, midy = (A.y+B.y)/2;
-    const pax = midx - ux*chord/2, pay = midy - uy*chord/2;
-    const pbx = midx + ux*chord/2, pby = midy + uy*chord/2;
-    ctx.lineTo(pax, pay);
-    const startAngle = Math.atan2(pay - midy, pax - midx);
-    const endAngle = Math.atan2(pby - midy, pbx - midx);
-    const anticlockwise = (v !== 1); // v=1 -> sens horaire (comme sweep=1 en SVG)
-    ctx.arc(midx, midy, r, startAngle, endAngle, anticlockwise);
-    ctx.lineTo(B.x, B.y);
-}
-
-/* --- Trace le contour complet d'une pièce directement sur un contexte canvas --- */
-function tracePiecePath(ctx, edges){
-    const TL={x:TAB_X,y:TAB_Y}, TR={x:TAB_X+CELL_W,y:TAB_Y}, BR={x:TAB_X+CELL_W,y:TAB_Y+CELL_H}, BL={x:TAB_X,y:TAB_Y+CELL_H};
-    ctx.moveTo(TL.x, TL.y);
-    edgeSegCanvas(ctx, TL, TR, edges.top);
-    edgeSegCanvas(ctx, TR, BR, edges.right);
-    edgeSegCanvas(ctx, BR, BL, edges.bottom);
-    edgeSegCanvas(ctx, BL, TL, edges.left);
-    ctx.closePath();
-}
-
-/* --- Génère aléatoirement les crans/creux partagés entre pièces voisines --- */
-function genEdges(){
-    const vEdges = []; // bords verticaux entre colonnes (partagés par la ligne)
-    for(let r=0;r<ROWS;r++){
-        vEdges.push([]);
-        for(let c=0;c<COLS-1;c++) vEdges[r].push(Math.random()<0.5 ? 1 : -1);
-    }
-    const hEdges = []; // bords horizontaux entre lignes
-    for(let r=0;r<ROWS-1;r++){
-        hEdges.push([]);
-        for(let c=0;c<COLS;c++) hEdges[r].push(Math.random()<0.5 ? 1 : -1);
-    }
-    return {vEdges, hEdges};
-}
-
-function pieceEdges(r, c, vEdges, hEdges){
-    return {
-        top:    r===0 ? 0 : -hEdges[r-1][c],
-        bottom: r===ROWS-1 ? 0 : hEdges[r][c],
-        left:   c===0 ? 0 : -vEdges[r][c-1],
-        right:  c===COLS-1 ? 0 : vEdges[r][c]
-    };
-}
-
-function createPuzzle(){
-
-    computeLayout();
-
-    const arena = document.getElementById('puzzleArena');
-    arena.innerHTML = '';
-
-    const tray = document.getElementById('pieceTray');
-    // on retire tout sauf le petit libellé "Pioche" fixe
-    while(tray.children.length > 1) tray.removeChild(tray.lastChild);
-    tray.style.height = TRAY_H + 'px';
-
-    // Image cible affichée en transparence, comme guide (à l'échelle des pièces)
-    const target = document.createElement('div');
-    target.id = 'puzzleTarget';
-    target.style.position = 'absolute';
-    target.style.left = BOARD_X + 'px';
-    target.style.top = BOARD_Y + 'px';
-    target.style.width = BOARD_W + 'px';
-    target.style.height = BOARD_H + 'px';
-    target.style.backgroundImage = `url(${PUZZLE_IMAGES[currentPuzzle]})`;
-    target.style.backgroundSize = `cover`;
-    target.style.backgroundPosition = 'center';
-    target.style.opacity = '.16';
-    target.style.pointerEvents = 'none';
-    arena.appendChild(target);
-
-    // ---- Découpe des pièces en CANVAS (plus fiable que clip-path CSS sur Safari) ----
-    // On charge l'image source une fois, puis chaque pièce est un <canvas> qui se
-    // dessine lui-même avec un découpage net (ctx.clip), sans aucune dépendance CSS fragile.
-    puzzleSrcImg = new Image();
-    puzzleSrcImg.src = PUZZLE_IMAGES[currentPuzzle];
-
-    const {vEdges, hEdges} = genEdges();
-
-    // Liste des pièces, puis mélange de l'ORDRE de rangement dans la pioche
-    // (les pièces gardent leur forme/emplacement cible, seul leur rangement change)
-    const order = [];
-    for(let i=0;i<TOTAL;i++) order.push(i);
-    for(let i=order.length-1;i>0;i--){
-        const j = Math.floor(Math.random()*(i+1));
-        [order[i],order[j]] = [order[j],order[i]];
-    }
-
-    pieceEls = [];
-
-    function buildAllPieces(){
-    // Ordre d'affichage dans la pioche (rangement mélangé), rempli au fil de la boucle
-    const byId = {};
-    for(let r=0;r<ROWS;r++){
-        for(let c=0;c<COLS;c++){
-
-            const id = r*COLS + c;
-            const edges = pieceEdges(r, c, vEdges, hEdges);
-
-            const div = document.createElement('div');
-            div.className = 'jz-piece inTray';
-            div.dataset.id = id;
-            div.style.width = TRAY_THUMB_W + 'px';
-            div.style.height = TRAY_THUMB_H + 'px';
-            div.style.flex = '0 0 auto';
-            div.style.animationDelay = (Math.random()*2).toFixed(2) + 's';
-
-            const canvas = document.createElement('canvas');
-            canvas.width = PIECE_BOX_W;
-            canvas.height = PIECE_BOX_H;
-            canvas.style.cssText = 'position:absolute; left:0; top:0; width:100%; height:100%; display:block; pointer-events:none;';
-            div.appendChild(canvas);
-            renderPieceCanvas(canvas, edges, r, c, true);
-            div._canvas = canvas;
-            div._edges = edges;
-            div._r = r; div._c = c;
-
-            // Position correcte (coin haut-gauche de la boîte de la pièce) sur le plateau
-            const correctX = BOARD_X + c*CELL_W - TAB_X;
-            const correctY = BOARD_Y + r*CELL_H - TAB_Y;
-            div.dataset.cx = correctX;
-            div.dataset.cy = correctY;
-
-            attachDragHandlers(div);
-
-            byId[id] = div;
-            pieceEls.push(div);
-        }
-    }
-    // Insère les pièces dans la pioche selon l'ordre mélangé (défilement horizontal)
-    for(const id of order){
-        tray.appendChild(byId[id]);
-    }
-
-    }
-
-    if(puzzleSrcImg.complete && puzzleSrcImg.naturalWidth){
-        buildAllPieces();
-    } else {
-        puzzleSrcImg.onload = buildAllPieces;
-    }
-
-    // Bannière de victoire
-    const win = document.createElement("div");
-    win.id = "puzzleWinBanner";
-    win.className = "puzzle-win-banner";
-    win.innerHTML = `
-        <div class="win-card">
-            <div class="win-title">🎉 Bravo Malo ! 🎉</div>
-            <div class="win-emojis">⭐🎊✨🎊⭐</div>
-            <button class="pill" onclick="startPuzzle()" style="pointer-events:auto;">🔁 Rejouer</button>
-        </div>
-    `;
-    arena.appendChild(win);
-
-    // Toast
-    const toast = document.createElement("div");
-    toast.id = "pzToast";
-    toast.className = "pz-toast";
-    arena.appendChild(toast);
-
-    updateScore();
-}
-
-/* Le bouton "Mélanger" régénère un nouveau puzzle (formes + dispersion) */
-function shufflePuzzle(){
-    createPuzzle();
-}
-
-function attachDragHandlers(div){
-
-    div.addEventListener('pointerdown', (e) => {
-        if (div.classList.contains('placed')) return;
-        e.preventDefault();
-        div.setPointerCapture(e.pointerId);
-        const arena = document.getElementById('puzzleArena');
-        const arenaRect = arena.getBoundingClientRect();
-
-        // Première prise en main : on "sort" la pièce du flux de la pioche, on lui redonne
-        // sa vraie taille, et on la positionne en absolu (par-dessus le plateau).
-        if (!div._poppedOut) {
-            const r = div.getBoundingClientRect();
-            const cxCenter = r.left + r.width/2, cyCenter = r.top + r.height/2;
-            div._poppedOut = true;
-            div.classList.remove('inTray');
-            div.style.width = PIECE_BOX_W + 'px';
-            div.style.height = PIECE_BOX_H + 'px';
-            div.style.position = 'absolute';
-            // recentrée sur l'endroit où le doigt l'a attrapée, à sa vraie taille
-            div.style.left = (cxCenter - PIECE_BOX_W/2 - arenaRect.left) + 'px';
-            div.style.top = (cyCenter - PIECE_BOX_H/2 - arenaRect.top) + 'px';
-            div.style.flex = 'none';
-            arena.appendChild(div);
-        }
-
-        dragEl = div;
-        dragOffX = e.clientX - arenaRect.left - parseFloat(div.style.left);
-        dragOffY = e.clientY - arenaRect.top - parseFloat(div.style.top);
-        div.style.zIndex = 100;
-        div.classList.add('dragging');
     });
+  });
 
-    div.addEventListener('pointermove', (e) => {
-        if (dragEl !== div) return;
-        const arenaRect = document.getElementById('puzzleArena').getBoundingClientRect();
-        let x = e.clientX - arenaRect.left - dragOffX;
-        let y = e.clientY - arenaRect.top - dragOffY;
-        div.style.left = x + 'px';
-        div.style.top = y + 'px';
-    });
+  function roundRectPath(g,x,y,w,h,r){
+    g.beginPath();
+    g.moveTo(x+r,y);
+    g.arcTo(x+w,y,x+w,y+h,r);
+    g.arcTo(x+w,y+h,x,y+h,r);
+    g.arcTo(x,y+h,x,y,r);
+    g.arcTo(x,y,x+w,y,r);
+    g.closePath();
+  }
 
-    const dropHandler = (e) => {
-        if (dragEl !== div) return;
-        dragEl = null;
-        div.classList.remove('dragging');
-        div.style.zIndex = 2;
-
-        const cx = parseFloat(div.dataset.cx), cy = parseFloat(div.dataset.cy);
-        const x = parseFloat(div.style.left), y = parseFloat(div.style.top);
-        const dist = Math.hypot(x-cx, y-cy);
-
-        if (dist < SNAP_DIST) {
-            div.style.left = cx + 'px';
-            div.style.top = cy + 'px';
-            div.classList.add('placed');
-            div.style.zIndex = 1;
-            div.style.cursor = 'default';
-            if(div._canvas) renderPieceCanvas(div._canvas, div._edges, div._r, div._c, false);
-            tone(650, .12, 'triangle', .12);
-            updateScore();
-        }
-    };
-
-    div.addEventListener('pointerup', dropHandler);
-    div.addEventListener('pointercancel', dropHandler);
-}
-
-function updateScore(){
-
-    const ok = pieceEls.filter(d => d.classList.contains('placed')).length;
-
-    document.getElementById("pzScore").textContent = ok;
-    document.getElementById("pzTotal").textContent = TOTAL;
-
-    const banner = document.getElementById("puzzleWinBanner");
-
-    if (ok === TOTAL) {
-        banner.classList.add('show');
-        tone(880, .2, 'triangle', .15);
-    } else {
-        banner.classList.remove('show');
+  function drawGrain(g,x,y,w,h){
+    g.strokeStyle='rgba(110,65,20,.28)';
+    g.lineWidth=1.4;
+    for(let i=1;i<3;i++){
+      g.beginPath();
+      g.moveTo(x+4, y+h*(i/3));
+      g.quadraticCurveTo(x+w/2, y+h*(i/3)+4, x+w-4, y+h*(i/3));
+      g.stroke();
     }
+  }
 
-}
+  // ---- Dessin d'une pièce = une vraie forme (cube / planche / cylindre / arche / cône) ----
+  function drawPiece(g, p, cx, topY, wOverride, hOverride){
+    const w = wOverride || p.w, h = hOverride || p.h;
+    const shape = p.shape, colors = p.colors;
+    const left = cx - w/2, right = cx + w/2, bottom = topY + h;
+    g.save();
+    switch(shape){
+      case 'cube':
+      case 'rect': {
+        const r = Math.min(10, w*0.14, h*0.14);
+        roundRectPath(g, left, topY, w, h, r);
+        const grad = g.createLinearGradient(0, topY, 0, bottom);
+        grad.addColorStop(0, colors.top);
+        grad.addColorStop(1, colors.side);
+        g.fillStyle = grad; g.fill();
+        g.lineWidth = 2; g.strokeStyle = 'rgba(0,0,0,.25)'; g.stroke();
+        g.fillStyle = 'rgba(255,255,255,.35)';
+        roundRectPath(g, left+4, topY+3, w-8, h*0.26, r*0.6); g.fill();
+        if(colors.name==='wood') drawGrain(g,left,topY,w,h);
+        break;
+      }
+      case 'cyl': {
+        const rx = w/2;
+        roundRectPath(g, left, topY+h*0.16, w, h*0.84, rx*0.5);
+        const grad = g.createLinearGradient(left,0,right,0);
+        grad.addColorStop(0, colors.side); grad.addColorStop(0.5, colors.top); grad.addColorStop(1, colors.side);
+        g.fillStyle = grad; g.fill();
+        g.lineWidth=2; g.strokeStyle='rgba(0,0,0,.25)'; g.stroke();
+        g.beginPath();
+        g.ellipse(cx, topY+h*0.16, rx, h*0.14, 0, 0, Math.PI*2);
+        g.fillStyle = colors.top; g.fill(); g.stroke();
+        if(colors.name==='wood') drawGrain(g,left,topY+h*0.16,w,h*0.7);
+        break;
+      }
+      case 'arch': {
+        roundRectPath(g, left, topY, w, h, 8);
+        const grad = g.createLinearGradient(0, topY, 0, bottom);
+        grad.addColorStop(0, colors.top); grad.addColorStop(1, colors.side);
+        g.fillStyle = grad; g.fill();
+        g.save();
+        roundRectPath(g, left, topY, w, h, 8);
+        g.clip();
+        g.globalCompositeOperation = 'destination-out';
+        g.beginPath();
+        g.arc(cx, bottom, w*0.34, Math.PI, 0);
+        g.lineTo(right*0 + cx + w*0.34, bottom);
+        g.lineTo(cx - w*0.34, bottom);
+        g.closePath();
+        g.fill();
+        g.restore();
+        g.lineWidth=2; g.strokeStyle='rgba(0,0,0,.25)';
+        roundRectPath(g,left,topY,w,h,8); g.stroke();
+        if(colors.name==='wood') drawGrain(g,left,topY,w,h*0.5);
+        break;
+      }
+      case 'cone': {
+        g.beginPath();
+        g.moveTo(cx, topY);
+        g.lineTo(right, bottom);
+        g.lineTo(left, bottom);
+        g.closePath();
+        const grad = g.createLinearGradient(left,0,right,0);
+        grad.addColorStop(0, colors.side); grad.addColorStop(0.5, colors.top); grad.addColorStop(1, colors.side);
+        g.fillStyle = grad; g.fill();
+        g.lineWidth=2; g.strokeStyle='rgba(0,0,0,.25)'; g.stroke();
+        break;
+      }
+    }
+    g.restore();
+  }
 
+  // ---- Tray (palette) ----
+  const tray = document.getElementById('tray');
+  let selectedIdx = 0;
+  const trayBtns = [];
+  PIECE_TYPES.forEach((p, idx)=>{
+    const btn = document.createElement('div');
+    btn.className = 'pieceBtn' + (idx===0 ? ' selected' : '');
+    const c = document.createElement('canvas');
+    c.width = 64; c.height = 64;
+    const g = c.getContext('2d');
+    const scale = Math.min(50/p.w, 50/p.h);
+    g.clearRect(0,0,64,64);
+    drawPiece(g, p, 32, 32 - (p.h*scale)/2, p.w*scale, p.h*scale);
+    btn.appendChild(c);
+    tray.appendChild(btn);
+    trayBtns.push(btn);
+  });
 
-refreshButtons();
+  // ---- Etat de la tour ----
+  let stack = [];
+  let placedCount = 0;
+  let cameraY = 0, targetCameraY = 0;
+  let swaying = false, swayStart = 0;
+  let mode = 'building';
+  let fallingPieces = [];
+  let dropAnim = null;
 
+  const BASE_Y = ()=> CH * 0.86;
+  const STACK_X = ()=> CW/2;
+
+  function addPiece(typeIdx, xOffset){
+    if(mode !== 'building') return;
+    const p = PIECE_TYPES[typeIdx];
+    const prevTop = stack.length ? stack[stack.length-1].topY : BASE_Y();
+    const h = p.h;
+    const maxOffset = 70;
+    const jitter = xOffset !== undefined ? Math.max(-maxOffset, Math.min(maxOffset, xOffset)) : (Math.random()-0.5) * 10;
+    const piece = { p, x: jitter, topY: prevTop - h, h };
+    dropAnim = { piece, fromY: -60, t: 0 };
+    stack.push(piece);
+    placedCount++;
+    document.getElementById('pieceCounter').textContent = '🧱 ' + placedCount + ' pièces';
+
+    if(placedCount >= 3){
+      document.getElementById('stopBtn').style.display = 'block';
+    }
+    if(placedCount % 5 === 0){
+      swaying = true; swayStart = performance.now();
+    }
+    const topWorldY = stack[stack.length-1].topY;
+    targetCameraY = Math.min(maxCameraY(), Math.max(0, (BASE_Y() - topWorldY) - CH*0.55));
+  }
+
+  // ---- Ancien mode: sélectionner puis glisser directement sur la scène (toujours dispo) ----
+  let placeDrag = null;
+
+  canvas.addEventListener('pointerdown', (ev)=>{
+    if(mode !== 'building') return;
+    const rect = canvas.getBoundingClientRect();
+    placeDrag = { x: ev.clientX - rect.left };
+  }, {passive:true});
+
+  canvas.addEventListener('pointermove', (ev)=>{
+    if(!placeDrag || mode !== 'building') return;
+    const rect = canvas.getBoundingClientRect();
+    placeDrag.x = ev.clientX - rect.left;
+  }, {passive:true});
+
+  function finishPlaceDrag(){
+    if(!placeDrag || mode !== 'building'){ placeDrag = null; return; }
+    const xOffset = placeDrag.x - STACK_X();
+    addPiece(selectedIdx, xOffset);
+    placeDrag = null;
+  }
+  canvas.addEventListener('pointerup', finishPlaceDrag, {passive:true});
+  canvas.addEventListener('pointercancel', ()=>{ placeDrag = null; }, {passive:true});
+
+  // ---- Nouveau: vrai glisser depuis la pioche (comme le puzzle) ----
+  let dragState = null;
+
+  function pieceGhostSize(p){
+    const maxDim = 74;
+    const scale = Math.min(maxDim/p.w, maxDim/p.h);
+    return { w: p.w*scale, h: p.h*scale };
+  }
+
+  trayBtns.forEach((btn, idx)=>{
+    btn.addEventListener('pointerdown', (ev)=>{
+      ev.preventDefault();
+      selectedIdx = idx;
+      trayBtns.forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+      if(mode !== 'building') return;
+
+      const p = PIECE_TYPES[idx];
+      const size = pieceGhostSize(p);
+      const ghost = document.createElement('canvas');
+      const dpr = Math.max(1, Math.min(window.devicePixelRatio||1, 3));
+      ghost.width = size.w*dpr; ghost.height = size.h*dpr;
+      ghost.style.cssText = 'position:fixed;left:'+(ev.clientX-size.w/2)+'px;top:'+(ev.clientY-size.h/2)+'px;'+
+        'width:'+size.w+'px;height:'+size.h+'px;pointer-events:none;z-index:200;opacity:.92;'+
+        'filter:drop-shadow(0 4px 6px rgba(0,0,0,.4));';
+      const gg = ghost.getContext('2d');
+      gg.scale(dpr,dpr);
+      drawPiece(gg, p, size.w/2, 0, size.w, size.h);
+      document.body.appendChild(ghost);
+      dragState = { idx, ghost, size, pointerId: ev.pointerId, moved:false };
+    }, {passive:false});
+  });
+
+  window.addEventListener('pointermove', (ev)=>{
+    if(!dragState || ev.pointerId !== dragState.pointerId) return;
+    dragState.moved = true;
+    dragState.ghost.style.left = (ev.clientX - dragState.size.w/2) + 'px';
+    dragState.ghost.style.top = (ev.clientY - dragState.size.h/2) + 'px';
+  }, {passive:true});
+
+  function endDrag(ev){
+    if(!dragState || ev.pointerId !== dragState.pointerId) return;
+    const rect = canvas.getBoundingClientRect();
+    const trayTop = tray.getBoundingClientRect().top;
+    const overCanvas = ev.clientX >= rect.left && ev.clientX <= rect.right &&
+                        ev.clientY >= rect.top && ev.clientY <= trayTop;
+    if(dragState.moved && overCanvas && mode === 'building'){
+      const xOffset = (ev.clientX - rect.left) - STACK_X();
+      addPiece(dragState.idx, xOffset);
+    }
+    dragState.ghost.remove();
+    dragState = null;
+  }
+  window.addEventListener('pointerup', endDrag, {passive:true});
+  window.addEventListener('pointercancel', ()=>{
+    if(dragState){ dragState.ghost.remove(); dragState = null; }
+  }, {passive:true});
+
+  // ---- Bouton stop / voir le résultat ----
+  document.getElementById('stopBtn').addEventListener('click', ()=>{
+    if(mode !== 'building') return;
+    mode = 'reveal';
+    document.getElementById('stopBtn').style.display = 'none';
+    document.getElementById('pieceCounter').style.display = 'none';
+    tray.style.display = 'none';
+    const topWorldY = stack.length ? stack[stack.length-1].topY : BASE_Y();
+    const towerHeight = BASE_Y() - topWorldY + 80;
+    targetCameraY = Math.min(maxCameraY(), Math.max(0, towerHeight - CH*0.9));
+    setTimeout(()=>{
+      document.getElementById('revealMsg').style.display = 'block';
+    }, 900);
+  });
+
+  canvas.addEventListener('pointerdown', (ev)=>{
+    if(mode !== 'reveal') return;
+    const rect = canvas.getBoundingClientRect();
+    const px = ev.clientX - rect.left;
+    if(Math.abs(px - CW/2) < 140){
+      collapseTower();
+    }
+  }, {passive:true});
+
+  function collapseTower(){
+    mode = 'collapsing';
+    document.getElementById('revealMsg').style.display = 'none';
+    fallingPieces = stack.map(s => ({
+      p: s.p, x: STACK_X() + s.x, y: cameraOffsetToScreenY(s.topY),
+      vx: (Math.random()-0.5) * 9, vy: -6 - Math.random()*4,
+      rot: 0, vrot: (Math.random()-0.5) * 0.35
+    }));
+    stack = [];
+    placedCount = 0;
+    setTimeout(()=>{
+      mode = 'done';
+      document.getElementById('replayBtn2').style.display = 'block';
+    }, 1800);
+  }
+
+  document.getElementById('replayBtn2').addEventListener('click', ()=>{
+    mode = 'building';
+    stack = []; placedCount = 0; fallingPieces = [];
+    cameraY = 0; targetCameraY = 0;
+    document.getElementById('pieceCounter').textContent = '🧱 0 pièces';
+    document.getElementById('pieceCounter').style.display = 'block';
+    document.getElementById('stopBtn').style.display = 'none';
+    document.getElementById('replayBtn2').style.display = 'none';
+    tray.style.display = 'flex';
+  });
+
+  function cameraOffsetToScreenY(worldTopY){
+    return worldTopY + cameraY;
+  }
+
+  // ---- Boucle ----
+  let lastTs = 0;
+  function loop(ts){
+    const dt = lastTs ? (ts-lastTs) : 16;
+    lastTs = ts;
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function update(dt){
+    cameraY += (targetCameraY - cameraY) * 0.08;
+    cameraY = Math.min(cameraY, maxCameraY());
+    if(swaying && performance.now() - swayStart > 2200) swaying = false;
+    if(dropAnim){
+      dropAnim.t += dt/220;
+      if(dropAnim.t >= 1){ dropAnim = null; }
+    }
+    if(mode === 'collapsing'){
+      for(const f of fallingPieces){
+        f.vy += 0.9;
+        f.x += f.vx; f.y += f.vy; f.rot += f.vrot;
+      }
+    }
+  }
+
+  function bgScaleFactor(){
+    // Moins zoomé qu'avant : juste assez de hauteur en plus pour permettre un léger
+    // défilement quand la tour grandit, sans recadrer la pièce de façon trop serrée.
+    const scaleByWidth = CW / bgImg.width;
+    const scaleByMinHeight = (CH * 1.35) / bgImg.height;
+    return Math.max(scaleByWidth, scaleByMinHeight);
+  }
+
+  function drawBackground(){
+    if(!bgReady){ ctx.fillStyle = '#3a2a18'; ctx.fillRect(0,0,CW,CH); return; }
+    const scale = bgScaleFactor();
+    const drawW = bgImg.width * scale;
+    const drawH = bgImg.height * scale;
+    const x = (CW - drawW) / 2;
+    const y = (CH - drawH) + cameraY;
+    ctx.drawImage(bgImg, x, y, drawW, drawH);
+  }
+
+  function drawStack(){
+    const sway = swaying ? Math.sin((performance.now()-swayStart)/260) * 0.055 * Math.min(1,(performance.now()-swayStart)/400) : 0;
+    ctx.save();
+    ctx.translate(STACK_X(), BASE_Y() + cameraY);
+    ctx.rotate(sway);
+    for(const s of stack){
+      const localTopY = s.topY - BASE_Y();
+      let drawY = localTopY;
+      const drawX = s.x;
+      if(dropAnim && dropAnim.piece === s){
+        const e = 1 - Math.pow(1-dropAnim.t, 3);
+        drawY = dropAnim.fromY + (localTopY - dropAnim.fromY) * e;
+      }
+      drawPiece(ctx, s.p, drawX, drawY, undefined, undefined);
+    }
+    ctx.restore();
+  }
+
+  function drawFalling(){
+    for(const f of fallingPieces){
+      ctx.save();
+      ctx.translate(f.x, f.y);
+      ctx.rotate(f.rot);
+      drawPiece(ctx, f.p, 0, -f.p.h/2, undefined, undefined);
+      ctx.restore();
+    }
+  }
+
+  function drawGhost(){
+    if(!placeDrag) return;
+    const p = PIECE_TYPES[selectedIdx];
+    const topWorldY = stack.length ? stack[stack.length-1].topY : BASE_Y();
+    const topScreenY = topWorldY + cameraY;
+    const ghostScreenY = topScreenY - p.h - 26;
+    ctx.save();
+    ctx.globalAlpha = 0.6;
+    drawPiece(ctx, p, placeDrag.x, ghostScreenY, undefined, undefined);
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(255,255,255,.8)';
+    ctx.setLineDash([5,5]);
+    ctx.beginPath();
+    ctx.moveTo(placeDrag.x, ghostScreenY + p.h);
+    ctx.lineTo(placeDrag.x, topScreenY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,CW,CH);
+    drawBackground();
+    if(mode === 'building' || mode === 'reveal'){
+      drawStack();
+      drawGhost();
+    } else if(mode === 'collapsing' || mode === 'done'){
+      drawFalling();
+    }
+  }
+
+  requestAnimationFrame(loop);
+})();
 </script>
 </body>
 </html>
