@@ -13,7 +13,8 @@
   ::selection{background:transparent;}
 
   #wrap{position:relative; width:100%; height:100%; overflow:hidden; display:flex; flex-direction:column; background:#3c2513;}
-  #stage{position:relative; width:100%; flex:1; overflow:hidden; display:flex; align-items:center; justify-content:center;}
+  #stage{position:relative; width:100%; flex:0 0 auto; overflow:hidden; display:flex; align-items:flex-start; justify-content:center;}
+  #trayFiller{flex:1 1 auto; background:#fff8ea; min-height:0;}
   .photo-frame{position:relative; height:100%; aspect-ratio:1402/1122; max-width:100%; max-height:100%;}
   @media (max-aspect-ratio:1402/1122){
     .photo-frame{ height:auto; width:100%; }
@@ -34,8 +35,18 @@
     flex-wrap:wrap; gap:2px; padding:6%;
   }
   .plate-zone.hover{ background:rgba(255,255,255,.18); box-shadow:0 0 0 6px rgba(255,255,255,.35) inset; }
+  .glass-zone{
+    position:absolute; z-index:10;
+    border-radius:40%;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .glass-zone.hover{ background:rgba(255,255,255,.22); box-shadow:0 0 0 5px rgba(255,255,255,.4) inset; }
   .plate-food{ font-size:clamp(32px,10vw,54px); filter:drop-shadow(0 3px 3px rgba(0,0,0,.35)); animation:foodPop .3s cubic-bezier(.3,1.5,.4,1) backwards; }
+  .plate-food.drink-placed{ font-size:clamp(22px,7vw,34px); }
   @keyframes foodPop{ from{transform:scale(0);} to{transform:scale(1);} }
+
+  .miam-bubble{position:absolute; background:#fff; color:#e0507f; font-weight:900; padding:5px 14px; border-radius:18px; font-size:clamp(13px,3.6vw,17px); box-shadow:0 4px 10px rgba(0,0,0,.3); z-index:56; pointer-events:none; opacity:0; transform:translate(-50%,0) scale(.4); transition:transform .35s cubic-bezier(.3,1.6,.4,1), opacity .35s; white-space:nowrap;}
+  .miam-bubble.show{opacity:1; transform:translate(-50%,-14px) scale(1);}
 
   .happy-float{position:absolute; font-size:30px; z-index:55; pointer-events:none; opacity:1; transition:transform .9s ease-out, opacity .9s;}
   .happy-pulse{animation:happyGlow .6s ease-out;}
@@ -95,11 +106,14 @@
 
   <div id="stage">
     <div class="photo-frame" id="photoFrame">
-      <img class="photo" id="repasPhoto" src="images/repas_bg.jpg" alt="le repas de Malo">
+      <img class="photo" id="repasPhoto" src="images/repas_bg.jpg" alt="le repas de Malo" onerror="this.style.display='none'; document.getElementById('photoFrame').style.background='linear-gradient(180deg,#7a4a26,#3c2513)';">
       <div class="toast" id="toast"></div>
       <div class="plate-zone" id="zone-lion"  data-char="lion"></div>
       <div class="plate-zone" id="zone-malo"  data-char="malo"></div>
       <div class="plate-zone" id="zone-chien" data-char="chien"></div>
+      <div class="glass-zone" id="glass-lion"  data-char="lion"></div>
+      <div class="glass-zone" id="glass-malo"  data-char="malo"></div>
+      <div class="glass-zone" id="glass-chien" data-char="chien"></div>
     </div>
     <div class="end-banner" id="endBanner">
       <div class="big">🦁🍽️🐶</div>
@@ -110,6 +124,7 @@
   </div>
 
   <div id="tray"></div>
+  <div id="trayFiller"></div>
 </div>
 
 <script>
@@ -120,9 +135,12 @@ document.addEventListener('contextmenu', e=>e.preventDefault());
 function box(node,l,t,w,h){
   node.style.left=l+'%'; node.style.top=t+'%'; node.style.width=w+'%'; node.style.height=h+'%';
 }
-box(document.getElementById('zone-lion'),  5.5, 71, 27, 17.5);
-box(document.getElementById('zone-malo'),  36.5,70, 27, 17.5);
-box(document.getElementById('zone-chien'), 71,  71, 27, 17.5);
+box(document.getElementById('zone-lion'),  1,  68, 33, 17);
+box(document.getElementById('zone-malo'),  34, 68, 32, 15);
+box(document.getElementById('zone-chien'), 65, 71, 33, 15);
+box(document.getElementById('glass-lion'),  0,  87, 16, 13);
+box(document.getElementById('glass-malo'),  34, 87, 16, 13);
+box(document.getElementById('glass-chien'), 80, 85, 16, 14);
 
 /* ================= Son (Web Audio, aucun fichier) ================= */
 let actx, muted=false;
@@ -213,14 +231,14 @@ function makeFoodItem(data, isDrink){
   const div = document.createElement('div');
   div.className = 'food-item' + (isDrink ? ' drink' : '');
   div.innerHTML = '<span class="fi-emoji">'+data.emoji+'</span><span class="fi-label">'+data.label+'</span>';
-  attachFoodDrag(div, data.emoji);
+  attachFoodDrag(div, data.emoji, isDrink ? 'drink' : 'food');
   return div;
 }
 
 /* ================= Glisser-déposer réel (comme la construction) ================= */
 let dragState = null;
 
-function attachFoodDrag(el, emoji){
+function attachFoodDrag(el, emoji, cat){
   el.addEventListener('pointerdown', (ev)=>{
     ev.preventDefault();
     const ghost = document.createElement('div');
@@ -229,7 +247,7 @@ function attachFoodDrag(el, emoji){
     ghost.style.left = (ev.clientX-42)+'px';
     ghost.style.top = (ev.clientY-42)+'px';
     document.body.appendChild(ghost);
-    dragState = { emoji, ghost, pointerId: ev.pointerId, moved:false };
+    dragState = { emoji, cat, ghost, pointerId: ev.pointerId, moved:false };
   }, {passive:false});
 }
 
@@ -238,7 +256,8 @@ window.addEventListener('pointermove', (ev)=>{
   dragState.moved = true;
   dragState.ghost.style.left = (ev.clientX-42)+'px';
   dragState.ghost.style.top = (ev.clientY-42)+'px';
-  document.querySelectorAll('.plate-zone').forEach(z=>{
+  const selector = dragState.cat==='drink' ? '.glass-zone' : '.plate-zone';
+  document.querySelectorAll(selector).forEach(z=>{
     const r = z.getBoundingClientRect();
     const over = ev.clientX>=r.left && ev.clientX<=r.right && ev.clientY>=r.top && ev.clientY<=r.bottom;
     z.classList.toggle('hover', over);
@@ -248,16 +267,22 @@ window.addEventListener('pointermove', (ev)=>{
 function endFoodDrag(ev){
   if(!dragState || ev.pointerId !== dragState.pointerId) return;
   let landed = null;
-  document.querySelectorAll('.plate-zone').forEach(z=>{
+  const selector = dragState.cat==='drink' ? '.glass-zone' : '.plate-zone';
+  document.querySelectorAll(selector).forEach(z=>{
     z.classList.remove('hover');
     const r = z.getBoundingClientRect();
     const over = ev.clientX>=r.left && ev.clientX<=r.right && ev.clientY>=r.top && ev.clientY<=r.bottom;
     if(over) landed = z;
   });
   if(dragState.moved && landed){
-    feedCharacter(landed, dragState.emoji);
+    feedCharacter(landed, dragState.emoji, dragState.cat);
+    dragState.ghost.remove();
+  } else {
+    dragState.ghost.style.transition = 'transform .25s ease-in, opacity .25s ease-in';
+    dragState.ghost.style.transform = 'scale(.3)';
+    dragState.ghost.style.opacity = '0';
+    setTimeout(()=>dragState.ghost.remove(), 250);
   }
-  dragState.ghost.remove();
   dragState = null;
 }
 window.addEventListener('pointerup', endFoodDrag, {passive:true});
@@ -274,13 +299,19 @@ const CHAR_MSG = {
   chien: { sound: soundBark,   msgs: ['Le chiot remue la queue ! 🐶', 'Wouf wouf, encore !'] },
 };
 
-function feedCharacter(zone, emoji){
+function feedCharacter(zone, emoji, cat){
   const foodEl = document.createElement('div');
-  foodEl.className = 'plate-food';
+  foodEl.className = 'plate-food' + (cat==='drink' ? ' drink-placed' : '');
   foodEl.textContent = emoji;
+
+  if(cat==='drink'){
+    zone.innerHTML = ''; // un verre ne contient qu'une boisson à la fois
+  }
   zone.appendChild(foodEl);
-  // on garde au maximum 3 aliments visibles par assiette (pour rester gros et lisible)
-  while(zone.children.length > 3) zone.removeChild(zone.firstChild);
+  if(cat!=='drink'){
+    // on garde au maximum 3 aliments visibles par assiette (pour rester gros et lisible)
+    while(zone.children.length > 3) zone.removeChild(zone.firstChild);
+  }
 
   mealCount++;
   document.getElementById('mealCount').textContent = mealCount;
@@ -292,6 +323,16 @@ function feedCharacter(zone, emoji){
 
   photoFrame.classList.remove('happy-pulse'); void photoFrame.offsetWidth; photoFrame.classList.add('happy-pulse');
   spawnHappyIcon(zone);
+  spawnMiamBubble(zone);
+
+  // l'aliment/la boisson est "mangé(e)" après un court instant : rétrécit et disparaît
+  setTimeout(()=>{
+    if(!foodEl.parentNode) return;
+    foodEl.style.transition = 'transform .45s cubic-bezier(.4,0,.6,1), opacity .45s';
+    foodEl.style.transform = 'scale(.15) translateY(-6px)';
+    foodEl.style.opacity = '0';
+    setTimeout(()=>foodEl.remove(), 460);
+  }, 1300);
 
   if(mealCount>0 && mealCount % 5 === 0){
     burstConfetti(zone);
@@ -302,6 +343,23 @@ function feedCharacter(zone, emoji){
       document.getElementById('endBanner').classList.add('show');
     }, 500);
   }
+}
+
+function spawnMiamBubble(zone){
+  const words = ['Miam !','Miam miam !','Trop bon !','Croc croc !'];
+  const r = zone.getBoundingClientRect();
+  const fr = photoFrame.getBoundingClientRect();
+  const b = document.createElement('div');
+  b.className = 'miam-bubble';
+  b.textContent = words[Math.floor(Math.random()*words.length)];
+  b.style.left = (r.left - fr.left + r.width/2) + 'px';
+  b.style.top = (r.top - fr.top - 12) + 'px';
+  photoFrame.appendChild(b);
+  requestAnimationFrame(()=> b.classList.add('show'));
+  setTimeout(()=>{
+    b.classList.remove('show');
+    setTimeout(()=>b.remove(), 350);
+  }, 900);
 }
 
 function spawnHappyIcon(zone){
@@ -343,7 +401,7 @@ function burstConfetti(zone){
 function resetMeal(){
   mealCount = 0;
   document.getElementById('mealCount').textContent = 0;
-  document.querySelectorAll('.plate-zone').forEach(z=> z.innerHTML = '');
+  document.querySelectorAll('.plate-zone, .glass-zone').forEach(z=> z.innerHTML = '');
   document.getElementById('endBanner').classList.remove('show');
   toast('On recommence ! ✨');
 }
