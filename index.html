@@ -232,13 +232,13 @@
 
   .room-btn{
     position:relative; border:none; cursor:pointer; font-family:inherit;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
-    width:104px; height:118px; padding:8px 6px;
-    border-radius:28px; color:#fff; font-weight:900; letter-spacing:.3px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;
+    width:80px; height:92px; padding:6px 4px;
+    border-radius:22px; color:#fff; font-weight:900; letter-spacing:.3px;
     text-shadow:0 2px 0 rgba(0,0,0,.35), 0 0 6px rgba(0,0,0,.25);
     background:linear-gradient(160deg, var(--c1), var(--c2));
-    border:4px solid #fff;
-    box-shadow:0 6px 0 rgba(0,0,0,.2), 0 8px 18px rgba(0,0,0,.25);
+    border:3px solid #fff;
+    box-shadow:0 5px 0 rgba(0,0,0,.2), 0 6px 14px rgba(0,0,0,.25);
     transition:transform .12s;
     overflow:visible;
     animation:roomPop .5s cubic-bezier(.34,1.56,.64,1) backwards, roomBounce 2.4s ease-in-out infinite, neonBlink 1.6s ease-in-out infinite;
@@ -266,10 +266,10 @@
     50%{box-shadow:0 6px 0 rgba(0,0,0,.2), 0 8px 18px rgba(0,0,0,.25), 0 0 26px 8px rgba(var(--neon),1), 0 0 10px rgba(var(--neon),1);}
   }
 
-  .room-btn .room-emoji{font-size:46px; line-height:1; filter:drop-shadow(0 3px 4px rgba(0,0,0,.35));}
+  .room-btn .room-emoji{font-size:34px; line-height:1; filter:drop-shadow(0 3px 4px rgba(0,0,0,.35));}
   .room-btn .room-text{display:flex; flex-direction:column; align-items:center; line-height:1.1;}
-  .room-btn .room-label{font-size:17px;}
-  .room-btn .room-sub{font-size:10px; font-weight:800; opacity:.9; letter-spacing:.3px;}
+  .room-btn .room-label{font-size:13px;}
+  .room-btn .room-sub{font-size:8px; font-weight:800; opacity:.9; letter-spacing:.2px;}
 
   /* ---- puzzle ---- */
   #puzzleScreen{
@@ -1323,7 +1323,7 @@ function attachDragHandlers(div){
             tone(650, .12, 'triangle', .12);
             updateScore();
         }
-    };y
+    };
 
     div.addEventListener('pointerup', dropHandler);
     div.addEventListener('pointercancel', dropHandler);
