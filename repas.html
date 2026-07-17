@@ -13,8 +13,8 @@
   ::selection{background:transparent;}
 
   #wrap{position:relative; width:100%; height:100%; overflow:hidden; display:flex; flex-direction:column; background:#3c2513;}
-  #stage{position:relative; width:100%; flex:0 0 auto; overflow:hidden; display:flex; align-items:flex-start; justify-content:center;}
-  #trayFiller{flex:1 1 auto; background:#fff8ea; min-height:0;}
+  #stage{position:relative; width:100%; flex:1; overflow:hidden; display:flex; align-items:center; justify-content:center;}
+  #trayFiller{flex:0 0 auto; height:0; background:#fff8ea;}
   .photo-frame{position:relative; height:100%; aspect-ratio:1402/1122; max-width:100%; max-height:100%;}
   @media (max-aspect-ratio:1402/1122){
     .photo-frame{ height:auto; width:100%; }
@@ -32,7 +32,7 @@
     position:absolute; z-index:10;
     border-radius:50%;
     display:flex; align-items:center; justify-content:center;
-    flex-wrap:wrap; gap:2px; padding:6%;
+    flex-wrap:wrap; align-content:center; gap:2px; padding:2%;
   }
   .plate-zone.hover{ background:rgba(255,255,255,.18); box-shadow:0 0 0 6px rgba(255,255,255,.35) inset; }
   .glass-zone{
@@ -41,9 +41,20 @@
     display:flex; align-items:center; justify-content:center;
   }
   .glass-zone.hover{ background:rgba(255,255,255,.22); box-shadow:0 0 0 5px rgba(255,255,255,.4) inset; }
-  .plate-food{ font-size:clamp(32px,10vw,54px); filter:drop-shadow(0 3px 3px rgba(0,0,0,.35)); animation:foodPop .3s cubic-bezier(.3,1.5,.4,1) backwards; }
-  .plate-food.drink-placed{ font-size:clamp(22px,7vw,34px); }
+  .plate-food{ display:flex; align-items:center; justify-content:center; line-height:1; font-size:clamp(38px,11.5vw,60px); filter:drop-shadow(0 3px 3px rgba(0,0,0,.35)); animation:foodPop .3s cubic-bezier(.3,1.5,.4,1) backwards; }
+  .plate-food.drink-placed{ font-size:clamp(26px,8vw,40px); }
   @keyframes foodPop{ from{transform:scale(0);} to{transform:scale(1);} }
+
+  .char-zone{ position:absolute; z-index:8; cursor:pointer; border-radius:26px; }
+  .char-zone.ready{ animation: charPulse 1.1s ease-in-out infinite; }
+  @keyframes charPulse{
+    0%,100%{ box-shadow:0 0 0 0 rgba(255,224,138,0) inset; }
+    50%{ box-shadow:0 0 0 12px rgba(255,224,138,.45) inset; }
+  }
+  .tap-hint{position:absolute; top:-6px; left:50%; transform:translateX(-50%); font-size:clamp(22px,6vw,30px);
+    animation:tapBounce 1s ease-in-out infinite; pointer-events:none; filter:drop-shadow(0 2px 3px rgba(0,0,0,.4)); display:none;}
+  .char-zone.ready .tap-hint{ display:block; }
+  @keyframes tapBounce{0%,100%{transform:translateX(-50%) translateY(0);} 50%{transform:translateX(-50%) translateY(-10px);}}
 
   .miam-bubble{position:absolute; background:#fff; color:#e0507f; font-weight:900; padding:5px 14px; border-radius:18px; font-size:clamp(13px,3.6vw,17px); box-shadow:0 4px 10px rgba(0,0,0,.3); z-index:56; pointer-events:none; opacity:0; transform:translate(-50%,0) scale(.4); transition:transform .35s cubic-bezier(.3,1.6,.4,1), opacity .35s; white-space:nowrap;}
   .miam-bubble.show{opacity:1; transform:translate(-50%,-14px) scale(1);}
@@ -114,6 +125,9 @@
       <div class="glass-zone" id="glass-lion"  data-char="lion"></div>
       <div class="glass-zone" id="glass-malo"  data-char="malo"></div>
       <div class="glass-zone" id="glass-chien" data-char="chien"></div>
+      <div class="char-zone" id="char-lion"  data-char="lion"><span class="tap-hint">👉🍽️</span></div>
+      <div class="char-zone" id="char-malo"  data-char="malo"><span class="tap-hint">👉🍽️</span></div>
+      <div class="char-zone" id="char-chien" data-char="chien"><span class="tap-hint">👉🍽️</span></div>
     </div>
     <div class="end-banner" id="endBanner">
       <div class="big">🦁🍽️🐶</div>
@@ -135,12 +149,15 @@ document.addEventListener('contextmenu', e=>e.preventDefault());
 function box(node,l,t,w,h){
   node.style.left=l+'%'; node.style.top=t+'%'; node.style.width=w+'%'; node.style.height=h+'%';
 }
-box(document.getElementById('zone-lion'),  1,  68, 33, 17);
-box(document.getElementById('zone-malo'),  34, 68, 32, 15);
-box(document.getElementById('zone-chien'), 65, 71, 33, 15);
+box(document.getElementById('zone-lion'),  1,  66, 33, 19);
+box(document.getElementById('zone-malo'),  34, 65, 32, 18);
+box(document.getElementById('zone-chien'), 65, 69, 33, 17);
 box(document.getElementById('glass-lion'),  0,  87, 16, 13);
 box(document.getElementById('glass-malo'),  34, 87, 16, 13);
 box(document.getElementById('glass-chien'), 80, 85, 16, 14);
+box(document.getElementById('char-lion'),  0,  8, 35, 62);
+box(document.getElementById('char-malo'),  32, 0, 36, 68);
+box(document.getElementById('char-chien'), 65, 8, 35, 62);
 
 /* ================= Son (Web Audio, aucun fichier) ================= */
 let actx, muted=false;
@@ -313,37 +330,64 @@ function feedCharacter(zone, emoji, cat){
     while(zone.children.length > 3) zone.removeChild(zone.firstChild);
   }
 
-  mealCount++;
+  tone(520,.09,'triangle',.12); // petit "plop" quand on pose l'aliment
+  const charKey = zone.dataset.char;
+  const charZone = document.getElementById('char-'+charKey);
+  if(charZone) charZone.classList.add('ready');
+}
+
+function eatCharacter(charKey){
+  const plateZone = document.getElementById('zone-'+charKey);
+  const glassZone = document.getElementById('glass-'+charKey);
+  const items = [...plateZone.children, ...glassZone.children];
+
+  if(items.length === 0){
+    toast("Donne-lui à manger ou à boire d'abord ! 🍽️");
+    tone(300,.1,'sine',.1);
+    return;
+  }
+
+  mealCount += items.length;
   document.getElementById('mealCount').textContent = mealCount;
 
-  const charKey = zone.dataset.char;
   const info = CHAR_MSG[charKey];
   info.sound();
   toast(info.msgs[Math.floor(Math.random()*info.msgs.length)]);
 
   photoFrame.classList.remove('happy-pulse'); void photoFrame.offsetWidth; photoFrame.classList.add('happy-pulse');
-  spawnHappyIcon(zone);
-  spawnMiamBubble(zone);
+  spawnHappyIcon(plateZone.children.length ? plateZone : glassZone);
+  spawnMiamBubble(plateZone.children.length ? plateZone : glassZone);
 
-  // l'aliment/la boisson est "mangé(e)" après un court instant : rétrécit et disparaît
-  setTimeout(()=>{
-    if(!foodEl.parentNode) return;
-    foodEl.style.transition = 'transform .45s cubic-bezier(.4,0,.6,1), opacity .45s';
-    foodEl.style.transform = 'scale(.15) translateY(-6px)';
-    foodEl.style.opacity = '0';
-    setTimeout(()=>foodEl.remove(), 460);
-  }, 1300);
+  items.forEach((foodEl,i)=>{
+    setTimeout(()=>{
+      if(!foodEl.parentNode) return;
+      foodEl.style.transition = 'transform .4s cubic-bezier(.4,0,.6,1), opacity .4s';
+      foodEl.style.transform = 'scale(.15) translateY(-6px)';
+      foodEl.style.opacity = '0';
+      setTimeout(()=>foodEl.remove(), 400);
+    }, i*120);
+  });
 
-  if(mealCount>0 && mealCount % 5 === 0){
-    burstConfetti(zone);
+  const charZone = document.getElementById('char-'+charKey);
+  if(charZone) charZone.classList.remove('ready');
+
+  if(mealCount>0 && Math.floor(mealCount/5) > Math.floor((mealCount-items.length)/5)){
+    burstConfetti(plateZone);
   }
-  if(mealCount === 12){
+  if(mealCount >= 12){
     setTimeout(()=>{
       happyChord();
       document.getElementById('endBanner').classList.add('show');
     }, 500);
   }
 }
+
+document.querySelectorAll('.char-zone').forEach(cz=>{
+  cz.addEventListener('pointerup', (ev)=>{
+    ev.preventDefault();
+    eatCharacter(cz.dataset.char);
+  });
+});
 
 function spawnMiamBubble(zone){
   const words = ['Miam !','Miam miam !','Trop bon !','Croc croc !'];
@@ -402,6 +446,7 @@ function resetMeal(){
   mealCount = 0;
   document.getElementById('mealCount').textContent = 0;
   document.querySelectorAll('.plate-zone, .glass-zone').forEach(z=> z.innerHTML = '');
+  document.querySelectorAll('.char-zone').forEach(cz=> cz.classList.remove('ready'));
   document.getElementById('endBanner').classList.remove('show');
   toast('On recommence ! ✨');
 }
