@@ -303,38 +303,10 @@ function handleChoice(a, card){
   }
 }
 
-function preflightCheckSounds(){
-  const broken = [];
-  let pending = ANIMALS.length;
-  ANIMALS.forEach(a=>{
-    const audio = new Audio();
-    const done = (ok)=>{
-      if(!ok) broken.push(a.sound.split('/').pop());
-      pending--;
-      if(pending === 0) report();
-    };
-    audio.addEventListener('canplaythrough', ()=> done(true), {once:true});
-    audio.addEventListener('error', ()=> done(false), {once:true});
-    audio.src = a.sound;
-    audio.load();
-  });
-  function report(){
-    if(broken.length){
-      console.error('[sons animaux] fichiers manquants ou invalides (' + broken.length + '/16):', broken);
-      toast('⚠️ ' + broken.length + '/16 sons manquants : ' + broken.slice(0,3).join(', ') + (broken.length>3?'…':''), 6000);
-    } else {
-      console.log('[sons animaux] les 16 fichiers se chargent correctement.');
-    }
-  }
-  // filet de sécurité si un fichier reste bloqué en attente indéfiniment (ex: réseau lent)
-  setTimeout(()=>{ if(pending>0) report(); }, 5000);
-}
-
 document.getElementById('startOverlay').addEventListener('pointerdown', ()=>{
   startBgMusic();
   document.getElementById('startOverlay').style.display = 'none';
   startGame();
-  preflightCheckSounds();
 }, {once:true});
 
 document.getElementById('againBtn').addEventListener('click', ()=>{
