@@ -35,7 +35,7 @@
     box-shadow:0 4px 10px rgba(0,0,0,.2); white-space:nowrap;
   }
 
-  #stage{ position:relative; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3vh; padding:0 4vw 6vh; }
+  #stage{ position:relative; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:3vh; padding:0 4vw 12vh; }
 
   #choices{
     display:grid; grid-template-columns:1fr 1fr; gap:5vw;
@@ -182,7 +182,7 @@ function playAnimalSound(a){
 
 const bgMusic = new Audio('sounds/musique_fond.mp3');
 bgMusic.loop = true;
-bgMusic.volume = 0.035;
+bgMusic.volume = 0.02;
 let bgStarted = false;
 function startBgMusic(){
   if(bgStarted) return;
@@ -266,7 +266,7 @@ function newRound(){
     el.appendChild(card);
   });
 
-  setTimeout(()=> playAnimalSound(current), 400);
+  playAnimalSound(current);
 }
 
 function handleChoice(a, card){
