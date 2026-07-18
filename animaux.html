@@ -35,7 +35,7 @@
     box-shadow:0 4px 10px rgba(0,0,0,.2); white-space:nowrap;
   }
 
-  #stage{ position:relative; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:3vh; padding:0 4vw 3vh; }
+  #stage{ position:relative; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:3vh; padding:0 4vw calc(env(safe-area-inset-bottom) + 6px); }
 
   #soundBtn{
     width:clamp(72px,20vw,96px); height:clamp(72px,20vw,96px); border-radius:50%;
@@ -114,7 +114,6 @@
 
   <div id="stage">
     <div class="toast" id="toast"></div>
-    <div class="sound-hint">👆 Écoute, puis touche la bonne photo !</div>
     <button id="soundBtn">🎵</button>
     <div id="choices"></div>
   </div>
@@ -162,11 +161,23 @@ function playSfx(name){
   try{ const a = src.cloneNode(); a.volume = 0.6; a.play().catch(()=>{}); }catch(e){}
 }
 const animalAudioCache = {};
+let currentPlayingAudio = null;
+function stopAnimalSound(){
+  if(currentPlayingAudio){
+    currentPlayingAudio.pause();
+    currentPlayingAudio.currentTime = 0;
+  }
+}
 function playAnimalSound(a){
   if(muted) return;
+  stopAnimalSound();
   let audio = animalAudioCache[a.id];
   if(!audio){ audio = new Audio(a.sound); animalAudioCache[a.id] = audio; }
-  try{ audio.currentTime = 0; audio.play().catch(()=>{}); }catch(e){}
+  try{
+    audio.currentTime = 0;
+    audio.play().catch(()=>{});
+    currentPlayingAudio = audio;
+  }catch(e){}
 }
 
 const bgMusic = new Audio('sounds/musique_fond.mp3');
@@ -277,6 +288,7 @@ function handleChoice(a, card){
   if(locked) return;
   if(a.id === current.id){
     locked = true;
+    stopAnimalSound();
     card.classList.add('correct');
     found++;
     document.getElementById('scoreCount').textContent = found;
