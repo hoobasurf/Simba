@@ -156,6 +156,7 @@
   ];
   let carImg = null, carLeftImg = null, carRightImg = null;
   let carAspect = 1.4, carLeftAspect = 1.4, carRightAspect = 1.4;
+  let carLoaded = false, carLeftLoaded = false, carRightLoaded = false;
   let turnState = 0;   // -1 gauche, 0 tout droit, 1 droite
   let turnTimer = 0;
 
@@ -172,17 +173,21 @@
 
   function chooseCar(c){
     carImg = new Image();
-    carImg.onload = ()=>{ carAspect = carImg.naturalWidth / carImg.naturalHeight; };
+    carLoaded = false;
+    carImg.onload = ()=>{ carAspect = carImg.naturalWidth / carImg.naturalHeight; carLoaded = true; };
+    carImg.onerror = ()=>{ console.error('[course] image voiture introuvable:', c.src); };
     carImg.src = c.src;
-    carLeftImg = null; carRightImg = null;
+    carLeftImg = null; carRightImg = null; carLeftLoaded = false; carRightLoaded = false;
     if(c.left){
       carLeftImg = new Image();
-      carLeftImg.onload = ()=>{ carLeftAspect = carLeftImg.naturalWidth / carLeftImg.naturalHeight; };
+      carLeftImg.onload = ()=>{ carLeftAspect = carLeftImg.naturalWidth / carLeftImg.naturalHeight; carLeftLoaded = true; };
+      carLeftImg.onerror = ()=>{ console.error('[course] image virage gauche introuvable:', c.left); };
       carLeftImg.src = c.left;
     }
     if(c.right){
       carRightImg = new Image();
-      carRightImg.onload = ()=>{ carRightAspect = carRightImg.naturalWidth / carRightImg.naturalHeight; };
+      carRightImg.onload = ()=>{ carRightAspect = carRightImg.naturalWidth / carRightImg.naturalHeight; carRightLoaded = true; };
+      carRightImg.onerror = ()=>{ console.error('[course] image virage droite introuvable:', c.right); };
       carRightImg.src = c.right;
     }
     startBgMusic();
@@ -345,10 +350,9 @@
 
   /* ================= Dessin de la voiture (vrai sprite) ================= */
   function drawCar(cx, cy, targetW){
-    let img = carImg, aspect = carAspect;
-    if(turnState === -1 && carLeftImg){ img = carLeftImg; aspect = carLeftAspect; }
-    else if(turnState === 1 && carRightImg){ img = carRightImg; aspect = carRightAspect; }
-    if(!img) return;
+    let img = carImg, aspect = carAspect, ready = carLoaded;
+    if(turnState === -1 && carLeftImg && carLeftLoaded){ img = carLeftImg; aspect = carLeftAspect; ready = true; }
+    else if(turnState === 1 && carRightImg && carRightLoaded){ img = carRightImg; aspect = carRightAspect; ready = true; }
     const w = targetW;
     const h = w / aspect;
     ctx.save();
@@ -356,8 +360,14 @@
     ctx.beginPath();
     ctx.ellipse(cx, cy+h*0.42, w*0.42, h*0.14, 0, 0, Math.PI*2);
     ctx.fill();
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(img, cx-w/2, cy-h*0.5, w, h);
+    if(ready){
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(img, cx-w/2, cy-h*0.5, w, h);
+    } else {
+      // secours si l'image n'a pas (encore) fini de charger : silhouette simple, pas de plantage
+      ctx.fillStyle = '#3f76c9';
+      ctx.fillRect(cx-w*0.4, cy-h*0.3, w*0.8, h*0.5);
+    }
     ctx.restore();
   }
 
@@ -366,14 +376,19 @@
   function loop(ts){
     const dt = lastTs ? Math.min(40, ts-lastTs) : 16;
     lastTs = ts;
-    if(running) update(dt);
-    draw();
+    try{
+      if(running) update(dt);
+      draw();
+    }catch(err){
+      console.error('[course] erreur dans la boucle:', err);
+      toast('⚠️ ' + err.message);
+    }
     requestAnimationFrame(loop);
   }
 
   function update(dt){
     carLaneVisual += (carLane - carLaneVisual) * Math.min(1, dt/120);
-    roadOffset += dt/900;
+    roadOffset += dt/260;
     if(turnTimer > 0){ turnTimer -= dt; if(turnTimer <= 0) turnState = 0; }
 
     spawnTimer += dt;
