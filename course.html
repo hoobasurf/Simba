@@ -201,6 +201,7 @@
   const ROAD_BOTTOM_W = ()=> CW * 1.53;
   const CAR_Y = ()=> CH * 0.88;
 
+  function roadCenterX(){ return CW/2 + roadShiftX; }
   function roadWidthAtY(y){
     const t = (y - HORIZON_Y()) / (CH - HORIZON_Y());
     return ROAD_TOP_W() + (ROAD_BOTTOM_W() - ROAD_TOP_W()) * Math.max(0, Math.min(1, t));
@@ -210,7 +211,7 @@
   }
   function laneX(lane, y){
     const w = roadWidthAtY(y);
-    const cx = CW/2;
+    const cx = roadCenterX();
     const laneW = w/3;
     return cx - w/2 + laneW*(lane+0.5);
   }
@@ -224,6 +225,7 @@
   let spawnTimer = 0;
   let nextSpawnDelay = 900;
   let roadOffset = 0;
+  let roadShiftX = 0;
 
   const ITEM_TYPES = ['star','candy','apple','balloon'];
 
@@ -318,7 +320,7 @@
 
   /* ================= Route dessinée par-dessus la photo (efface la ligne fixe de l'image) ================= */
   function drawRoadSurface(){
-    const cx = CW/2;
+    const cx = roadCenterX();
     const topW = ROAD_TOP_W(), botW = ROAD_BOTTOM_W();
     const hy = HORIZON_Y();
     const grad = ctx.createLinearGradient(0, hy, 0, CH);
@@ -336,7 +338,7 @@
 
   /* ================= Ligne jaune centrale animée ================= */
   function drawLaneLines(){
-    const cx = CW/2;
+    const cx = roadCenterX();
     ctx.fillStyle = '#f0a825';
     const dashCount = 8;
     for(let i=0;i<dashCount;i++){
@@ -407,6 +409,7 @@
 
   function update(dt){
     carLaneVisual += (carLane - carLaneVisual) * Math.min(1, dt/120);
+    roadShiftX = (1 - carLaneVisual) * CW * 0.09;
     roadOffset += dt/2400;
     if(turnTimer > 0){ turnTimer -= dt; if(turnTimer <= 0) turnState = 0; }
 
