@@ -150,12 +150,12 @@
   const CARS = [
     { id:'jaune_gt',      name:'GT Jaune',    src:'images/cars/car_jaune_gt.png',       left:'images/cars/car_jaune_gt_left.png',      right:'images/cars/car_jaune_gt_right.png' },
     { id:'bleu',          name:'Bleue',       src:'images/cars/car_bleu.png',           left:'images/cars/car_bleu_left.png',          right:'images/cars/car_bleu_right.png' },
-    { id:'rouge',         name:'Rouge',       src:'images/cars/car_rouge.png',          left:'images/cars/car_rouge_left.png',         right:null },
-    { id:'jaune_charger', name:'Charger',     src:'images/cars/car_jaune_charger.png',  left:'images/cars/car_jaune_charger_left.png', right:'images/cars/car_jaune_charger_right.png' },
-    { id:'noir',          name:'Noire',       src:'images/cars/car_noir.png',           left:'images/cars/car_noir_left.png',          right:'images/cars/car_noir_right.png' },
+    { id:'rouge',         name:'Rouge',       src:'images/cars/car_rouge.png',          left:null,                                     right:null },
+    { id:'jaune_charger', name:'Charger',     src:'images/cars/car_jaune_charger.png',  left:null,                                     right:null },
+    { id:'noir',          name:'Noire',       src:'images/cars/car_noir.png',           left:null,                                     right:null },
   ];
   let carImg = null, carLeftImg = null, carRightImg = null;
-  let carAspect = 1.4;
+  let carAspect = 1.4, carLeftAspect = 1.4, carRightAspect = 1.4;
   let turnState = 0;   // -1 gauche, 0 tout droit, 1 droite
   let turnTimer = 0;
 
@@ -175,17 +175,25 @@
     carImg.onload = ()=>{ carAspect = carImg.naturalWidth / carImg.naturalHeight; };
     carImg.src = c.src;
     carLeftImg = null; carRightImg = null;
-    if(c.left){ carLeftImg = new Image(); carLeftImg.src = c.left; }
-    if(c.right){ carRightImg = new Image(); carRightImg.src = c.right; }
+    if(c.left){
+      carLeftImg = new Image();
+      carLeftImg.onload = ()=>{ carLeftAspect = carLeftImg.naturalWidth / carLeftImg.naturalHeight; };
+      carLeftImg.src = c.left;
+    }
+    if(c.right){
+      carRightImg = new Image();
+      carRightImg.onload = ()=>{ carRightAspect = carRightImg.naturalWidth / carRightImg.naturalHeight; };
+      carRightImg.src = c.right;
+    }
     startBgMusic();
     document.getElementById('carPickerOverlay').style.display = 'none';
     running = true;
   }
 
-  /* ================= Géométrie de la route (perspective simple, pour positionner voiture/objets) ================= */
-  const HORIZON_Y = ()=> CH * 0.34;
-  const ROAD_TOP_W = ()=> CW * 0.10;
-  const ROAD_BOTTOM_W = ()=> CW * 1.1;
+  /* ================= Géométrie de la route (calibrée sur la vraie photo par analyse de couleur) ================= */
+  const HORIZON_Y = ()=> CH * 0.315;
+  const ROAD_TOP_W = ()=> 0;
+  const ROAD_BOTTOM_W = ()=> CW * 1.53;
   const CAR_Y = ()=> CH * 0.88;
 
   function roadWidthAtY(y){
@@ -335,17 +343,19 @@
     } else {
       dw = CW; dh = dw/ir; dx = 0; dy = (CH-dh)/2;
     }
-    ctx.drawImage(bgImg, dx, dy, dw, dh);
+    // léger décalage opposé au sens du virage, pour un effet de perspective réaliste
+    const shift = (1 - carLaneVisual) * CW * 0.05;
+    ctx.drawImage(bgImg, dx + shift, dy, dw, dh);
   }
 
   /* ================= Dessin de la voiture (vrai sprite) ================= */
   function drawCar(cx, cy, targetW){
-    let img = carImg;
-    if(turnState === -1 && carLeftImg) img = carLeftImg;
-    else if(turnState === 1 && carRightImg) img = carRightImg;
+    let img = carImg, aspect = carAspect;
+    if(turnState === -1 && carLeftImg){ img = carLeftImg; aspect = carLeftAspect; }
+    else if(turnState === 1 && carRightImg){ img = carRightImg; aspect = carRightAspect; }
     if(!img) return;
     const w = targetW;
-    const h = w / carAspect;
+    const h = w / aspect;
     ctx.save();
     ctx.fillStyle = 'rgba(0,0,0,.28)';
     ctx.beginPath();
