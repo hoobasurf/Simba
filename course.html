@@ -311,24 +311,21 @@
     ctx.restore();
   }
 
-  /* ================= Lignes de route animées (par-dessus la photo, donnent l'impression d'avancer) ================= */
+  /* ================= Ligne jaune centrale animée (comme sur la vraie photo) ================= */
   function drawLaneLines(){
     const cx = CW/2;
-    ctx.strokeStyle = 'rgba(255,255,255,.95)';
-    const dashCount = 10;
-    for(let lane=1; lane<3; lane++){
-      for(let i=0;i<dashCount;i++){
-        let z = (((i/dashCount) + roadOffset) % 1 + 1) % 1;
-        const y0 = yAtZ(z);
-        const y1 = yAtZ(Math.min(1, z + 0.5/dashCount));
-        if(y1 - y0 < 1) continue;
-        const x0 = laneX(lane-1, y0) + (laneX(lane,y0)-laneX(lane-1,y0));
-        const x1 = laneX(lane-1, y1) + (laneX(lane,y1)-laneX(lane-1,y1));
-        ctx.lineWidth = Math.max(1, (1-z)*6);
-        ctx.beginPath();
-        ctx.moveTo(x0,y0); ctx.lineTo(x1,y1);
-        ctx.stroke();
-      }
+    ctx.fillStyle = '#f0a825';
+    ctx.strokeStyle = 'rgba(0,0,0,.25)';
+    const dashCount = 12;
+    for(let i=0;i<dashCount;i++){
+      let z = (((i/dashCount) + roadOffset) % 1 + 1) % 1;
+      const zNext = Math.min(1, z + 0.55/dashCount);
+      const y0 = yAtZ(z);
+      const y1 = yAtZ(zNext);
+      const h = y1 - y0;
+      if(h < 1.5) continue;
+      const w = Math.max(1.5, (1-z) * CW*0.028);
+      ctx.fillRect(cx - w/2, y0, w, h);
     }
   }
 
@@ -343,9 +340,7 @@
     } else {
       dw = CW; dh = dw/ir; dx = 0; dy = (CH-dh)/2;
     }
-    // léger décalage opposé au sens du virage, pour un effet de perspective réaliste
-    const shift = (1 - carLaneVisual) * CW * 0.05;
-    ctx.drawImage(bgImg, dx + shift, dy, dw, dh);
+    ctx.drawImage(bgImg, dx, dy, dw, dh);
   }
 
   /* ================= Dessin de la voiture (vrai sprite) ================= */
