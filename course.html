@@ -316,14 +316,32 @@
     ctx.restore();
   }
 
-  /* ================= Ligne jaune centrale animée (comme sur la vraie photo) ================= */
+  /* ================= Route dessinée par-dessus la photo (efface la ligne fixe de l'image) ================= */
+  function drawRoadSurface(){
+    const cx = CW/2;
+    const topW = ROAD_TOP_W(), botW = ROAD_BOTTOM_W();
+    const hy = HORIZON_Y();
+    const grad = ctx.createLinearGradient(0, hy, 0, CH);
+    grad.addColorStop(0, '#6e6e6e');
+    grad.addColorStop(1, '#3a3a3a');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(cx-topW/2, hy);
+    ctx.lineTo(cx+topW/2, hy);
+    ctx.lineTo(cx+botW/2, CH);
+    ctx.lineTo(cx-botW/2, CH);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  /* ================= Ligne jaune centrale animée ================= */
   function drawLaneLines(){
     const cx = CW/2;
     ctx.fillStyle = '#f0a825';
     ctx.strokeStyle = 'rgba(0,0,0,.25)';
     const dashCount = 12;
     for(let i=0;i<dashCount;i++){
-      let z = (((i/dashCount) + roadOffset) % 1 + 1) % 1;
+      let z = (((i/dashCount) - roadOffset) % 1 + 1) % 1;
       const zNext = Math.min(1, z + 0.55/dashCount);
       const y0 = yAtZ(z);
       const y1 = yAtZ(zNext);
@@ -417,6 +435,7 @@
   function draw(){
     ctx.clearRect(0,0,CW,CH);
     drawBackground();
+    drawRoadSurface();
     drawLaneLines();
 
     const sorted = items.slice().sort((a,b)=> b.z - a.z);
