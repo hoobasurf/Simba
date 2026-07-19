@@ -197,7 +197,7 @@
 
   /* ================= Géométrie de la route (calibrée sur la vraie photo par analyse de couleur) ================= */
   const HORIZON_Y = ()=> CH * 0.315;
-  const ROAD_TOP_W = ()=> 0;
+  const ROAD_TOP_W = ()=> CW * 0.02;
   const ROAD_BOTTOM_W = ()=> CW * 1.53;
   const CAR_Y = ()=> CH * 0.88;
 
@@ -338,17 +338,16 @@
   function drawLaneLines(){
     const cx = CW/2;
     ctx.fillStyle = '#f0a825';
-    ctx.strokeStyle = 'rgba(0,0,0,.25)';
-    const dashCount = 12;
+    const dashCount = 8;
     for(let i=0;i<dashCount;i++){
       let z = (((i/dashCount) - roadOffset) % 1 + 1) % 1;
-      const zNext = Math.min(1, z + 0.55/dashCount);
-      const y0 = yAtZ(z);
-      const y1 = yAtZ(zNext);
-      const h = y1 - y0;
+      const zNext = Math.min(1, z + 0.7/dashCount);
+      const yNear = yAtZ(z);
+      const yFar = yAtZ(zNext);
+      const h = yNear - yFar;
       if(h < 1.5) continue;
-      const w = Math.max(1.5, (1-z) * CW*0.028);
-      ctx.fillRect(cx - w/2, y0, w, h);
+      const w = Math.max(2, (1-z) * CW*0.05);
+      ctx.fillRect(cx - w/2, yFar, w, h);
     }
   }
 
@@ -363,7 +362,9 @@
     } else {
       dw = CW; dh = dw/ir; dx = 0; dy = (CH-dh)/2;
     }
-    ctx.drawImage(bgImg, dx, dy, dw, dh);
+    // léger décalage opposé au sens du virage (la route étant dessinée à part, ça ne la perturbe pas)
+    const shift = (1 - carLaneVisual) * CW * 0.06;
+    ctx.drawImage(bgImg, dx + shift, dy, dw, dh);
   }
 
   /* ================= Dessin de la voiture (vrai sprite) ================= */
@@ -406,7 +407,7 @@
 
   function update(dt){
     carLaneVisual += (carLane - carLaneVisual) * Math.min(1, dt/120);
-    roadOffset += dt/260;
+    roadOffset += dt/2400;
     if(turnTimer > 0){ turnTimer -= dt; if(turnTimer <= 0) turnState = 0; }
 
     spawnTimer += dt;
