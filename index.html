@@ -250,6 +250,7 @@
   .room-btn:nth-child(5){animation-delay:.65s, 1.25s, .65s;}
   .room-btn:nth-child(6){animation-delay:.8s, 1.55s, .8s;}
   .room-btn:nth-child(7){animation-delay:.95s, 1.85s, .95s;}
+  .room-btn:nth-child(8){animation-delay:1.1s, 2.15s, 1.1s;}
   @keyframes roomPop{0%{transform:scale(.3) rotate(-8deg); opacity:0;} 100%{transform:scale(1) rotate(0); opacity:1;}}
   @keyframes roomBounce{0%,100%{transform:translateY(0) scale(1);} 50%{transform:translateY(-6px) scale(1.04);}}
   .room-btn:active{transform:translateY(3px) scale(.94) !important; animation-play-state:paused;}
@@ -261,6 +262,7 @@
   .room-btn.construction{--neon:230,160,70; --c1:#ffc36b; --c2:#c9832a;}
   .room-btn.lego{--neon:70,130,255; --c1:#6ea8ff; --c2:#2f5fd6;}
   .room-btn.animaux{--neon:255,180,60; --c1:#ffcf6b; --c2:#e0932a;}
+  .room-btn.course{--neon:70,190,255; --c1:#5bc0ff; --c2:#2f76d6;}
   @keyframes neonBlink{
     0%,100%{box-shadow:0 6px 0 rgba(0,0,0,.2), 0 8px 18px rgba(0,0,0,.25), 0 0 10px 2px rgba(var(--neon),.55), 0 0 3px rgba(var(--neon),.8);}
     50%{box-shadow:0 6px 0 rgba(0,0,0,.2), 0 8px 18px rgba(0,0,0,.25), 0 0 26px 8px rgba(var(--neon),1), 0 0 10px rgba(var(--neon),1);}
@@ -495,6 +497,13 @@
         <span class="room-text">
           <span class="room-label">Animaux</span>
           <span class="room-sub">Devine le son !</span>
+        </span>
+      </button>
+      <button class="room-btn course" onclick="window.location.href='course.html'">
+        <span class="room-emoji">🏎️</span>
+        <span class="room-text">
+          <span class="room-label">Course</span>
+          <span class="room-sub">Fonce Malo !</span>
         </span>
       </button>
     </div>
