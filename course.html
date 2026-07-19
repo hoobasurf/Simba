@@ -363,9 +363,7 @@
     } else {
       dw = CW; dh = dw/ir; dx = 0; dy = (CH-dh)/2;
     }
-    // léger décalage opposé au sens du virage (la route étant dessinée à part, ça ne la perturbe pas)
-    const shift = (1 - carLaneVisual) * CW * 0.1;
-    ctx.drawImage(bgImg, dx + shift, dy, dw, dh);
+    ctx.drawImage(bgImg, dx, dy, dw, dh);
   }
 
   /* ================= Dessin de la voiture (vrai sprite) ================= */
