@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Course - Le Monde de Malo</title>
+<style>
+  html,body{ margin:0; padding:0; overflow:hidden; background:#6ec3ef; touch-action:manipulation; overscroll-behavior:none;
+    -webkit-user-select:none;user-select:none;-moz-user-select:none;-ms-user-select:none;
+    -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent; }
+  *{-webkit-tap-highlight-color:transparent; box-sizing:border-box;}
+  ::selection{background:transparent;}
+  #gameWrap{ position:relative; width:100vw; height:100vh; overflow:hidden; background:#6ec3ef; }
+  canvas{ display:block; touch-action:none; }
+
+  .topbar{position:absolute; top:0; left:0; width:100%; display:flex; justify-content:space-between; padding:14px; z-index:40; pointer-events:none;}
+  .topbar > *{pointer-events:auto;}
+  .round-btn{
+    width:44px; height:44px; border-radius:50%;
+    background:rgba(255,255,255,.7); border:3px solid rgba(255,255,255,.95);
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; font-weight:900; color:#3a4a5a; text-decoration:none;
+    box-shadow:0 4px 10px rgba(0,0,0,.2); cursor:pointer;
+  }
+  .round-btn:active{ transform:scale(.94); }
+  .score-pill{
+    background:rgba(255,255,255,.85); border-radius:20px; padding:8px 20px;
+    font-family:'Comic Sans MS','Trebuchet MS',sans-serif;
+    font-size:clamp(15px,4vw,20px); font-weight:800; color:#5a3a1c;
+    box-shadow:0 4px 10px rgba(0,0,0,.2); white-space:nowrap;
+  }
+
+  .toast{
+    position:absolute; left:50%; top:70px; transform:translateX(-50%);
+    background:#fff; padding:9px 20px; border-radius:20px; font-weight:800; color:#a5672f;
+    box-shadow:0 4px 10px rgba(0,0,0,.2); opacity:0; transition:opacity .3s; pointer-events:none;
+    z-index:60; font-size:clamp(13px,3.6vw,16px); white-space:nowrap; font-family:'Comic Sans MS','Trebuchet MS',sans-serif;
+  }
+  .toast.show{ opacity:1; }
+
+  .controls{
+    position:absolute; bottom:0; left:0; width:100%; z-index:40;
+    display:flex; justify-content:space-between; align-items:flex-end;
+    padding:0 18px calc(18px + env(safe-area-inset-bottom));
+    pointer-events:none;
+  }
+  .controls > *{ pointer-events:auto; }
+  .ctrlBtn{
+    width:74px; height:74px; border-radius:50%;
+    background:rgba(255,255,255,.55); border:3px solid rgba(255,255,255,.85);
+    display:flex; align-items:center; justify-content:center;
+    font-size:34px; color:#3a4a5a; box-shadow:0 4px 10px rgba(0,0,0,.2);
+    user-select:none; -webkit-user-select:none; touch-action:manipulation;
+  }
+  .ctrlBtn:active{ background:rgba(255,255,255,.85); transform:scale(.94); }
+
+  #carPickerOverlay{
+    position:absolute; inset:0; z-index:90; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:linear-gradient(180deg,#bfe9ff,#e8d9a0); text-align:center; font-family:'Comic Sans MS','Trebuchet MS',sans-serif;
+    padding:20px; gap:18px;
+  }
+  #carPickerOverlay h2{ color:#e0932a; font-size:clamp(20px,6vw,28px); margin:0; text-shadow:0 2px 3px rgba(255,255,255,.6); }
+  #carPicker{ display:grid; grid-template-columns:1fr 1fr; gap:16px; width:100%; max-width:380px; }
+  .car-choice{
+    background:rgba(255,255,255,.75); border:4px solid #fff; border-radius:20px;
+    display:flex; align-items:center; justify-content:center; padding:10px;
+    box-shadow:0 5px 12px rgba(0,0,0,.2); cursor:pointer; aspect-ratio:1.3/1;
+  }
+  .car-choice:active{ transform:scale(.94); background:rgba(255,255,255,.95); }
+  .car-choice img{ max-width:100%; max-height:100%; image-rendering:pixelated; filter:drop-shadow(0 3px 4px rgba(0,0,0,.3)); }
+</style>
+</head>
+<body>
+<div id="gameWrap">
+  <canvas id="game"></canvas>
+
+  <div class="topbar">
+    <a class="round-btn" href="index.html">←</a>
+    <div class="score-pill">⭐ <span id="scoreCount">0</span></div>
+    <button class="round-btn" id="soundToggle">🔊</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="controls">
+    <div class="ctrlBtn" id="leftBtn">◀</div>
+    <div class="ctrlBtn" id="rightBtn">▶</div>
+  </div>
+
+  <div id="carPickerOverlay">
+    <h2>🏎️ Malo choisit sa voiture !</h2>
+    <div id="carPicker"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  let CW=0, CH=0;
+
+  function fitCanvas(){
+    const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 3));
+    CW = window.innerWidth; CH = window.innerHeight;
+    canvas.style.width = CW+'px'; canvas.style.height = CH+'px';
+    canvas.width = CW*dpr; canvas.height = CH*dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  fitCanvas();
+  window.addEventListener('resize', fitCanvas);
+  window.addEventListener('orientationchange', fitCanvas);
+
+  /* ================= Son ================= */
+  let muted = false;
+  const bgMusic = new Audio('sounds/musique_fond.mp3');
+  bgMusic.loop = true;
+  bgMusic.volume = 0.1;
+  let bgStarted = false;
+  function startBgMusic(){
+    if(bgStarted) return;
+    bgStarted = true;
+    if(!muted) bgMusic.play().catch(()=>{});
+  }
+  document.getElementById('soundToggle').addEventListener('click', ()=>{
+    muted = !muted;
+    document.getElementById('soundToggle').textContent = muted ? '🔇' : '🔊';
+    if(muted){ bgMusic.pause(); } else if(bgStarted){ bgMusic.play().catch(()=>{}); }
+  });
+  const SFX = { chime:new Audio('sounds/chime.wav'), miss:new Audio('sounds/miss.wav'), win:new Audio('sounds/win.wav') };
+  function playSfx(name){
+    if(muted) return;
+    const src = SFX[name]; if(!src) return;
+    try{ const a = src.cloneNode(); a.volume = 0.6; a.play().catch(()=>{}); }catch(e){}
+  }
+
+  function toast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast._t); toast._t = setTimeout(()=> t.classList.remove('show'), 1200);
+  }
+
+  /* ================= Images (fond de ville + voitures) ================= */
+  const bgImg = new Image();
+  bgImg.src = 'images/course_bg.png';
+  let bgReady = false;
+  bgImg.onload = ()=>{ bgReady = true; };
+
+  const CARS = [
+    { id:'jaune_gt',      name:'GT Jaune',    src:'images/cars/car_jaune_gt.png' },
+    { id:'bleu',          name:'Bleue',       src:'images/cars/car_bleu.png' },
+    { id:'rouge',         name:'Rouge',       src:'images/cars/car_rouge.png' },
+    { id:'jaune_charger', name:'Charger',     src:'images/cars/car_jaune_charger.png' },
+    { id:'noir',          name:'Noire',       src:'images/cars/car_noir.png' },
+  ];
+  let carImg = null;
+  let carAspect = 1.4;
+
+  const picker = document.getElementById('carPicker');
+  CARS.forEach(c=>{
+    const btn = document.createElement('div');
+    btn.className = 'car-choice';
+    const img = document.createElement('img');
+    img.src = c.src;
+    btn.appendChild(img);
+    btn.addEventListener('pointerdown', ()=> chooseCar(c));
+    picker.appendChild(btn);
+  });
+
+  function chooseCar(c){
+    carImg = new Image();
+    carImg.onload = ()=>{ carAspect = carImg.naturalWidth / carImg.naturalHeight; };
+    carImg.src = c.src;
+    startBgMusic();
+    document.getElementById('carPickerOverlay').style.display = 'none';
+    running = true;
+  }
+
+  /* ================= Géométrie de la route (perspective simple, pour positionner voiture/objets) ================= */
+  const HORIZON_Y = ()=> CH * 0.34;
+  const ROAD_TOP_W = ()=> CW * 0.10;
+  const ROAD_BOTTOM_W = ()=> CW * 1.1;
+  const CAR_Y = ()=> CH * 0.88;
+
+  function roadWidthAtY(y){
+    const t = (y - HORIZON_Y()) / (CH - HORIZON_Y());
+    return ROAD_TOP_W() + (ROAD_BOTTOM_W() - ROAD_TOP_W()) * Math.max(0, Math.min(1, t));
+  }
+  function yAtZ(z){
+    return CAR_Y() - (CAR_Y() - HORIZON_Y()) * z;
+  }
+  function laneX(lane, y){
+    const w = roadWidthAtY(y);
+    const cx = CW/2;
+    const laneW = w/3;
+    return cx - w/2 + laneW*(lane+0.5);
+  }
+
+  /* ================= Etat du jeu ================= */
+  let carLane = 1;
+  let carLaneVisual = 1;
+  let score = 0;
+  let running = false;
+  let items = [];
+  let spawnTimer = 0;
+  let nextSpawnDelay = 900;
+
+  const ITEM_TYPES = ['star','candy','apple','balloon'];
+
+  function spawnItem(){
+    const lane = Math.floor(Math.random()*3);
+    const type = ITEM_TYPES[Math.floor(Math.random()*ITEM_TYPES.length)];
+    items.push({ lane, type, z: 1, id: Math.random() });
+  }
+
+  function moveLane(dir){
+    carLane = Math.max(0, Math.min(2, carLane + dir));
+  }
+  document.getElementById('leftBtn').addEventListener('pointerdown', (e)=>{ e.preventDefault(); moveLane(-1); });
+  document.getElementById('rightBtn').addEventListener('pointerdown', (e)=>{ e.preventDefault(); moveLane(1); });
+
+  /* ================= Dessin des objets à collecter ================= */
+  function drawItem(type, cx, cy, size){
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.3)';
+    ctx.shadowBlur = size*0.15;
+    ctx.shadowOffsetY = size*0.08;
+    const outline = Math.max(1.4, size*0.06);
+    switch(type){
+      case 'star': {
+        ctx.fillStyle = '#ffd23f';
+        ctx.strokeStyle = '#1a1a1a';
+        ctx.lineWidth = outline;
+        ctx.beginPath();
+        for(let i=0;i<10;i++){
+          const ang = -Math.PI/2 + i*Math.PI/5;
+          const r = i%2===0 ? size*0.5 : size*0.22;
+          const px = cx + Math.cos(ang)*r, py = cy + Math.sin(ang)*r;
+          if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+        }
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        break;
+      }
+      case 'candy': {
+        ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = outline;
+        ctx.fillStyle = '#ffd23f';
+        ctx.beginPath();
+        ctx.moveTo(cx-size*0.32, cy);
+        ctx.lineTo(cx-size*0.55, cy-size*0.18);
+        ctx.lineTo(cx-size*0.55, cy+size*0.18);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(cx+size*0.32, cy);
+        ctx.lineTo(cx+size*0.55, cy-size*0.18);
+        ctx.lineTo(cx+size*0.55, cy+size*0.18);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#ff6f9c';
+        ctx.beginPath();
+        ctx.arc(cx, cy, size*0.32, 0, Math.PI*2);
+        ctx.fill(); ctx.stroke();
+        break;
+      }
+      case 'apple': {
+        ctx.fillStyle = '#e5453f';
+        ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = outline;
+        ctx.beginPath();
+        ctx.arc(cx-size*0.15, cy, size*0.32, 0, Math.PI*2);
+        ctx.arc(cx+size*0.15, cy, size*0.32, 0, Math.PI*2);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#4caf5e';
+        ctx.beginPath();
+        ctx.ellipse(cx+size*0.08, cy-size*0.42, size*0.14, size*0.08, 0.5, 0, Math.PI*2);
+        ctx.fill(); ctx.stroke();
+        break;
+      }
+      case 'balloon': {
+        const grad = ctx.createRadialGradient(cx-size*0.1,cy-size*0.1,size*0.05,cx,cy,size*0.4);
+        grad.addColorStop(0,'#8fd9ff'); grad.addColorStop(1,'#4fb3e0');
+        ctx.fillStyle = grad;
+        ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = outline;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, size*0.32, size*0.4, 0, 0, Math.PI*2);
+        ctx.fill(); ctx.stroke();
+        ctx.shadowColor = 'transparent';
+        ctx.lineWidth = Math.max(1,size*0.03);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy+size*0.4);
+        ctx.lineTo(cx, cy+size*0.7);
+        ctx.stroke();
+        break;
+      }
+    }
+    ctx.restore();
+  }
+
+  /* ================= Dessin du fond (vraie photo) ================= */
+  function drawBackground(){
+    if(!bgReady){ ctx.fillStyle = '#bfe9ff'; ctx.fillRect(0,0,CW,CH); return; }
+    const ir = bgImg.naturalWidth / bgImg.naturalHeight;
+    const cr = CW / CH;
+    let dw, dh, dx, dy;
+    if(ir > cr){
+      dh = CH; dw = dh*ir; dx = (CW-dw)/2; dy = 0;
+    } else {
+      dw = CW; dh = dw/ir; dx = 0; dy = (CH-dh)/2;
+    }
+    ctx.drawImage(bgImg, dx, dy, dw, dh);
+  }
+
+  /* ================= Dessin de la voiture (vrai sprite) ================= */
+  function drawCar(cx, cy, targetW){
+    if(!carImg) return;
+    const w = targetW;
+    const h = w / carAspect;
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,.28)';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy+h*0.42, w*0.42, h*0.14, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(carImg, cx-w/2, cy-h*0.5, w, h);
+    ctx.restore();
+  }
+
+  /* ================= Boucle de jeu ================= */
+  let lastTs = 0;
+  function loop(ts){
+    const dt = lastTs ? Math.min(40, ts-lastTs) : 16;
+    lastTs = ts;
+    if(running) update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function update(dt){
+    carLaneVisual += (carLane - carLaneVisual) * Math.min(1, dt/120);
+
+    spawnTimer += dt;
+    if(spawnTimer > nextSpawnDelay){
+      spawnTimer = 0;
+      nextSpawnDelay = 700 + Math.random()*500;
+      spawnItem();
+    }
+
+    for(let i=items.length-1;i>=0;i--){
+      const it = items[i];
+      it.z -= dt/2600;
+      if(it.z <= 0.04 && !it.done){
+        it.done = true;
+        if(it.lane === carLane){
+          score++;
+          document.getElementById('scoreCount').textContent = score;
+          playSfx('chime');
+          toast('✨ +1 !');
+        }
+        items.splice(i,1);
+      }
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,CW,CH);
+    drawBackground();
+
+    const sorted = items.slice().sort((a,b)=> b.z - a.z);
+    for(const it of sorted){
+      const y = yAtZ(it.z);
+      const x = laneX(it.lane, y);
+      const size = 14 + (1-it.z)*54;
+      drawItem(it.type, x, y, size);
+    }
+
+    const carY = CAR_Y();
+    const carX = laneX(carLaneVisual, carY);
+    const carW = roadWidthAtY(carY)/3 * 0.95;
+    drawCar(carX, carY, carW);
+  }
+
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
