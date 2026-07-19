@@ -83,6 +83,7 @@
   </div>
 
   <div class="toast" id="toast"></div>
+  <div id="debugInfo" style="position:absolute; top:64px; left:14px; z-index:60; background:rgba(0,0,0,.7); color:#0f0; font-family:monospace; font-size:12px; padding:6px 10px; border-radius:8px; white-space:pre;"></div>
 
   <div class="controls">
     <div class="ctrlBtn" id="leftBtn">◀</div>
@@ -365,7 +366,7 @@
       dw = CW; dh = dw/ir; dx = 0; dy = (CH-dh)/2;
     }
     // léger décalage opposé au sens du virage (la route étant dessinée à part, ça ne la perturbe pas)
-    const shift = (1 - carLaneVisual) * CW * 0.06;
+    const shift = (1 - carLaneVisual) * CW * 0.18;
     ctx.drawImage(bgImg, dx + shift, dy, dw, dh);
   }
 
@@ -409,7 +410,7 @@
 
   function update(dt){
     carLaneVisual += (carLane - carLaneVisual) * Math.min(1, dt/120);
-    roadShiftX = (1 - carLaneVisual) * CW * 0.09;
+    roadShiftX = (1 - carLaneVisual) * CW * 0.35;
     roadOffset += dt/2400;
     if(turnTimer > 0){ turnTimer -= dt; if(turnTimer <= 0) turnState = 0; }
 
@@ -454,6 +455,14 @@
     const carX = laneX(carLaneVisual, carY);
     const carW = roadWidthAtY(carY)/3 * 0.95;
     drawCar(carX, carY, carW);
+
+    const dbg = document.getElementById('debugInfo');
+    if(dbg) dbg.textContent =
+      'running: ' + running + '\n' +
+      'carLane: ' + carLane + '\n' +
+      'carLaneVisual: ' + carLaneVisual.toFixed(2) + '\n' +
+      'roadShiftX: ' + roadShiftX.toFixed(1) + '\n' +
+      'roadOffset: ' + roadOffset.toFixed(3);
   }
 
   requestAnimationFrame(loop);
