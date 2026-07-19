@@ -354,7 +354,18 @@
 
   /* ================= Dessin du fond (vraie photo) ================= */
   function drawBackground(){
-    if(!bgReady){ ctx.fillStyle = '#bfe9ff'; ctx.fillRect(0,0,CW,CH); return; }
+    const hy = HORIZON_Y();
+
+    // herbe unie fixe en dessous de l'horizon (dégradé proche des teintes de la photo)
+    const grassGrad = ctx.createLinearGradient(0, hy, 0, CH);
+    grassGrad.addColorStop(0, '#2fa746');
+    grassGrad.addColorStop(1, '#0a6a35');
+    ctx.fillStyle = grassGrad;
+    ctx.fillRect(0, hy, CW, CH-hy);
+
+    if(!bgReady){ ctx.fillStyle = '#bfe9ff'; ctx.fillRect(0,0,CW,hy); return; }
+
+    // ciel + immeubles (au-dessus de l'horizon) : seule cette partie se décale en virage
     const ir = bgImg.naturalWidth / bgImg.naturalHeight;
     const cr = CW / CH;
     let dw, dh, dx, dy;
@@ -363,7 +374,13 @@
     } else {
       dw = CW; dh = dw/ir; dx = 0; dy = (CH-dh)/2;
     }
-    ctx.drawImage(bgImg, dx, dy, dw, dh);
+    const shift = (1 - carLaneVisual) * CW * 0.12;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, CW, hy);
+    ctx.clip();
+    ctx.drawImage(bgImg, dx + shift, dy, dw, dh);
+    ctx.restore();
   }
 
   /* ================= Dessin de la voiture (vrai sprite) ================= */
