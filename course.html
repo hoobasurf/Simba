@@ -114,25 +114,25 @@
 
   /* ================= Son ================= */
   let muted = false;
-  const bgMusic = new Audio('sounds/musique_fond.mp3');
-  bgMusic.loop = true;
-  bgMusic.volume = 0.1;
-  let bgStarted = false;
-  function startBgMusic(){
-    if(bgStarted) return;
-    bgStarted = true;
-    if(!muted) bgMusic.play().catch(()=>{});
+  const engineSound = new Audio('sounds/engine.wav');
+  engineSound.loop = true;
+  engineSound.volume = 0.25;
+  let engineStarted = false;
+  function startEngine(){
+    if(engineStarted) return;
+    engineStarted = true;
+    if(!muted) engineSound.play().catch(()=>{});
   }
   document.getElementById('soundToggle').addEventListener('click', ()=>{
     muted = !muted;
     document.getElementById('soundToggle').textContent = muted ? '🔇' : '🔊';
-    if(muted){ bgMusic.pause(); } else if(bgStarted){ bgMusic.play().catch(()=>{}); }
+    if(muted){ engineSound.pause(); } else if(engineStarted){ engineSound.play().catch(()=>{}); }
   });
-  const SFX = { chime:new Audio('sounds/chime.wav'), miss:new Audio('sounds/miss.wav'), win:new Audio('sounds/win.wav') };
+  const SFX = { chime:new Audio('sounds/chime.wav'), miss:new Audio('sounds/miss.wav'), win:new Audio('sounds/win.wav'), boost:new Audio('sounds/boost.wav') };
   function playSfx(name){
     if(muted) return;
     const src = SFX[name]; if(!src) return;
-    try{ const a = src.cloneNode(); a.volume = 0.6; a.play().catch(()=>{}); }catch(e){}
+    try{ const a = src.cloneNode(); a.volume = 0.65; a.play().catch(()=>{}); }catch(e){}
   }
 
   function toast(msg){
@@ -190,7 +190,7 @@
       carRightImg.onerror = ()=>{ console.error('[course] image virage droite introuvable:', c.right); };
       carRightImg.src = c.right;
     }
-    startBgMusic();
+    startEngine();
     document.getElementById('carPickerOverlay').style.display = 'none';
     running = true;
   }
@@ -225,12 +225,19 @@
   let spawnTimer = 0;
   let nextSpawnDelay = 900;
   let roadOffset = 0;
+  let boostTimer = 0;      // >0 pendant le boost dynamite
+  let flames = [];         // particules de feu autour de la voiture
+  let starRain = 0;        // minuteur pour faire pleuvoir des étoiles pendant le boost
 
   const ITEM_TYPES = ['star','candy','apple','balloon'];
 
-  function spawnItem(){
+  function spawnItem(forceType){
     const lane = Math.floor(Math.random()*3);
-    const type = ITEM_TYPES[Math.floor(Math.random()*ITEM_TYPES.length)];
+    let type = forceType;
+    if(!type){
+      // la dynamite est rare (environ 1 objet sur 12)
+      type = Math.random() < 0.08 ? 'dynamite' : ITEM_TYPES[Math.floor(Math.random()*ITEM_TYPES.length)];
+    }
     items.push({ lane, type, z: 1, id: Math.random() });
   }
 
@@ -313,8 +320,37 @@
         ctx.stroke();
         break;
       }
+      case 'dynamite': {
+        ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = outline;
+        ctx.fillStyle = '#e5453f';
+        roundRect(ctx, cx-size*0.16, cy-size*0.32, size*0.32, size*0.6, size*0.06);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold ' + Math.round(size*0.16) + 'px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('TNT', cx, cy+size*0.03);
+        ctx.strokeStyle = '#7a4a26'; ctx.lineWidth = Math.max(1,size*0.05);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy-size*0.32);
+        ctx.quadraticCurveTo(cx+size*0.15, cy-size*0.5, cx+size*0.05, cy-size*0.62);
+        ctx.stroke();
+        ctx.fillStyle = '#ffb347';
+        ctx.beginPath();
+        ctx.arc(cx+size*0.05, cy-size*0.64, size*0.09, 0, Math.PI*2);
+        ctx.fill();
+        break;
+      }
     }
     ctx.restore();
+  }
+  function roundRect(g,x,y,w,h,r){
+    g.beginPath();
+    g.moveTo(x+r,y);
+    g.arcTo(x+w,y,x+w,y+h,r);
+    g.arcTo(x+w,y+h,x,y+h,r);
+    g.arcTo(x,y+h,x,y,r);
+    g.arcTo(x,y,x+w,y,r);
+    g.closePath();
   }
 
   /* ================= Route dessinée par-dessus la photo (efface la ligne fixe de l'image) ================= */
@@ -354,18 +390,7 @@
 
   /* ================= Dessin du fond (vraie photo) ================= */
   function drawBackground(){
-    const hy = HORIZON_Y();
-
-    // herbe unie fixe en dessous de l'horizon (dégradé proche des teintes de la photo)
-    const grassGrad = ctx.createLinearGradient(0, hy, 0, CH);
-    grassGrad.addColorStop(0, '#2fa746');
-    grassGrad.addColorStop(1, '#0a6a35');
-    ctx.fillStyle = grassGrad;
-    ctx.fillRect(0, hy, CW, CH-hy);
-
-    if(!bgReady){ ctx.fillStyle = '#bfe9ff'; ctx.fillRect(0,0,CW,hy); return; }
-
-    // ciel + immeubles (au-dessus de l'horizon) : seule cette partie se décale en virage
+    if(!bgReady){ ctx.fillStyle = '#bfe9ff'; ctx.fillRect(0,0,CW,CH); return; }
     const ir = bgImg.naturalWidth / bgImg.naturalHeight;
     const cr = CW / CH;
     let dw, dh, dx, dy;
@@ -374,13 +399,7 @@
     } else {
       dw = CW; dh = dw/ir; dx = 0; dy = (CH-dh)/2;
     }
-    const shift = (1 - carLaneVisual) * CW * 0.12;
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(0, 0, CW, hy);
-    ctx.clip();
-    ctx.drawImage(bgImg, dx + shift, dy, dw, dh);
-    ctx.restore();
+    ctx.drawImage(bgImg, dx, dy, dw, dh);
   }
 
   /* ================= Dessin de la voiture (vrai sprite) ================= */
@@ -423,8 +442,15 @@
 
   function update(dt){
     carLaneVisual += (carLane - carLaneVisual) * Math.min(1, dt/120);
-    roadOffset += dt/2400;
     if(turnTimer > 0){ turnTimer -= dt; if(turnTimer <= 0) turnState = 0; }
+
+    const boosting = boostTimer > 0;
+    if(boosting) boostTimer -= dt;
+
+    // vitesse : x3.2 pendant le boost dynamite
+    const speedMul = boosting ? 3.2 : 1;
+    roadOffset += (dt/2400) * speedMul;
+    engineSound.playbackRate = boosting ? 1.7 : 1;
 
     spawnTimer += dt;
     if(spawnTimer > nextSpawnDelay){
@@ -433,19 +459,51 @@
       spawnItem();
     }
 
+    // pluie d'étoiles supplémentaire pendant le boost
+    if(boosting){
+      starRain += dt;
+      if(starRain > 130){
+        starRain = 0;
+        spawnItem('star');
+      }
+    }
+
     for(let i=items.length-1;i>=0;i--){
       const it = items[i];
-      it.z -= dt/2600;
+      it.z -= (dt/2600) * speedMul;
       if(it.z <= 0.04 && !it.done){
         it.done = true;
         if(it.lane === carLane){
-          score++;
-          document.getElementById('scoreCount').textContent = score;
-          playSfx('chime');
-          toast('✨ +1 !');
+          if(it.type === 'dynamite'){
+            boostTimer = 3800;
+            playSfx('boost');
+            toast('🧨 BOOM ! Vitesse maximale !');
+          } else {
+            score++;
+            document.getElementById('scoreCount').textContent = score;
+            playSfx('chime');
+            toast('✨ +1 !');
+          }
         }
         items.splice(i,1);
       }
+    }
+
+    // particules de flammes (pot d'échappement + tourbillon autour de la voiture pendant le boost)
+    if(Math.random() < (boosting ? 0.9 : 0.35)){
+      flames.push({
+        x: (Math.random()-0.5) * (boosting ? 90 : 24),
+        y: 0,
+        life: 1,
+        size: (boosting ? 26 : 14) + Math.random()*10,
+        boosting
+      });
+    }
+    for(let i=flames.length-1;i>=0;i--){
+      const f = flames[i];
+      f.y += (boosting ? 5.5 : 2.2);
+      f.life -= dt/420;
+      if(f.life <= 0) flames.splice(i,1);
     }
   }
 
@@ -467,6 +525,26 @@
     const carX = laneX(carLaneVisual, carY);
     const carW = roadWidthAtY(carY)/3 * 0.95;
     drawCar(carX, carY, carW);
+    drawFlames(carX, carY, carW);
+  }
+
+  function drawFlames(carX, carY, carW){
+    for(const f of flames){
+      const alpha = Math.max(0, f.life);
+      const fx = carX + f.x;
+      const fy = carY + carW*0.32 + f.y;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      const grad = ctx.createRadialGradient(fx,fy,0,fx,fy,f.size*0.6);
+      grad.addColorStop(0, '#fff3c4');
+      grad.addColorStop(0.4, '#ffb347');
+      grad.addColorStop(1, 'rgba(229,69,32,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(fx, fy, f.size*0.6*alpha + f.size*0.15, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
   }
 
   requestAnimationFrame(loop);
