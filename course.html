@@ -117,9 +117,17 @@
   const engineSound = new Audio('sounds/engine.mp3');
   engineSound.loop = true;
   engineSound.volume = 0.3;
+  engineSound.addEventListener('ended', ()=>{
+    engineSound.currentTime = 0;
+    if(!muted) engineSound.play().catch(()=>{});
+  });
   const rocketSound = new Audio('sounds/rocket.mp3');
   rocketSound.loop = true;
   rocketSound.volume = 0.45;
+  rocketSound.addEventListener('ended', ()=>{
+    rocketSound.currentTime = 0;
+    if(!muted && engineIsBoosting) rocketSound.play().catch(()=>{});
+  });
   let engineStarted = false;
   let engineIsBoosting = false;
   function startEngine(){
@@ -256,7 +264,7 @@
     let type = forceType;
     if(!type){
       // la dynamite est rare (environ 1 objet sur 12)
-      type = Math.random() < 0.08 ? 'dynamite' : ITEM_TYPES[Math.floor(Math.random()*ITEM_TYPES.length)];
+      type = Math.random() < 0.18 ? 'dynamite' : ITEM_TYPES[Math.floor(Math.random()*ITEM_TYPES.length)];
     }
     items.push({ lane, type, z: 1, id: Math.random() });
   }
