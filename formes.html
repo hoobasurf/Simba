@@ -222,7 +222,7 @@ const pizzaStage = document.getElementById('pizzaStage');
 const pizzaBoard = document.getElementById('pizzaBoard');
 function fitPizzaBoard(){
   const cw = window.innerWidth, ch = window.innerHeight;
-  const iw = pizzaImg.naturalWidth || 854, ih = pizzaImg.naturalHeight || 1210;
+  const iw = pizzaImg.naturalWidth || 854, ih = pizzaImg.naturalHeight || 1842;
   if(!cw || !ch) return;
   const scale = Math.max(cw/iw, ch/ih);
   const dw = iw*scale, dh = ih*scale;
@@ -254,15 +254,15 @@ document.getElementById('cardPizza').addEventListener('click', ()=>{
 
 /* ================= Mode Pizza ================= */
 const TOPPINGS = [
-  { id:'tomato',    img:'images/tomato.png',    label:'Tomate',    top:31.9, left:50.4 },
-  { id:'cream',     img:'images/cream.png',     label:'Fromage',   top:37.4, left:36.9 },
-  { id:'pepperoni', img:'images/pepperoni.png', label:'Pepperoni', top:37.4, left:62.6 },
-  { id:'onion',     img:'images/onion.png',     label:'Oignon',    top:46.1, left:34.3 },
-  { id:'basil',     img:'images/basil.png',     label:'Basilic',   top:46.6, left:49.1 },
-  { id:'cheese',    img:'images/cheese.png',    label:'Fromage',   top:47.0, left:64.6 },
-  { id:'mushroom',  img:'images/mushroom.png',  label:'Champignon',top:55.2, left:35.6 },
-  { id:'pepper',    img:'images/pepper.png',    label:'Poivron',   top:56.0, left:51.1 },
-  { id:'bacon',     img:'images/bacon.png',     label:'Bacon',     top:55.2, left:64.6 },
+  { id:'tomato',    img:'images/tomato.png',    label:'Tomate',    top:46.5, left:50.4 },
+  { id:'cream',     img:'images/cream.png',     label:'Fromage',   top:50.1, left:36.9 },
+  { id:'pepperoni', img:'images/pepperoni.png', label:'Pepperoni', top:50.1, left:62.6 },
+  { id:'onion',     img:'images/onion.png',     label:'Oignon',    top:55.8, left:34.3 },
+  { id:'basil',     img:'images/basil.png',     label:'Basilic',   top:56.1, left:49.1 },
+  { id:'cheese',    img:'images/cheese.png',    label:'Fromage',   top:56.4, left:64.6 },
+  { id:'mushroom',  img:'images/mushroom.png',  label:'Champignon',top:61.8, left:35.6 },
+  { id:'pepper',    img:'images/pepper.png',    label:'Poivron',   top:62.3, left:51.1 },
+  { id:'bacon',     img:'images/bacon.png',     label:'Bacon',     top:61.8, left:64.6 },
 ];
 
 let pizzaPlaced = 0;
@@ -290,7 +290,7 @@ function startPizza(){
   TOPPINGS.forEach(t=>{
     const hole = document.createElement('div');
     hole.className = 'shape-base hole';
-    hole.style.width = '11%'; hole.style.height = '5.1%';
+    hole.style.width = '33%'; hole.style.height = '15.3%';
     hole.style.top = t.top+'%'; hole.style.left = t.left+'%';
     hole.style.transform = 'translate(-50%,-50%)';
     hole.dataset.id = t.id;
