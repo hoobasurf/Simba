@@ -51,18 +51,16 @@
   .mode-card.soon:active{ transform:none; }
   .mode-card .mode-tag{ font-size:10px; font-weight:800; color:#a5672f; background:#fff3d6; padding:2px 8px; border-radius:10px; }
 
-  #pizzaScene{ width:100%; max-height:20vh; object-fit:cover; object-position:center 30%; border-bottom:4px solid #fff; box-shadow:0 4px 10px rgba(0,0,0,.15); }
-
-  /* ---- mode pizza ---- */
+  /* ---- mode pizza : une seule image plein écran ---- */
   #pizzaMode{ display:none; flex:1; flex-direction:column; align-items:center; justify-content:space-between; padding:0; overflow:hidden; }
   .row-label{ font-weight:800; color:#5a3a1c; font-size:clamp(13px,3.8vw,17px); text-align:center; text-shadow:0 1px 2px rgba(255,255,255,.6); }
 
-  #pizzaBoard{
-    position:relative; width:min(80vw,320px); aspect-ratio:1/1; border-radius:50%;
-    background-image:url('images/pizza_board.jpeg'); background-size:cover; background-position:center;
-    box-shadow:0 8px 20px rgba(0,0,0,.3);
-    border:4px solid #fff;
+  #pizzaStage{ position:relative; width:100%; flex:1; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+  .pizza-frame{ position:relative; height:100%; aspect-ratio:854/1842; max-width:100%; max-height:100%; }
+  @media (max-aspect-ratio:854/1842){
+    .pizza-frame{ height:auto; width:100%; }
   }
+  .pizza-frame img{ position:absolute; inset:0; width:100%; height:100%; display:block; }
 
   #piecesRow{ display:flex; justify-content:center; gap:2.2vw; width:100%; padding:6px 4vw 10px; flex-wrap:wrap; }
 
@@ -148,9 +146,13 @@
 
   <!-- MODE PIZZA -->
   <div id="pizzaMode">
-    <img id="pizzaScene" src="images/pizza_scene.jpeg" alt="pizzeria de Malo">
     <div class="row-label">👇 Trouve la bonne place pour chaque ingrédient !</div>
-    <div id="pizzaBoard"></div>
+    <div id="pizzaStage">
+      <div class="pizza-frame">
+        <img src="images/pizza_board.jpeg" alt="pizzeria de Malo">
+        <div id="pizzaBoard" style="position:absolute; inset:0;"></div>
+      </div>
+    </div>
     <div id="piecesRow"></div>
   </div>
 
@@ -231,15 +233,15 @@ document.getElementById('cardPizza').addEventListener('click', ()=>{
 
 /* ================= Mode Pizza ================= */
 const TOPPINGS = [
-  { id:'tomato',    img:'images/tomato.png',    label:'Tomate',    top:14, left:51 },
-  { id:'cream',     img:'images/cream.png',     label:'Fromage',   top:26, left:30 },
-  { id:'pepperoni', img:'images/pepperoni.png', label:'Pepperoni', top:26, left:70 },
-  { id:'onion',     img:'images/onion.png',     label:'Oignon',    top:45, left:26 },
-  { id:'basil',     img:'images/basil.png',     label:'Basilic',   top:46, left:49 },
-  { id:'cheese',    img:'images/cheese.png',    label:'Fromage',   top:47, left:73 },
-  { id:'mushroom',  img:'images/mushroom.png',  label:'Champignon',top:65, left:28 },
-  { id:'pepper',    img:'images/pepper.png',    label:'Poivron',   top:67, left:52 },
-  { id:'bacon',     img:'images/bacon.png',     label:'Bacon',     top:65, left:73 },
+  { id:'tomato',    img:'images/tomato.png',    label:'Tomate',    top:46.5, left:50.4 },
+  { id:'cream',     img:'images/cream.png',     label:'Fromage',   top:50.1, left:36.9 },
+  { id:'pepperoni', img:'images/pepperoni.png', label:'Pepperoni', top:50.1, left:62.6 },
+  { id:'onion',     img:'images/onion.png',     label:'Oignon',    top:55.8, left:34.3 },
+  { id:'basil',     img:'images/basil.png',     label:'Basilic',   top:56.1, left:49.1 },
+  { id:'cheese',    img:'images/cheese.png',    label:'Fromage',   top:56.4, left:64.6 },
+  { id:'mushroom',  img:'images/mushroom.png',  label:'Champignon',top:61.8, left:35.6 },
+  { id:'pepper',    img:'images/pepper.png',    label:'Poivron',   top:62.3, left:51.1 },
+  { id:'bacon',     img:'images/bacon.png',     label:'Bacon',     top:61.8, left:64.6 },
 ];
 
 let pizzaPlaced = 0;
@@ -267,7 +269,7 @@ function startPizza(){
   TOPPINGS.forEach(t=>{
     const hole = document.createElement('div');
     hole.className = 'shape-base hole';
-    hole.style.width = '17%'; hole.style.height = '17%';
+    hole.style.width = '11%'; hole.style.height = '5.1%';
     hole.style.top = t.top+'%'; hole.style.left = t.left+'%';
     hole.style.transform = 'translate(-50%,-50%)';
     hole.dataset.id = t.id;
