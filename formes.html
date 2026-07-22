@@ -53,13 +53,13 @@
 
   /* ---- mode pizza : une seule image plein écran ---- */
   #pizzaMode{ display:none; flex:1; flex-direction:column; align-items:center; justify-content:space-between; padding:0; overflow:hidden; }
-  .row-label{ font-weight:800; color:#5a3a1c; font-size:clamp(13px,3.8vw,17px); text-align:center; text-shadow:0 1px 2px rgba(255,255,255,.6); }
+  .row-label{ position:relative; z-index:2; font-weight:800; color:#5a3a1c; font-size:clamp(13px,3.8vw,17px); text-align:center; text-shadow:0 1px 2px rgba(255,255,255,.6); background:rgba(255,255,255,.75); padding:4px 0; }
 
   #pizzaStage{ position:relative; width:100%; flex:1; overflow:hidden; }
-  #pizzaImg{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
-  #pizzaBoard{ position:absolute; }
+  #pizzaImg{ position:fixed; inset:0; width:100vw; height:100vh; object-fit:cover; object-position:center 38%; z-index:0; }
+  #pizzaBoard{ position:fixed; z-index:1; }
 
-  #piecesRow{ display:flex; justify-content:center; gap:2.2vw; width:100%; padding:6px 4vw 10px; flex-wrap:wrap; }
+  #piecesRow{ position:relative; z-index:2; display:flex; justify-content:center; gap:2.2vw; width:100%; padding:6px 4vw 10px; flex-wrap:wrap; background:#fff3d6; }
 
   .shape-base{ width:13vw; height:13vw; max-width:58px; max-height:58px; }
 
@@ -72,7 +72,11 @@
   .hole{
     position:absolute;
     display:flex; align-items:center; justify-content:center;
+    border-radius:50%;
+    border:3px dashed rgba(255,255,255,.95);
+    box-shadow:0 0 0 2px rgba(0,0,0,.25);
   }
+  .hole.filled{ border-color:transparent; box-shadow:none; }
   .hole.hover .hole-piece{ filter:drop-shadow(0 3px 4px rgba(0,0,0,.35)) brightness(1.3); }
   .hole .hole-piece{ width:100%; height:100%; opacity:.5; transform:scale(.92); transition:transform .35s cubic-bezier(.3,1.6,.4,1), opacity .3s, filter .2s; }
   .hole.filled .hole-piece{ opacity:1; transform:scale(1); }
@@ -217,12 +221,13 @@ const pizzaImg = document.getElementById('pizzaImg');
 const pizzaStage = document.getElementById('pizzaStage');
 const pizzaBoard = document.getElementById('pizzaBoard');
 function fitPizzaBoard(){
-  const cw = pizzaStage.clientWidth, ch = pizzaStage.clientHeight;
-  const iw = pizzaImg.naturalWidth || 854, ih = pizzaImg.naturalHeight || 1842;
+  const cw = window.innerWidth, ch = window.innerHeight;
+  const iw = pizzaImg.naturalWidth || 854, ih = pizzaImg.naturalHeight || 1210;
   if(!cw || !ch) return;
-  const scale = Math.min(cw/iw, ch/ih);
+  const scale = Math.max(cw/iw, ch/ih);
   const dw = iw*scale, dh = ih*scale;
-  const dx = (cw-dw)/2, dy = (ch-dh)/2;
+  const dx = (cw-dw)/2;
+  const dy = (ch-dh) * 0.38; // suit object-position:center 38%
   pizzaBoard.style.left = dx+'px';
   pizzaBoard.style.top = dy+'px';
   pizzaBoard.style.width = dw+'px';
@@ -249,15 +254,15 @@ document.getElementById('cardPizza').addEventListener('click', ()=>{
 
 /* ================= Mode Pizza ================= */
 const TOPPINGS = [
-  { id:'tomato',    img:'images/tomato.png',    label:'Tomate',    top:46.5, left:50.4 },
-  { id:'cream',     img:'images/cream.png',     label:'Fromage',   top:50.1, left:36.9 },
-  { id:'pepperoni', img:'images/pepperoni.png', label:'Pepperoni', top:50.1, left:62.6 },
-  { id:'onion',     img:'images/onion.png',     label:'Oignon',    top:55.8, left:34.3 },
-  { id:'basil',     img:'images/basil.png',     label:'Basilic',   top:56.1, left:49.1 },
-  { id:'cheese',    img:'images/cheese.png',    label:'Fromage',   top:56.4, left:64.6 },
-  { id:'mushroom',  img:'images/mushroom.png',  label:'Champignon',top:61.8, left:35.6 },
-  { id:'pepper',    img:'images/pepper.png',    label:'Poivron',   top:62.3, left:51.1 },
-  { id:'bacon',     img:'images/bacon.png',     label:'Bacon',     top:61.8, left:64.6 },
+  { id:'tomato',    img:'images/tomato.png',    label:'Tomate',    top:31.9, left:50.4 },
+  { id:'cream',     img:'images/cream.png',     label:'Fromage',   top:37.4, left:36.9 },
+  { id:'pepperoni', img:'images/pepperoni.png', label:'Pepperoni', top:37.4, left:62.6 },
+  { id:'onion',     img:'images/onion.png',     label:'Oignon',    top:46.1, left:34.3 },
+  { id:'basil',     img:'images/basil.png',     label:'Basilic',   top:46.6, left:49.1 },
+  { id:'cheese',    img:'images/cheese.png',    label:'Fromage',   top:47.0, left:64.6 },
+  { id:'mushroom',  img:'images/mushroom.png',  label:'Champignon',top:55.2, left:35.6 },
+  { id:'pepper',    img:'images/pepper.png',    label:'Poivron',   top:56.0, left:51.1 },
+  { id:'bacon',     img:'images/bacon.png',     label:'Bacon',     top:55.2, left:64.6 },
 ];
 
 let pizzaPlaced = 0;
