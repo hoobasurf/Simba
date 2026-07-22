@@ -59,7 +59,7 @@
   #pizzaImg{ position:fixed; inset:0; width:100vw; height:100vh; object-fit:cover; object-position:center 38%; z-index:0; }
   #pizzaBoard{ position:fixed; z-index:1; }
 
-  #piecesRow{ position:relative; z-index:2; display:flex; justify-content:center; gap:2.2vw; width:100%; padding:6px 4vw 10px; flex-wrap:wrap; background:#fff3d6; }
+  #piecesRow{ position:relative; z-index:2; display:flex; justify-content:center; gap:2.2vw; width:100%; padding:6px 4vw calc(28px + env(safe-area-inset-bottom)); flex-wrap:wrap; }
 
   .shape-base{ width:13vw; height:13vw; max-width:58px; max-height:58px; }
 
@@ -72,13 +72,9 @@
   .hole{
     position:absolute;
     display:flex; align-items:center; justify-content:center;
-    border-radius:50%;
-    border:3px dashed rgba(255,255,255,.95);
-    box-shadow:0 0 0 2px rgba(0,0,0,.25);
   }
-  .hole.filled{ border-color:transparent; box-shadow:none; }
   .hole.hover .hole-piece{ filter:drop-shadow(0 3px 4px rgba(0,0,0,.35)) brightness(1.3); }
-  .hole .hole-piece{ width:100%; height:100%; opacity:.5; transform:scale(.92); transition:transform .35s cubic-bezier(.3,1.6,.4,1), opacity .3s, filter .2s; }
+  .hole .hole-piece{ width:100%; height:100%; opacity:.8; transform:scale(.92); transition:transform .35s cubic-bezier(.3,1.6,.4,1), opacity .3s, filter .2s; }
   .hole.filled .hole-piece{ opacity:1; transform:scale(1); }
 
   .ghost-piece{ position:fixed; z-index:200; pointer-events:none; opacity:.92; }
