@@ -511,9 +511,15 @@ document.getElementById('againBtn').addEventListener('click', ()=>{
   startPizza();
 });
 
-/* ================= Mode Robot : forme aléatoire dans la main ================= */
-// Emplacement de la main du robot, en % de l'image images/robot_board.png (1024x1536)
-const ROBOT_HAND = { top: 54.0, left: 31.5 };
+/* ================= Mode Robot : forme aléatoire sur le corps du robot ================= */
+// Emplacements possibles sur le robot, en % du plateau (main déjà calée par toi ; les 4 autres sont des estimations à ajuster)
+const ROBOT_SPOTS = [
+  { id:'hand',        top: 54.0, left: 31.5 },  // main levée (déjà calée)
+  { id:'elbow_left',  top: 58.0, left: 40.0 },  // coude du bras levé (estimation)
+  { id:'elbow_right', top: 63.0, left: 66.0 },  // coude de l'autre bras (estimation)
+  { id:'knee_left',   top: 79.0, left: 41.0 },  // genou gauche (estimation)
+  { id:'knee_right',  top: 79.0, left: 58.0 },  // genou droit (estimation)
+];
 
 const SHAPES = [
   { id:'circle',   img:'images/shapes/circle.png',   label:'Rond' },
@@ -539,8 +545,11 @@ function pickRobotOptions(){
 
 function nextRobotRound(){
   const options = pickRobotOptions();
+  const spot = shuffle(ROBOT_SPOTS)[0];
 
   robotHoleEl.classList.remove('filled');
+  robotHoleEl.style.top = spot.top+'%';
+  robotHoleEl.style.left = spot.left+'%';
   robotHoleEl.querySelector('.hole-piece').src = robotTarget.img;
 
   const piecesRow = document.getElementById('piecesRowRobot');
@@ -574,7 +583,7 @@ function startRobot(){
   robotHoleEl = document.createElement('div');
   robotHoleEl.className = 'shape-base hole';
   robotHoleEl.style.width = '15%'; robotHoleEl.style.height = '10%';
-  robotHoleEl.style.top = ROBOT_HAND.top+'%'; robotHoleEl.style.left = ROBOT_HAND.left+'%';
+  robotHoleEl.style.top = ROBOT_SPOTS[0].top+'%'; robotHoleEl.style.left = ROBOT_SPOTS[0].left+'%';
   robotHoleEl.style.transform = 'translate(-50%,-50%)';
   const inner = buildImgEl(SHAPES[0].img, 'hole-piece');
   robotHoleEl.appendChild(inner);
