@@ -138,20 +138,13 @@
   .hole .hole-piece{ width:100%; height:100%; opacity:.55; transform:scale(.92); transition:transform .35s cubic-bezier(.3,1.6,.4,1), opacity .3s, filter .2s; }
   .hole.filled .hole-piece{ opacity:1; transform:scale(1); }
 
-  /* sous-marin : trou = silhouette NOIRE (creux), tant qu'il n'est pas rempli */
-  #sousmarinBoard .hole:not(.filled){
-    background:radial-gradient(circle, rgba(0,0,0,.5) 0%, rgba(0,0,0,.3) 65%, transparent 100%);
-    border-radius:50%;
-  }
+  /* sous-marin : trou = silhouette NOIRE pleine de la pièce, sans fond gris derrière */
   #sousmarinBoard .hole:not(.filled) .hole-piece{
-    opacity:.9;
-    filter:brightness(0) drop-shadow(0 0 2px rgba(255,255,255,.35));
-  }
-  #sousmarinBoard .hole.hover:not(.filled){
-    background:radial-gradient(circle, rgba(0,0,0,.65) 0%, rgba(0,0,0,.35) 65%, transparent 100%);
+    opacity:1;
+    filter:brightness(0);
   }
   #sousmarinBoard .hole.hover:not(.filled) .hole-piece{
-    filter:brightness(0) drop-shadow(0 0 4px rgba(255,255,255,.6));
+    filter:brightness(0.25);
   }
   #sousmarinBoard .hole.filled .hole-piece{ filter:none; }
 
@@ -764,7 +757,7 @@ const SOUSMARIN_ROUNDS = [
 ];
 // Emplacement UNIQUE et FIXE du trou sur la coque (là où tu as mis la flèche).
 // Les 4 pièces passent toutes par ce même trou, une après l'autre.
-const SOUSMARIN_HOLE_SPOT = { top:58.0, left:71.5, w:16.0, h:15.0 };
+const SOUSMARIN_HOLE_SPOT = { top:52.5, left:71.3, w:16.0, h:15.0 };
 let sousmarinLevel = 0;
 let sousmarinHoleEl = null;
 
