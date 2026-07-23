@@ -101,6 +101,7 @@
   #pizzaBoard, #robotBoard, #sousmarinBoard{ position:fixed; z-index:1; }
 
   #piecesRow, #piecesRowRobot, #piecesRowSousmarin{ position:relative; z-index:2; display:flex; justify-content:center; gap:2.2vw; width:100%; padding:6px 4vw calc(28px + env(safe-area-inset-bottom)); flex-wrap:wrap; }
+  #piecesRowSousmarin{ gap:6vw; padding-bottom:calc(56px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.4); }
 
   .shape-base{ width:15vw; height:15vw; max-width:64px; max-height:64px; }
 
@@ -742,7 +743,7 @@ const SOUSMARIN_ROUNDS = [
   { bg:'images/sousmarin/board1.jpg', piece:'images/sousmarin/piece1.png', top:43.0, left:67.5, w:10.1, h:13.0 },
   { bg:'images/sousmarin/board2.jpg', piece:'images/sousmarin/piece2.png', top:44.3, left:66.1, w:10.6, h:13.8 },
   { bg:'images/sousmarin/board3.jpg', piece:'images/sousmarin/piece3.png', top:43.5, left:64.6, w:10.4, h:14.1 },
-  { bg:'images/sousmarin/board4.jpg', piece:'images/sousmarin/piece4.png', top:43.9, left:68.0, w:10.6, h:12.3 },
+  { bg:'images/sousmarin/board4.jpg', piece:'images/sousmarin/piece4.png', top:47.0, left:71.1, w:14.4, h:8.4 },
 ];
 let sousmarinLevel = 0;
 
