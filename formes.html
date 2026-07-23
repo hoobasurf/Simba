@@ -90,16 +90,16 @@
     padding:3px 9px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,.25);
   }
 
-  /* ---- mode plein écran (pizza / robot) : une seule image plein écran ---- */
-  #pizzaMode, #robotMode{ display:none; flex:1; flex-direction:column; align-items:center; justify-content:space-between; padding:0; overflow:hidden; }
+  /* ---- mode plein écran (pizza / robot / sous-marin) : une seule image plein écran ---- */
+  #pizzaMode, #robotMode, #sousmarinMode{ display:none; flex:1; flex-direction:column; align-items:center; justify-content:space-between; padding:0; overflow:hidden; }
   .row-label{ position:relative; z-index:2; font-weight:800; color:#5a3a1c; font-size:clamp(13px,3.8vw,17px); text-align:center; text-shadow:0 1px 2px rgba(255,255,255,.6); background:rgba(255,255,255,.75); padding:4px 0; }
 
-  #pizzaStage, #robotStage{ position:relative; width:100%; flex:1; overflow:hidden; }
-  #pizzaImg, #robotImg{ position:fixed; inset:0; width:100vw; height:100vh; object-fit:cover; object-position:center 38%; z-index:0; }
-  #robotImg{ object-position:center center; }
-  #pizzaBoard, #robotBoard{ position:fixed; z-index:1; }
+  #pizzaStage, #robotStage, #sousmarinStage{ position:relative; width:100%; flex:1; overflow:hidden; }
+  #pizzaImg, #robotImg, #sousmarinImg{ position:fixed; inset:0; width:100vw; height:100vh; object-fit:cover; object-position:center 38%; z-index:0; }
+  #robotImg, #sousmarinImg{ object-position:center center; }
+  #pizzaBoard, #robotBoard, #sousmarinBoard{ position:fixed; z-index:1; }
 
-  #piecesRow, #piecesRowRobot{ position:relative; z-index:2; display:flex; justify-content:center; gap:2.2vw; width:100%; padding:6px 4vw calc(28px + env(safe-area-inset-bottom)); flex-wrap:wrap; }
+  #piecesRow, #piecesRowRobot, #piecesRowSousmarin{ position:relative; z-index:2; display:flex; justify-content:center; gap:2.2vw; width:100%; padding:6px 4vw calc(28px + env(safe-area-inset-bottom)); flex-wrap:wrap; }
 
   .shape-base{ width:15vw; height:15vw; max-width:64px; max-height:64px; }
 
@@ -147,14 +147,14 @@
 
   .confetti-piece{position:fixed; pointer-events:none; border-radius:2px; z-index:70;}
 
-  #endBanner, #endBannerRobot{
+  #endBanner, #endBannerRobot, #endBannerSousmarin{
     position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
     background:rgba(255,255,255,.95); opacity:0; pointer-events:none; transition:opacity .3s; text-align:center; z-index:80;
   }
-  #endBanner.show, #endBannerRobot.show{ opacity:1; pointer-events:auto; }
-  #endBanner .big, #endBannerRobot .big{ font-size:54px; margin-bottom:8px; }
-  #endBanner h2, #endBannerRobot h2{ color:#e0507f; font-size:28px; margin:0 0 8px 0; }
-  #endBanner p, #endBannerRobot p{ color:#5a7a67; font-weight:600; margin:0 0 22px 0; }
+  #endBanner.show, #endBannerRobot.show, #endBannerSousmarin.show{ opacity:1; pointer-events:auto; }
+  #endBanner .big, #endBannerRobot .big, #endBannerSousmarin .big{ font-size:54px; margin-bottom:8px; }
+  #endBanner h2, #endBannerRobot h2, #endBannerSousmarin h2{ color:#e0507f; font-size:28px; margin:0 0 8px 0; }
+  #endBanner p, #endBannerRobot p, #endBannerSousmarin p{ color:#5a7a67; font-weight:600; margin:0 0 22px 0; }
   .again-btn{
     background:linear-gradient(180deg,#ffe08a,#ffd166); border:none; border-bottom:5px solid #d99a1f;
     border-radius:40px; padding:14px 40px; font-family:inherit; font-weight:800; font-size:18px;
@@ -232,10 +232,9 @@
           <div class="mode-label">Tableau</div>
           <div class="mode-tag">Bientôt</div>
         </div>
-        <div class="mode-card soon" style="--accent:#7fe3d6; --accent-dark:#39aa9b;">
+        <div class="mode-card" id="cardSousmarin" style="--accent:#7fe3d6; --accent-dark:#39aa9b;">
           <div class="mode-badge">🐠</div>
           <div class="mode-label">Sous-marin</div>
-          <div class="mode-tag">Bientôt</div>
         </div>
       </div>
     </div>
@@ -261,6 +260,16 @@
     <div id="piecesRowRobot"></div>
   </div>
 
+  <!-- MODE SOUS-MARIN -->
+  <div id="sousmarinMode">
+    <div class="row-label">👇 Remets la pièce manquante sur le sous-marin !</div>
+    <div id="sousmarinStage">
+      <img id="sousmarinImg" src="images/sousmarin_board.jpg" alt="sous-marin">
+      <div id="sousmarinBoard"></div>
+    </div>
+    <div id="piecesRowSousmarin"></div>
+  </div>
+
   <div id="endBanner">
     <div class="big">🎉🍕🎉</div>
     <h2>Bravo Malo !</h2>
@@ -273,6 +282,13 @@
     <h2>Bravo Malo !</h2>
     <p>Tu as aidé le robot !</p>
     <button class="again-btn" id="againBtnRobot">🔁 Rejouer</button>
+  </div>
+
+  <div id="endBannerSousmarin">
+    <div class="big">🎉🐠🎉</div>
+    <h2>Bravo Malo !</h2>
+    <p>Le sous-marin est réparé !</p>
+    <button class="again-btn" id="againBtnSousmarin">🔁 Rejouer</button>
   </div>
 </div>
 
@@ -298,10 +314,19 @@ robotMusic.volume = 0.22;
 function startRobotMusic(){ if(!muted) robotMusic.play().catch(()=>{}); }
 function stopRobotMusic(){ robotMusic.pause(); robotMusic.currentTime = 0; }
 
+const sousmarinMusic = new Audio('sounds/sousmarin_music.mp3');
+sousmarinMusic.loop = true;
+sousmarinMusic.volume = 0.22;
+function startSousmarinMusic(){ if(!muted) sousmarinMusic.play().catch(()=>{}); }
+function stopSousmarinMusic(){ sousmarinMusic.pause(); sousmarinMusic.currentTime = 0; }
+
 document.getElementById('soundToggle').addEventListener('click', ()=>{
   muted = !muted;
   document.getElementById('soundToggle').textContent = muted ? '🔇' : '🔊';
-  if(muted){ robotMusic.pause(); } else if(!robotMusic.paused || document.getElementById('robotMode').style.display==='flex'){ robotMusic.play().catch(()=>{}); }
+  if(muted){ robotMusic.pause(); sousmarinMusic.pause(); } else {
+    if(!robotMusic.paused || document.getElementById('robotMode').style.display==='flex'){ robotMusic.play().catch(()=>{}); }
+    if(!sousmarinMusic.paused || document.getElementById('sousmarinMode').style.display==='flex'){ sousmarinMusic.play().catch(()=>{}); }
+  }
 });
 
 function toast(msg){
@@ -372,6 +397,14 @@ if(robotImg.complete) fitRobotBoard();
 robotImg.addEventListener('load', fitRobotBoard);
 window.addEventListener('resize', fitRobotBoard);
 
+/* ================= Sous-marin : positionnement ================= */
+const sousmarinImg = document.getElementById('sousmarinImg');
+const sousmarinBoard = document.getElementById('sousmarinBoard');
+const fitSousmarinBoard = makeFitter(sousmarinImg, sousmarinBoard, 0.5);
+if(sousmarinImg.complete) fitSousmarinBoard();
+sousmarinImg.addEventListener('load', fitSousmarinBoard);
+window.addEventListener('resize', fitSousmarinBoard);
+
 /* ================= Menu ================= */
 function showMode(modeEl, emoji, fitFn){
   document.getElementById('modePicker').style.display = 'none';
@@ -382,6 +415,7 @@ function showMode(modeEl, emoji, fitFn){
     e.preventDefault();
     stopSparkles();
     stopRobotMusic();
+    stopSousmarinMusic();
     modeEl.style.display = 'none';
     document.getElementById('scorePill').style.display = 'none';
     document.getElementById('modePicker').style.display = 'flex';
@@ -398,6 +432,12 @@ document.getElementById('cardRobot').addEventListener('click', ()=>{
   showMode(document.getElementById('robotMode'), '🤖', fitRobotBoard);
   startRobot();
   startRobotMusic();
+});
+
+document.getElementById('cardSousmarin').addEventListener('click', ()=>{
+  showMode(document.getElementById('sousmarinMode'), '🐠', fitSousmarinBoard);
+  startSousmarin();
+  startSousmarinMusic();
 });
 
 /* ================= Drag & drop générique (utilisé par pizza + robot) ================= */
@@ -682,6 +722,80 @@ document.getElementById('againBtnRobot').addEventListener('click', ()=>{
   document.getElementById('endBannerRobot').classList.remove('show');
   startRobot();
   startRobotMusic();
+});
+
+/* ================= Mode Sous-marin (4 manches, un fond + une pièce différents à chaque fois) ================= */
+const SOUSMARIN_ROUNDS = [
+  { bg:'images/sousmarin/board1.jpg', piece:'images/sousmarin/piece1.png', top:43.0, left:67.5, w:10.1, h:13.0 },
+  { bg:'images/sousmarin/board2.jpg', piece:'images/sousmarin/piece2.png', top:44.3, left:66.1, w:10.6, h:13.8 },
+  { bg:'images/sousmarin/board3.jpg', piece:'images/sousmarin/piece3.png', top:43.5, left:64.6, w:10.4, h:14.1 },
+  { bg:'images/sousmarin/board4.jpg', piece:'images/sousmarin/piece4.png', top:43.9, left:68.0, w:10.6, h:12.3 },
+];
+let sousmarinLevel = 0;
+
+function startSousmarin(){
+  sousmarinLevel = 0;
+  setupSousmarinLevel();
+}
+
+function setupSousmarinLevel(){
+  const round = SOUSMARIN_ROUNDS[sousmarinLevel];
+
+  sousmarinImg.src = round.bg;
+  fitSousmarinBoard();
+
+  const board = document.getElementById('sousmarinBoard');
+  board.innerHTML = '';
+
+  const hole = document.createElement('div');
+  hole.className = 'shape-base hole';
+  hole.style.width = round.w+'%'; hole.style.height = round.h+'%';
+  hole.style.top = round.top+'%'; hole.style.left = round.left+'%';
+  hole.style.transform = 'translate(-50%,-50%)';
+  hole.dataset.id = 'p'+sousmarinLevel;
+  const inner = buildImgEl(round.piece, 'hole-piece');
+  hole.appendChild(inner);
+  board.appendChild(hole);
+
+  const piecesRow = document.getElementById('piecesRowSousmarin');
+  piecesRow.innerHTML = '';
+  const item = { id:'p'+sousmarinLevel, img:round.piece };
+  const piece = buildImgEl(round.piece, 'piece');
+  piece.dataset.id = item.id;
+  attachDrag(piece, item, onSousmarinDrop);
+  piecesRow.appendChild(piece);
+}
+
+function onSousmarinDrop(hole, pieceEl, item){
+  if(hole.dataset.id === item.id){
+    hole.classList.add('filled');
+    pieceEl.classList.add('placed');
+    playSfx('chime');
+    toast('🎉 Bien joué !');
+    const r = hole.getBoundingClientRect();
+    burstConfetti(r.left + r.width/2, r.top + r.height/2);
+
+    if(sousmarinLevel + 1 >= SOUSMARIN_ROUNDS.length){
+      setTimeout(()=>{
+        playSfx('win');
+        stopSousmarinMusic();
+        document.getElementById('endBannerSousmarin').classList.add('show');
+      }, 500);
+    } else {
+      sousmarinLevel++;
+      toast('✨ Manche ' + (sousmarinLevel+1) + ' / ' + SOUSMARIN_ROUNDS.length + ' !');
+      setTimeout(setupSousmarinLevel, 1000);
+    }
+  } else {
+    playSfx('miss');
+    toast('Essaie encore ! 🤔');
+  }
+}
+
+document.getElementById('againBtnSousmarin').addEventListener('click', ()=>{
+  document.getElementById('endBannerSousmarin').classList.remove('show');
+  startSousmarin();
+  startSousmarinMusic();
 });
 </script>
 </body>
