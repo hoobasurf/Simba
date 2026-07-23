@@ -116,11 +116,24 @@
 
   .hole{
     position:absolute;
+    z-index:5;
     display:flex; align-items:center; justify-content:center;
   }
   .hole.hover .hole-piece{ filter:drop-shadow(0 3px 4px rgba(0,0,0,.35)) brightness(1.3); }
   .hole .hole-piece{ width:100%; height:100%; opacity:.55; transform:scale(.92); transition:transform .35s cubic-bezier(.3,1.6,.4,1), opacity .3s, filter .2s; }
   .hole.filled .hole-piece{ opacity:1; transform:scale(1); }
+
+  /* contour blanc qui suit la silhouette exacte de la forme, uniquement pour le robot */
+  #robotBoard .hole .hole-piece{
+    opacity:.6;
+    filter:
+      drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff)
+      drop-shadow(0 1.5px 0 #fff) drop-shadow(0 -1.5px 0 #fff)
+      drop-shadow(1px 1px 0 #fff) drop-shadow(-1px -1px 0 #fff)
+      drop-shadow(1px -1px 0 #fff) drop-shadow(-1px 1px 0 #fff);
+  }
+  #robotBoard .hole.hover .hole-piece{ filter: brightness(1.3) drop-shadow(0 0 4px #fff); }
+  #robotBoard .hole.filled .hole-piece{ opacity:1; filter:drop-shadow(0 3px 4px rgba(0,0,0,.3)); }
 
   .ghost-piece{ position:fixed; z-index:200; pointer-events:none; opacity:.92; }
 
@@ -529,41 +542,13 @@ const SHAPES = [
   { id:'hexagon',  img:'images/hexagon.png',  label:'Hexagone' },
   { id:'diamond',  img:'images/diamond.png',  label:'Losange' },
 ];
-const ROBOT_ROUNDS = 8;
-const OPTIONS_PER_ROUND = 4;
-
 let robotScore = 0;
-let robotRound = 0;
-let robotTarget = null;
-let robotHoleEl = null;
-
-function pickRobotOptions(){
-  robotTarget = shuffle(SHAPES)[0];
-  const decoys = shuffle(SHAPES.filter(s => s.id !== robotTarget.id)).slice(0, OPTIONS_PER_ROUND - 1);
-  return shuffle([robotTarget, ...decoys]);
-}
-
-function nextRobotRound(){
-  const options = pickRobotOptions();
-  const spot = shuffle(ROBOT_SPOTS)[0];
-
-  robotHoleEl.classList.remove('filled');
-  robotHoleEl.style.top = spot.top+'%';
-  robotHoleEl.style.left = spot.left+'%';
-  robotHoleEl.querySelector('.hole-piece').src = robotTarget.img;
-
-  const piecesRow = document.getElementById('piecesRowRobot');
-  piecesRow.innerHTML = '';
-  options.forEach(s=>{
-    const piece = buildImgEl(s.img, 'piece');
-    piece.dataset.id = s.id;
-    attachDrag(piece, s, onRobotDrop);
-    piecesRow.appendChild(piece);
-  });
-}
+let robotPlaced = 0;
+let robotTotal = 0;
+let robotSpots = [];
 
 function startRobot(){
-  robotScore = 0; robotRound = 0; robotTarget = null;
+  robotScore = 0; robotPlaced = 0;
   document.getElementById('scoreCount').textContent = 0;
 
   const board = document.getElementById('robotBoard');
@@ -580,17 +565,34 @@ function startRobot(){
   charEl.style.width = '47.95%';
   board.appendChild(charEl);
 
-  robotHoleEl = document.createElement('div');
-  robotHoleEl.className = 'shape-base hole';
-  robotHoleEl.style.width = '15%'; robotHoleEl.style.height = '10%';
-  robotHoleEl.style.top = ROBOT_SPOTS[0].top+'%'; robotHoleEl.style.left = ROBOT_SPOTS[0].left+'%';
-  robotHoleEl.style.transform = 'translate(-50%,-50%)';
-  const inner = buildImgEl(SHAPES[0].img, 'hole-piece');
-  robotHoleEl.appendChild(inner);
-  board.appendChild(robotHoleEl);
+  // 3 emplacements tirés au hasard parmi les 5, et 3 formes tirées au hasard parmi les 6
+  robotSpots = shuffle(ROBOT_SPOTS).slice(0, 3);
+  const targets = shuffle(SHAPES).slice(0, 3);
+  robotTotal = targets.length;
+
+  targets.forEach((shape, i)=>{
+    const spot = robotSpots[i];
+    const hole = document.createElement('div');
+    hole.className = 'shape-base hole';
+    hole.style.width = '15%'; hole.style.height = '10%';
+    hole.style.top = spot.top+'%'; hole.style.left = spot.left+'%';
+    hole.style.transform = 'translate(-50%,-50%)';
+    hole.dataset.id = shape.id;
+    const inner = buildImgEl(shape.img, 'hole-piece');
+    hole.appendChild(inner);
+    board.appendChild(hole);
+  });
+
+  const piecesRow = document.getElementById('piecesRowRobot');
+  piecesRow.innerHTML = '';
+  shuffle(targets).forEach(s=>{
+    const piece = buildImgEl(s.img, 'piece');
+    piece.dataset.id = s.id;
+    attachDrag(piece, s, onRobotDrop);
+    piecesRow.appendChild(piece);
+  });
 
   startSparkles();
-  nextRobotRound();
 }
 
 /* ---- étincelles autour du robot (idle) ---- */
@@ -616,12 +618,11 @@ function stopSparkles(){
 }
 
 function onRobotDrop(hole, pieceEl, item){
-  if(hole !== robotHoleEl){ return; }
-  if(item.id === robotTarget.id){
+  if(hole.dataset.id === item.id){
     hole.classList.add('filled');
     pieceEl.classList.add('placed');
     robotScore++;
-    robotRound++;
+    robotPlaced++;
     document.getElementById('scoreCount').textContent = robotScore;
     playSfx('chime');
     toast('🎉 Bien joué !');
@@ -636,13 +637,11 @@ function onRobotDrop(hole, pieceEl, item){
       setTimeout(()=> charEl.classList.remove('celebrate'), 800);
     }
 
-    if(robotRound >= ROBOT_ROUNDS){
+    if(robotPlaced >= robotTotal){
       setTimeout(()=>{
         playSfx('win');
         document.getElementById('endBannerRobot').classList.add('show');
       }, 500);
-    } else {
-      setTimeout(nextRobotRound, 900);
     }
   } else {
     playSfx('miss');
