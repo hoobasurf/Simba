@@ -343,10 +343,10 @@ document.getElementById('soundToggle').addEventListener('click', ()=>{
   }
 });
 
-function toast(msg){
+function toast(msg, duration){
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
-  clearTimeout(toast._t); toast._t = setTimeout(()=> t.classList.remove('show'), 1300);
+  clearTimeout(toast._t); toast._t = setTimeout(()=> t.classList.remove('show'), duration || 1300);
 }
 
 function burstConfetti(x, y){
@@ -749,7 +749,12 @@ let sousmarinLevel = 0;
 
 function startSousmarin(){
   sousmarinLevel = 0;
-  setupSousmarinLevel();
+  try{
+    setupSousmarinLevel();
+  }catch(err){
+    console.error('[sous-marin] erreur:', err);
+    toast('⚠️ ' + err.message, 8000);
+  }
 }
 
 function setupSousmarinLevel(){
