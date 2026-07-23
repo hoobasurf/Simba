@@ -96,7 +96,8 @@
 
   #pizzaStage, #robotStage, #sousmarinStage{ position:relative; width:100%; flex:1; overflow:hidden; }
   #pizzaImg, #robotImg, #sousmarinImg{ position:fixed; inset:0; width:100vw; height:100vh; object-fit:cover; object-position:center 38%; z-index:0; }
-  #robotImg, #sousmarinImg{ object-position:center center; }
+  #robotImg{ object-position:center center; }
+  #sousmarinImg{ object-position:center 30%; }
   #pizzaBoard, #robotBoard, #sousmarinBoard{ position:fixed; z-index:1; }
 
   #piecesRow, #piecesRowRobot, #piecesRowSousmarin{ position:relative; z-index:2; display:flex; justify-content:center; gap:2.2vw; width:100%; padding:6px 4vw calc(28px + env(safe-area-inset-bottom)); flex-wrap:wrap; }
@@ -262,7 +263,6 @@
 
   <!-- MODE SOUS-MARIN -->
   <div id="sousmarinMode">
-    <div class="row-label">👇 Remets la pièce manquante sur le sous-marin !</div>
     <div id="sousmarinStage">
       <img id="sousmarinImg" src="images/sousmarin_board.jpg" alt="sous-marin">
       <div id="sousmarinBoard"></div>
@@ -400,7 +400,7 @@ window.addEventListener('resize', fitRobotBoard);
 /* ================= Sous-marin : positionnement ================= */
 const sousmarinImg = document.getElementById('sousmarinImg');
 const sousmarinBoard = document.getElementById('sousmarinBoard');
-const fitSousmarinBoard = makeFitter(sousmarinImg, sousmarinBoard, 0.5);
+const fitSousmarinBoard = makeFitter(sousmarinImg, sousmarinBoard, 0.3);
 if(sousmarinImg.complete) fitSousmarinBoard();
 sousmarinImg.addEventListener('load', fitSousmarinBoard);
 window.addEventListener('resize', fitSousmarinBoard);
@@ -757,13 +757,20 @@ function setupSousmarinLevel(){
   hole.appendChild(inner);
   board.appendChild(hole);
 
+  // 1 bonne pièce + 3 leurres (les pièces des autres manches), mélangés
+  const correctItem = { id:'p'+sousmarinLevel, img:round.piece };
+  const decoyIndexes = SOUSMARIN_ROUNDS.map((_,i)=>i).filter(i=>i!==sousmarinLevel);
+  const decoyItems = shuffle(decoyIndexes).slice(0,3).map(i=>({ id:'p'+i, img:SOUSMARIN_ROUNDS[i].piece }));
+  const options = shuffle([correctItem, ...decoyItems]);
+
   const piecesRow = document.getElementById('piecesRowSousmarin');
   piecesRow.innerHTML = '';
-  const item = { id:'p'+sousmarinLevel, img:round.piece };
-  const piece = buildImgEl(round.piece, 'piece');
-  piece.dataset.id = item.id;
-  attachDrag(piece, item, onSousmarinDrop);
-  piecesRow.appendChild(piece);
+  options.forEach(item=>{
+    const piece = buildImgEl(item.img, 'piece');
+    piece.dataset.id = item.id;
+    attachDrag(piece, item, onSousmarinDrop);
+    piecesRow.appendChild(piece);
+  });
 }
 
 function onSousmarinDrop(hole, pieceEl, item){
