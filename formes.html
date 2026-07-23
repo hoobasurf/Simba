@@ -787,9 +787,11 @@ function setupSousmarinLevel(){
   options.forEach(item=>{
     const piece = buildImgEl(item.img, 'piece');
     piece.dataset.id = item.id;
+    piece.addEventListener('error', ()=> toast('⚠️ image introuvable : ' + item.img, 6000));
     attachDrag(piece, item, onSousmarinDrop);
     piecesRow.appendChild(piece);
   });
+  toast('🔍 ' + options.length + ' pièce(s) créée(s), ' + piecesRow.children.length + ' dans la pioche', 6000);
 }
 
 function onSousmarinDrop(hole, pieceEl, item){
