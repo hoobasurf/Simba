@@ -474,7 +474,11 @@ function buildImgEl(imgSrc, extraClass){
   el.className = 'shape-base' + (extraClass ? ' ' + extraClass : '');
   el.style.objectFit = 'contain';
   el.style.background = 'transparent';
-  el.style.filter = 'drop-shadow(0 3px 4px rgba(0,0,0,.35))';
+  // Le filtre inline écrasait le CSS des trous (silhouette noire, contour robot...) :
+  // on ne l'applique donc plus qu'aux pièces de la pioche / ghost, pas aux hole-piece.
+  if(extraClass !== 'hole-piece'){
+    el.style.filter = 'drop-shadow(0 3px 4px rgba(0,0,0,.35))';
+  }
   return el;
 }
 
@@ -757,7 +761,7 @@ const SOUSMARIN_ROUNDS = [
 ];
 // Emplacement UNIQUE et FIXE du trou sur la coque (là où tu as mis la flèche).
 // Les 4 pièces passent toutes par ce même trou, une après l'autre.
-const SOUSMARIN_HOLE_SPOT = { top:52.5, left:71.3, w:16.0, h:15.0 };
+const SOUSMARIN_HOLE_SPOT = { top:44.0, left:71.3, w:16.0, h:15.0 };
 let sousmarinLevel = 0;
 let sousmarinHoleEl = null;
 
