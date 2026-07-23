@@ -283,15 +283,25 @@ const SFX = {
   chime: new Audio('sounds/chime.wav'),
   miss:  new Audio('sounds/miss.wav'),
   win:   new Audio('sounds/win.wav'),
+  robotPlace: new Audio('sounds/robot_place.mp3'),
+  robotWin:   new Audio('sounds/robot_win.mp3'),
 };
 function playSfx(name){
   if(muted) return;
   const src = SFX[name]; if(!src) return;
   try{ const a = src.cloneNode(); a.volume = 0.65; a.play().catch(()=>{}); }catch(e){}
 }
+
+const robotMusic = new Audio('sounds/robot_music.mp3');
+robotMusic.loop = true;
+robotMusic.volume = 0.22;
+function startRobotMusic(){ if(!muted) robotMusic.play().catch(()=>{}); }
+function stopRobotMusic(){ robotMusic.pause(); robotMusic.currentTime = 0; }
+
 document.getElementById('soundToggle').addEventListener('click', ()=>{
   muted = !muted;
   document.getElementById('soundToggle').textContent = muted ? '🔇' : '🔊';
+  if(muted){ robotMusic.pause(); } else if(!robotMusic.paused || document.getElementById('robotMode').style.display==='flex'){ robotMusic.play().catch(()=>{}); }
 });
 
 function toast(msg){
@@ -371,6 +381,7 @@ function showMode(modeEl, emoji, fitFn){
   document.getElementById('backBtn').onclick = (e)=>{
     e.preventDefault();
     stopSparkles();
+    stopRobotMusic();
     modeEl.style.display = 'none';
     document.getElementById('scorePill').style.display = 'none';
     document.getElementById('modePicker').style.display = 'flex';
@@ -386,6 +397,7 @@ document.getElementById('cardPizza').addEventListener('click', ()=>{
 document.getElementById('cardRobot').addEventListener('click', ()=>{
   showMode(document.getElementById('robotMode'), '🤖', fitRobotBoard);
   startRobot();
+  startRobotMusic();
 });
 
 /* ================= Drag & drop générique (utilisé par pizza + robot) ================= */
@@ -546,9 +558,11 @@ let robotScore = 0;
 let robotPlaced = 0;
 let robotTotal = 0;
 let robotSpots = [];
+let robotLevel = 0;
+const ROBOT_LEVELS = 5;
 
 function startRobot(){
-  robotScore = 0; robotPlaced = 0;
+  robotScore = 0; robotLevel = 0;
   document.getElementById('scoreCount').textContent = 0;
 
   const board = document.getElementById('robotBoard');
@@ -564,6 +578,16 @@ function startRobot(){
   charEl.style.top = '43.62%';
   charEl.style.width = '47.95%';
   board.appendChild(charEl);
+
+  startSparkles();
+  setupRobotLevel();
+}
+
+function setupRobotLevel(){
+  robotPlaced = 0;
+  document.querySelectorAll('#robotBoard .hole').forEach(h=> h.remove());
+
+  const board = document.getElementById('robotBoard');
 
   // 3 emplacements tirés au hasard parmi les 5, et 3 formes tirées au hasard parmi les 6
   robotSpots = shuffle(ROBOT_SPOTS).slice(0, 3);
@@ -591,8 +615,6 @@ function startRobot(){
     attachDrag(piece, s, onRobotDrop);
     piecesRow.appendChild(piece);
   });
-
-  startSparkles();
 }
 
 /* ---- étincelles autour du robot (idle) ---- */
@@ -624,7 +646,7 @@ function onRobotDrop(hole, pieceEl, item){
     robotScore++;
     robotPlaced++;
     document.getElementById('scoreCount').textContent = robotScore;
-    playSfx('chime');
+    playSfx('robotPlace');
     toast('🎉 Bien joué !');
     const r = hole.getBoundingClientRect();
     burstConfetti(r.left + r.width/2, r.top + r.height/2);
@@ -638,10 +660,17 @@ function onRobotDrop(hole, pieceEl, item){
     }
 
     if(robotPlaced >= robotTotal){
-      setTimeout(()=>{
-        playSfx('win');
-        document.getElementById('endBannerRobot').classList.add('show');
-      }, 500);
+      if(robotLevel + 1 >= ROBOT_LEVELS){
+        setTimeout(()=>{
+          playSfx('robotWin');
+          stopRobotMusic();
+          document.getElementById('endBannerRobot').classList.add('show');
+        }, 500);
+      } else {
+        robotLevel++;
+        toast('✨ Niveau ' + (robotLevel+1) + ' / ' + ROBOT_LEVELS + ' !');
+        setTimeout(setupRobotLevel, 1000);
+      }
     }
   } else {
     playSfx('miss');
@@ -652,6 +681,7 @@ function onRobotDrop(hole, pieceEl, item){
 document.getElementById('againBtnRobot').addEventListener('click', ()=>{
   document.getElementById('endBannerRobot').classList.remove('show');
   startRobot();
+  startRobotMusic();
 });
 </script>
 </body>
