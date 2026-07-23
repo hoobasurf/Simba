@@ -738,28 +738,26 @@ document.getElementById('againBtnRobot').addEventListener('click', ()=>{
   startRobotMusic();
 });
 
-/* ================= Mode Sous-marin (4 manches, un fond + une pièce différents à chaque fois) ================= */
+/* ================= Mode Sous-marin (un seul sous-marin, 4 trous qui apparaissent un par un) ================= */
 const SOUSMARIN_ROUNDS = [
-  { bg:'images/sousmarin/board1.jpg', piece:'images/sousmarin/piece1.png', top:43.0, left:67.5, w:10.1, h:13.0 },
-  { bg:'images/sousmarin/board2.jpg', piece:'images/sousmarin/piece2.png', top:44.3, left:66.1, w:10.6, h:13.8 },
-  { bg:'images/sousmarin/board3.jpg', piece:'images/sousmarin/piece3.png', top:43.5, left:64.6, w:10.4, h:14.1 },
-  { bg:'images/sousmarin/board4.jpg', piece:'images/sousmarin/piece4.png', top:47.0, left:71.1, w:17.8, h:8.25 },
+  { piece:'images/sousmarin/piece1.png', top:43.0, left:67.5, w:10.1, h:13.0 },
+  { piece:'images/sousmarin/piece2.png', top:44.3, left:66.1, w:10.6, h:13.8 },
+  { piece:'images/sousmarin/piece3.png', top:43.5, left:64.6, w:10.4, h:14.1 },
+  { piece:'images/sousmarin/piece4.png', top:47.0, left:71.1, w:17.8, h:8.25 },
 ];
 let sousmarinLevel = 0;
 
 function startSousmarin(){
   sousmarinLevel = 0;
+  sousmarinBoard.innerHTML = '';
+  fitSousmarinBoard();
   setupSousmarinLevel();
 }
 
 function setupSousmarinLevel(){
   const round = SOUSMARIN_ROUNDS[sousmarinLevel];
 
-  sousmarinImg.src = round.bg;
-  fitSousmarinBoard();
-
   const board = document.getElementById('sousmarinBoard');
-  board.innerHTML = '';
 
   const hole = document.createElement('div');
   hole.className = 'shape-base hole';
