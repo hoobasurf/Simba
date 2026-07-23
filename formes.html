@@ -138,22 +138,20 @@
   .hole .hole-piece{ width:100%; height:100%; opacity:.55; transform:scale(.92); transition:transform .35s cubic-bezier(.3,1.6,.4,1), opacity .3s, filter .2s; }
   .hole.filled .hole-piece{ opacity:1; transform:scale(1); }
 
-  /* sous-marin : trou = silhouette BLANCHE bien visible sur la coque sombre du sous-marin, tant qu'il n'est pas rempli */
+  /* sous-marin : trou = silhouette NOIRE (creux), tant qu'il n'est pas rempli */
   #sousmarinBoard .hole:not(.filled){
-    background:radial-gradient(circle, rgba(0,0,0,.45) 0%, rgba(0,0,0,.25) 65%, transparent 100%);
+    background:radial-gradient(circle, rgba(0,0,0,.5) 0%, rgba(0,0,0,.3) 65%, transparent 100%);
     border-radius:50%;
-    box-shadow:0 0 0 2px rgba(255,255,255,.55) inset;
   }
   #sousmarinBoard .hole:not(.filled) .hole-piece{
-    opacity:.95;
-    filter:brightness(0) invert(1) drop-shadow(0 0 3px rgba(0,0,0,.85)) drop-shadow(0 0 6px rgba(0,0,0,.5));
+    opacity:.9;
+    filter:brightness(0) drop-shadow(0 0 2px rgba(255,255,255,.35));
   }
   #sousmarinBoard .hole.hover:not(.filled){
-    background:radial-gradient(circle, rgba(0,0,0,.6) 0%, rgba(0,0,0,.3) 65%, transparent 100%);
-    box-shadow:0 0 0 3px rgba(255,255,255,.9) inset;
+    background:radial-gradient(circle, rgba(0,0,0,.65) 0%, rgba(0,0,0,.35) 65%, transparent 100%);
   }
   #sousmarinBoard .hole.hover:not(.filled) .hole-piece{
-    filter:brightness(0) invert(1) drop-shadow(0 0 5px rgba(255,255,255,.9)) drop-shadow(0 0 3px rgba(0,0,0,.9));
+    filter:brightness(0) drop-shadow(0 0 4px rgba(255,255,255,.6));
   }
   #sousmarinBoard .hole.filled .hole-piece{ filter:none; }
 
@@ -770,6 +768,20 @@ function startSousmarin(){
   sousmarinLevel = 0;
   sousmarinBoard.innerHTML = '';
   fitSousmarinBoard();
+
+  // Toutes les pièces sont posées dans la pioche UNE SEULE FOIS, dès le départ.
+  // Chaque pièce est unique : elle ne disparaît que lorsqu'elle est placée au bon
+  // endroit -> plus jamais de doublon, et plus besoin de re-tirer des leurres.
+  const piecesRow = document.getElementById('piecesRowSousmarin');
+  piecesRow.innerHTML = '';
+  const allItems = SOUSMARIN_ROUNDS.map((r,i)=>({ id:'p'+i, img:r.piece }));
+  shuffle(allItems).forEach(item=>{
+    const piece = buildImgEl(item.img, 'piece');
+    piece.dataset.id = item.id;
+    attachDrag(piece, item, onSousmarinDrop);
+    piecesRow.appendChild(piece);
+  });
+
   setupSousmarinLevel();
 }
 
@@ -787,22 +799,6 @@ function setupSousmarinLevel(){
   const inner = buildImgEl(round.piece, 'hole-piece');
   hole.appendChild(inner);
   board.appendChild(hole);
-
-  // 1 bonne pièce + des leurres tirés UNIQUEMENT parmi les manches pas encore jouées
-  // (les pièces déjà placées dans les manches précédentes ne réapparaissent plus -> plus de doublon)
-  const correctItem = { id:'p'+sousmarinLevel, img:round.piece };
-  const upcomingIndexes = SOUSMARIN_ROUNDS.map((_,i)=>i).filter(i=> i > sousmarinLevel);
-  const decoyItems = shuffle(upcomingIndexes).slice(0,3).map(i=>({ id:'p'+i, img:SOUSMARIN_ROUNDS[i].piece }));
-  const options = shuffle([correctItem, ...decoyItems]);
-
-  const piecesRow = document.getElementById('piecesRowSousmarin');
-  piecesRow.innerHTML = '';
-  options.forEach(item=>{
-    const piece = buildImgEl(item.img, 'piece');
-    piece.dataset.id = item.id;
-    attachDrag(piece, item, onSousmarinDrop);
-    piecesRow.appendChild(piece);
-  });
 }
 
 function onSousmarinDrop(hole, pieceEl, item){
