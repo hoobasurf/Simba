@@ -743,18 +743,13 @@ const SOUSMARIN_ROUNDS = [
   { bg:'images/sousmarin/board1.jpg', piece:'images/sousmarin/piece1.png', top:43.0, left:67.5, w:10.1, h:13.0 },
   { bg:'images/sousmarin/board2.jpg', piece:'images/sousmarin/piece2.png', top:44.3, left:66.1, w:10.6, h:13.8 },
   { bg:'images/sousmarin/board3.jpg', piece:'images/sousmarin/piece3.png', top:43.5, left:64.6, w:10.4, h:14.1 },
-  { bg:'images/sousmarin/board4.jpg', piece:'images/sousmarin/piece4.png', top:47.0, left:71.1, w:14.4, h:8.4 },
+  { bg:'images/sousmarin/board4.jpg', piece:'images/sousmarin/piece4.png', top:47.0, left:71.1, w:17.8, h:8.25 },
 ];
 let sousmarinLevel = 0;
 
 function startSousmarin(){
   sousmarinLevel = 0;
-  try{
-    setupSousmarinLevel();
-  }catch(err){
-    console.error('[sous-marin] erreur:', err);
-    toast('⚠️ ' + err.message, 8000);
-  }
+  setupSousmarinLevel();
 }
 
 function setupSousmarinLevel(){
@@ -787,11 +782,9 @@ function setupSousmarinLevel(){
   options.forEach(item=>{
     const piece = buildImgEl(item.img, 'piece');
     piece.dataset.id = item.id;
-    piece.addEventListener('error', ()=> toast('⚠️ image introuvable : ' + item.img, 6000));
     attachDrag(piece, item, onSousmarinDrop);
     piecesRow.appendChild(piece);
   });
-  toast('🔍 ' + options.length + ' pièce(s) créée(s), ' + piecesRow.children.length + ' dans la pioche', 6000);
 }
 
 function onSousmarinDrop(hole, pieceEl, item){
