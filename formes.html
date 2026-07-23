@@ -757,16 +757,21 @@ document.getElementById('againBtnRobot').addEventListener('click', ()=>{
 
 /* ================= Mode Sous-marin (un seul sous-marin, 4 trous qui apparaissent un par un) ================= */
 const SOUSMARIN_ROUNDS = [
-  { piece:'images/sousmarin/piece1.png', top:43.0, left:67.5, w:10.1, h:13.0 },
-  { piece:'images/sousmarin/piece2.png', top:44.3, left:66.1, w:10.6, h:13.8 },
-  { piece:'images/sousmarin/piece3.png', top:43.5, left:64.6, w:10.4, h:14.1 },
-  { piece:'images/sousmarin/piece4.png', top:47.0, left:71.1, w:17.8, h:8.25 },
+  { piece:'images/sousmarin/piece1.png' },
+  { piece:'images/sousmarin/piece2.png' },
+  { piece:'images/sousmarin/piece3.png' },
+  { piece:'images/sousmarin/piece4.png' },
 ];
+// Emplacement UNIQUE et FIXE du trou sur la coque (là où tu as mis la flèche).
+// Les 4 pièces passent toutes par ce même trou, une après l'autre.
+const SOUSMARIN_HOLE_SPOT = { top:58.0, left:71.5, w:16.0, h:15.0 };
 let sousmarinLevel = 0;
+let sousmarinHoleEl = null;
 
 function startSousmarin(){
   sousmarinLevel = 0;
   sousmarinBoard.innerHTML = '';
+  sousmarinHoleEl = null;
   fitSousmarinBoard();
 
   // Toutes les pièces sont posées dans la pioche UNE SEULE FOIS, dès le départ.
@@ -787,18 +792,25 @@ function startSousmarin(){
 
 function setupSousmarinLevel(){
   const round = SOUSMARIN_ROUNDS[sousmarinLevel];
-
   const board = document.getElementById('sousmarinBoard');
 
-  const hole = document.createElement('div');
-  hole.className = 'shape-base hole';
-  hole.style.width = round.w+'%'; hole.style.height = round.h+'%';
-  hole.style.top = round.top+'%'; hole.style.left = round.left+'%';
-  hole.style.transform = 'translate(-50%,-50%)';
-  hole.dataset.id = 'p'+sousmarinLevel;
+  // Un seul trou, toujours au même endroit : on le crée une fois, puis on
+  // change juste la forme affichée dedans à chaque manche.
+  if(!sousmarinHoleEl){
+    sousmarinHoleEl = document.createElement('div');
+    sousmarinHoleEl.className = 'shape-base hole';
+    sousmarinHoleEl.style.width = SOUSMARIN_HOLE_SPOT.w+'%';
+    sousmarinHoleEl.style.height = SOUSMARIN_HOLE_SPOT.h+'%';
+    sousmarinHoleEl.style.top = SOUSMARIN_HOLE_SPOT.top+'%';
+    sousmarinHoleEl.style.left = SOUSMARIN_HOLE_SPOT.left+'%';
+    sousmarinHoleEl.style.transform = 'translate(-50%,-50%)';
+    board.appendChild(sousmarinHoleEl);
+  }
+  sousmarinHoleEl.classList.remove('filled', 'hover');
+  sousmarinHoleEl.dataset.id = 'p'+sousmarinLevel;
+  sousmarinHoleEl.innerHTML = '';
   const inner = buildImgEl(round.piece, 'hole-piece');
-  hole.appendChild(inner);
-  board.appendChild(hole);
+  sousmarinHoleEl.appendChild(inner);
 }
 
 function onSousmarinDrop(hole, pieceEl, item){
