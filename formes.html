@@ -115,7 +115,10 @@
     padding:1%;
   }
   .piece.placed{ opacity:0; pointer-events:none; }
-  #piecesRowSousmarin .piece{ background:none; border:none; box-shadow:none; padding:0; filter:drop-shadow(0 3px 5px rgba(0,0,0,.4)); }
+  #piecesRowSousmarin .piece{
+    background:rgba(255,255,255,.85); border:3px solid #fff; box-shadow:0 4px 10px rgba(0,0,0,.3);
+    padding:6%; object-fit:contain;
+  }
 
   .sousmarin-slot{
     position:absolute; width:20%; height:15%; transform:translate(-50%,-50%);
@@ -137,6 +140,16 @@
   .hole.hover .hole-piece{ filter:drop-shadow(0 3px 4px rgba(0,0,0,.35)) brightness(1.3); }
   .hole .hole-piece{ width:100%; height:100%; opacity:.55; transform:scale(.92); transition:transform .35s cubic-bezier(.3,1.6,.4,1), opacity .3s, filter .2s; }
   .hole.filled .hole-piece{ opacity:1; transform:scale(1); }
+
+  /* sous-marin : trou = silhouette noire bien visible sur fond sombre, tant qu'il n'est pas rempli */
+  #sousmarinBoard .hole:not(.filled){
+    background:radial-gradient(circle, rgba(10,20,30,.55) 0%, rgba(10,20,30,.35) 70%, transparent 100%);
+    border-radius:50%;
+  }
+  #sousmarinBoard .hole:not(.filled) .hole-piece{ opacity:.85; filter:brightness(0) drop-shadow(0 0 2px rgba(255,255,255,.4)); }
+  #sousmarinBoard .hole.hover:not(.filled){ background:radial-gradient(circle, rgba(10,20,30,.7) 0%, rgba(10,20,30,.4) 70%, transparent 100%); }
+  #sousmarinBoard .hole.hover:not(.filled) .hole-piece{ filter:brightness(0) drop-shadow(0 0 4px rgba(255,255,255,.8)); }
+  #sousmarinBoard .hole.filled .hole-piece{ filter:none; }
 
   /* contour blanc qui suit la silhouette exacte de la forme, uniquement pour le robot */
   #robotBoard .hole .hole-piece{
@@ -740,10 +753,10 @@ document.getElementById('againBtnRobot').addEventListener('click', ()=>{
 
 /* ================= Mode Sous-marin (un seul sous-marin, 4 trous qui apparaissent un par un) ================= */
 const SOUSMARIN_ROUNDS = [
-  { piece:'images/sousmarin/piece1.png', top:43.0, left:67.5, w:10.1, h:13.0 },
-  { piece:'images/sousmarin/piece2.png', top:44.3, left:66.1, w:10.6, h:13.8 },
-  { piece:'images/sousmarin/piece3.png', top:43.5, left:64.6, w:10.4, h:14.1 },
-  { piece:'images/sousmarin/piece4.png', top:47.0, left:71.1, w:17.8, h:8.25 },
+  { piece:'images/sousmarin/piece1.png', top:33.0, left:64.0, w:11.0, h:13.0 },
+  { piece:'images/sousmarin/piece2.png', top:44.0, left:81.0, w:10.5, h:12.5 },
+  { piece:'images/sousmarin/piece3.png', top:58.0, left:85.0, w:10.5, h:13.0 },
+  { piece:'images/sousmarin/piece4.png', top:70.0, left:92.0, w:13.5, h:9.0  },
 ];
 let sousmarinLevel = 0;
 
