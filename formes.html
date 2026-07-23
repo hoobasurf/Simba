@@ -97,7 +97,7 @@
   #pizzaStage, #robotStage, #sousmarinStage{ position:relative; width:100%; flex:1; overflow:hidden; }
   #pizzaImg, #robotImg, #sousmarinImg{ position:fixed; inset:0; width:100vw; height:100vh; object-fit:cover; object-position:center 38%; z-index:0; }
   #robotImg{ object-position:center center; }
-  #sousmarinImg{ object-position:center 30%; }
+  #sousmarinImg{ object-fit:contain; object-position:center center; }
   #pizzaBoard, #robotBoard, #sousmarinBoard{ position:fixed; z-index:1; }
 
   #piecesRow, #piecesRowRobot, #piecesRowSousmarin{ position:relative; z-index:2; display:flex; justify-content:center; gap:2.2vw; width:100%; padding:6px 4vw calc(28px + env(safe-area-inset-bottom)); flex-wrap:wrap; }
@@ -114,6 +114,19 @@
     padding:1%;
   }
   .piece.placed{ opacity:0; pointer-events:none; }
+  #piecesRowSousmarin .piece{ background:none; border:none; box-shadow:none; padding:0; filter:drop-shadow(0 3px 5px rgba(0,0,0,.4)); }
+
+  .sousmarin-slot{
+    position:absolute; width:20%; height:15%; transform:translate(-50%,-50%);
+    border-radius:16px; cursor:pointer;
+  }
+  .sousmarin-slot.correct{ box-shadow:0 0 0 4px #7be06a inset; background:rgba(123,224,106,.25); }
+  .sousmarin-slot.wrong{ animation: slotShake .4s ease-in-out; }
+  @keyframes slotShake{
+    0%,100%{ transform:translate(-50%,-50%); }
+    25%{ transform:translate(calc(-50% - 8px),-50%); }
+    75%{ transform:translate(calc(-50% + 8px),-50%); }
+  }
 
   .hole{
     position:absolute;
@@ -365,12 +378,12 @@ function shuffle(arr){
 }
 
 /* ================= Générique : fit d'un board sur une image object-fit:cover ================= */
-function makeFitter(imgEl, boardEl, objectPositionY){
+function makeFitter(imgEl, boardEl, objectPositionY, containMode){
   return function fit(){
     const cw = window.innerWidth, ch = window.innerHeight;
     const iw = imgEl.naturalWidth || 1024, ih = imgEl.naturalHeight || 1536;
     if(!cw || !ch) return;
-    const scale = Math.max(cw/iw, ch/ih);
+    const scale = containMode ? Math.min(cw/iw, ch/ih) : Math.max(cw/iw, ch/ih);
     const dw = iw*scale, dh = ih*scale;
     const dx = (cw-dw)/2;
     const dy = (ch-dh) * objectPositionY;
@@ -400,7 +413,7 @@ window.addEventListener('resize', fitRobotBoard);
 /* ================= Sous-marin : positionnement ================= */
 const sousmarinImg = document.getElementById('sousmarinImg');
 const sousmarinBoard = document.getElementById('sousmarinBoard');
-const fitSousmarinBoard = makeFitter(sousmarinImg, sousmarinBoard, 0.3);
+const fitSousmarinBoard = makeFitter(sousmarinImg, sousmarinBoard, 0.5, true);
 if(sousmarinImg.complete) fitSousmarinBoard();
 sousmarinImg.addEventListener('load', fitSousmarinBoard);
 window.addEventListener('resize', fitSousmarinBoard);
@@ -757,7 +770,7 @@ function setupSousmarinLevel(){
   hole.appendChild(inner);
   board.appendChild(hole);
 
-  // 1 bonne pièce + 3 leurres (les pièces des autres manches), mélangés
+  // 1 bonne pièce + 3 leurres (les pièces des autres manches), mélangés, à glisser depuis la pioche
   const correctItem = { id:'p'+sousmarinLevel, img:round.piece };
   const decoyIndexes = SOUSMARIN_ROUNDS.map((_,i)=>i).filter(i=>i!==sousmarinLevel);
   const decoyItems = shuffle(decoyIndexes).slice(0,3).map(i=>({ id:'p'+i, img:SOUSMARIN_ROUNDS[i].piece }));
