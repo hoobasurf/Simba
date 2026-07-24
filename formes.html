@@ -54,7 +54,7 @@
     box-shadow:0 8px 16px rgba(90,60,20,.25);
   }
   .menu-panel{
-    position:relative; z-index:1; width:100%; max-width:600px;
+    position:relative; z-index:1; width:100%; max-width:680px;
     padding:0;
   }
   #modeGrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; width:100%; }
@@ -66,6 +66,11 @@
     display:block;
     padding:0; box-shadow:0 0 0 3px rgba(255,255,255,.5) inset, 0 8px 18px rgba(60,40,10,.28), 0 0 14px var(--accent);
     cursor:pointer; aspect-ratio:1/0.92; position:relative; overflow:hidden;
+    animation: neonPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes neonPulse{
+    0%,100%{ box-shadow:0 0 0 3px rgba(255,255,255,.5) inset, 0 8px 18px rgba(60,40,10,.28), 0 0 8px var(--accent), 0 0 2px var(--accent); border-color:var(--accent); }
+    50%{ box-shadow:0 0 0 3px rgba(255,255,255,.7) inset, 0 8px 18px rgba(60,40,10,.28), 0 0 26px var(--accent), 0 0 42px var(--accent); border-color:#fff; }
   }
   .mode-card:active{ transform:translateY(3px); }
   .mode-card .mode-img{
