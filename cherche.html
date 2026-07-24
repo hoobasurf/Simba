@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Cherche et trouve - Le Monde de Malo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap');
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;}
+  html,body{margin:0; padding:0; height:100%; overflow:hidden; font-family:'Baloo 2',sans-serif; background:#1c3b3a; touch-action:manipulation; overscroll-behavior:none;}
+  #app{position:absolute; inset:0; overflow:hidden;}
+  .screen{position:absolute; inset:0; display:flex; flex-direction:column; opacity:0; pointer-events:none; transition:opacity .4s ease;}
+  .screen.active{opacity:1; pointer-events:auto;}
+
+  /* ---- topbar ---- */
+  .topbar{position:absolute; top:0; left:0; width:100%; display:flex; justify-content:space-between; align-items:flex-start; padding:14px; z-index:100; pointer-events:none;}
+  .topbar > *{pointer-events:auto;}
+  .pill{background:rgba(255,255,255,.92); border:none; border-radius:30px; padding:10px 18px; font-family:inherit; font-weight:800; color:#137a68; box-shadow:0 4px 10px rgba(0,0,0,.25); font-size:14px; cursor:pointer; display:flex; align-items:center; gap:6px;}
+  .pill:active{transform:scale(.96);}
+
+  /* ---- picker ---- */
+  #picker{background:linear-gradient(180deg,#1fb8a3 0%,#0f8c7c 60%,#0a6b5f 100%); align-items:center; justify-content:center; gap:18px; padding:0 5vw;}
+  #picker h1{color:#fff; font-size:clamp(22px,6.5vw,30px); text-align:center; margin:0 0 6px 0; text-shadow:0 3px 0 rgba(0,0,0,.15);}
+  #picker .sub{color:#d7fff5; font-weight:600; font-size:14px; margin-bottom:10px; text-align:center;}
+  .scene-grid{display:flex; gap:16px; flex-wrap:wrap; justify-content:center; max-width:520px;}
+  .scene-card{width:150px; border-radius:22px; overflow:hidden; cursor:pointer; border:5px solid #fff; box-shadow:0 8px 0 rgba(0,0,0,.2), 0 10px 20px rgba(0,0,0,.3); transition:transform .15s; background:#fff;}
+  .scene-card:active{transform:scale(.94) translateY(3px);}
+  .scene-card img{width:100%; height:150px; object-fit:cover; display:block;}
+  .scene-card .sc-label{padding:8px 4px; text-align:center; font-weight:900; color:#fff; font-size:15px; background:linear-gradient(135deg,#ff9142,#e0507f);}
+
+  /* ---- scene view ---- */
+  .scene-view{display:none; flex:1; flex-direction:column; position:relative; overflow:hidden;}
+  .scene-view.active{display:flex;}
+  .scene-stage{position:relative; flex:1; overflow:hidden; display:flex; align-items:center; justify-content:center; background:#000;}
+  .scene-frame{position:relative; height:100%; aspect-ratio:1024/1536; max-width:100%; max-height:100%;}
+  @media (max-aspect-ratio:1024/1536){ .scene-frame{ height:auto; width:100%; } }
+  .scene-frame img.bg{position:absolute; inset:0; width:100%; height:100%; display:block; object-fit:fill;}
+
+  .hotspot{position:absolute; transform:translate(-50%,-50%); border-radius:50%; cursor:pointer; z-index:10; background:transparent;}
+  .hotspot .ring{position:absolute; inset:0; border-radius:50%; border:3px solid rgba(255,255,255,.0); transition:border-color .2s;}
+  .hotspot:not(.found) .pulse{position:absolute; inset:-6px; border-radius:50%; border:2px solid rgba(255,255,255,.55); animation:hsPulse 1.8s ease-out infinite;}
+  @keyframes hsPulse{0%{transform:scale(.7); opacity:.9;} 100%{transform:scale(1.6); opacity:0;}}
+  .hotspot.found{cursor:default; pointer-events:none;}
+  .hotspot .check{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:22px; opacity:0; transform:scale(.3); transition:transform .35s cubic-bezier(.3,1.6,.4,1), opacity .3s; filter:drop-shadow(0 2px 3px rgba(0,0,0,.5));}
+  .hotspot.found .check{opacity:1; transform:scale(1);}
+
+  .toast{position:absolute; left:50%; top:64px; transform:translateX(-50%); background:#fff; padding:9px 20px; border-radius:20px; font-weight:800; color:#137a68; box-shadow:0 4px 10px rgba(0,0,0,.2); opacity:0; transition:opacity .3s; pointer-events:none; z-index:60; font-size:clamp(13px,3.6vw,16px); white-space:nowrap;}
+  .toast.show{opacity:1;}
+
+  .confetti-piece{position:fixed; pointer-events:none; border-radius:2px; z-index:70;}
+
+  /* ---- tray des objets a trouver ---- */
+  .obj-tray{position:relative; z-index:5; display:flex; justify-content:center; gap:2vw; width:100%; padding:8px 3vw calc(10px + env(safe-area-inset-bottom)); flex-wrap:wrap; background:rgba(10,30,28,.55);}
+  .obj-thumb{position:relative; width:15vw; height:15vw; max-width:60px; max-height:60px; border-radius:14px; overflow:hidden; border:3px solid #fff; box-shadow:0 3px 8px rgba(0,0,0,.35); opacity:.5; transition:opacity .3s, transform .3s;}
+  .obj-thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+  .obj-thumb.found{opacity:1; transform:scale(1.08); box-shadow:0 0 0 3px #7be06a, 0 3px 8px rgba(0,0,0,.35);}
+  .obj-thumb.found::after{content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(50,190,110,.35); color:#fff; font-weight:900; font-size:22px; text-shadow:0 2px 3px rgba(0,0,0,.4);}
+
+  .score-pill{background:rgba(255,255,255,.92); border-radius:30px; padding:10px 16px; font-weight:800; color:#137a68; box-shadow:0 4px 10px rgba(0,0,0,.25); font-size:14px; display:flex; align-items:center; gap:6px;}
+
+  .end-banner{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(255,255,255,.95); opacity:0; pointer-events:none; transition:opacity .3s; text-align:center; padding:0 8vw; z-index:80;}
+  .end-banner.show{opacity:1; pointer-events:auto;}
+  .end-banner .big{font-size:56px; margin-bottom:6px;}
+  .end-banner h2{color:#e0507f; font-size:28px; margin:0 0 6px 0;}
+  .end-banner p{color:#5a7a67; font-weight:500; margin:0 0 20px 0;}
+  .again-btn{background:linear-gradient(180deg,#ffe08a,#ffd166); border:none; border-bottom:5px solid #d99a1f; border-radius:40px; padding:14px 40px; font-family:inherit; font-weight:800; font-size:18px; color:#7a4a26; cursor:pointer; margin:0 6px;}
+  .again-btn:active{transform:translateY(3px); border-bottom-width:1px;}
+  .again-btn.alt{background:linear-gradient(180deg,#8fe3c0,#28b487); border-bottom-color:#178562; color:#fff;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- PICKER -->
+  <div class="screen active" id="picker">
+    <div class="topbar">
+      <button class="pill" onclick="window.location.href='index.html'">←</button>
+    </div>
+    <h1>🔍 Cherche &amp; trouve !</h1>
+    <div class="sub">Choisis un décor et trouve les objets cachés</div>
+    <div class="scene-grid" id="sceneGrid"></div>
+  </div>
+
+  <!-- SCENE VIEW -->
+  <div class="screen" id="playScreen">
+    <div class="topbar">
+      <button class="pill" onclick="backToPicker()">←</button>
+      <div class="pill score-pill">🔎 <span id="scoreCount">0</span>/<span id="scoreTotal">6</span></div>
+    </div>
+    <div class="toast" id="toast"></div>
+
+    <div class="scene-view" id="sceneView">
+      <div class="scene-stage">
+        <div class="scene-frame" id="sceneFrame">
+          <img class="bg" id="sceneBg" src="" alt="décor">
+        </div>
+      </div>
+      <div class="obj-tray" id="objTray"></div>
+    </div>
+
+    <div class="end-banner" id="endBanner">
+      <div class="big">🎉🔍🎉</div>
+      <h2>Bravo Malo !</h2>
+      <p>Tu as tout trouvé dans ce décor !</p>
+      <div>
+        <button class="again-btn" id="againBtn">🔁 Rejouer</button>
+        <button class="again-btn alt" onclick="backToPicker()">🗺️ Autre décor</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* =============== Son (Web Audio, aucun fichier) =============== */
+let actx;
+function ac(){ actx = actx || new (window.AudioContext||window.webkitAudioContext)(); return actx; }
+function tone(freq,dur,type,vol,delay){
+  setTimeout(()=>{
+    try{
+      const a=ac(); const o=a.createOscillator(); const g=a.createGain();
+      o.type=type||'sine'; o.frequency.value=freq;
+      g.gain.setValueAtTime(0.0001,a.currentTime);
+      g.gain.exponentialRampToValueAtTime(vol||.2,a.currentTime+.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,a.currentTime+dur);
+      o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime+dur+.02);
+    }catch(e){}
+  }, delay||0);
+}
+function happyChord(){ [520,660,780].forEach((f,i)=>setTimeout(()=>tone(f,.25,'triangle',.2), i*90)); }
+
+/* =============== Data : les 3 decors et leurs objets =============== */
+const SCENES = {
+  savane: {
+    label: 'Safari',
+    bg: 'images/cherche/savane.jpg',
+    objects: [
+      { id:'girafe',    label:'La girafe',     x:42, y:24, r:8,  thumb:'images/cherche/thumb_savane_girafe.jpg' },
+      { id:'elephant',  label:"L'éléphant",    x:14, y:39, r:9,  thumb:'images/cherche/thumb_savane_elephant.jpg' },
+      { id:'zebre',     label:'Le zèbre',      x:48, y:36, r:8,  thumb:'images/cherche/thumb_savane_zebre.jpg' },
+      { id:'flamant',   label:'Le flamant rose', x:45, y:49, r:7, thumb:'images/cherche/thumb_savane_flamant.jpg' },
+      { id:'crocodile', label:'Le crocodile',  x:38, y:53, r:8,  thumb:'images/cherche/thumb_savane_crocodile.jpg' },
+      { id:'malo',      label:'Malo le lionceau !', x:10.2, y:90, r:6, thumb:'images/cherche/thumb_savane_malo.jpg', bonus:true },
+    ]
+  },
+  banquise: {
+    label:'Pôle Nord',
+    bg: 'images/cherche/banquise.jpg',
+    objects: [
+      { id:'ours',     label:"L'ours polaire", x:33, y:32, r:9, thumb:'images/cherche/thumb_banquise_ours.jpg' },
+      { id:'chouette', label:'La chouette',    x:87, y:10, r:7, thumb:'images/cherche/thumb_banquise_chouette.jpg' },
+      { id:'phoque',   label:'Le phoque',      x:47, y:88, r:8, thumb:'images/cherche/thumb_banquise_phoque.jpg' },
+      { id:'igloo',    label:"L'igloo",        x:87, y:68, r:9, thumb:'images/cherche/thumb_banquise_igloo.jpg' },
+      { id:'bateau',   label:'Le bateau',      x:55, y:20, r:8, thumb:'images/cherche/thumb_banquise_bateau.jpg' },
+    ]
+  },
+  plage: {
+    label:'Plage',
+    bg: 'images/cherche/plage.jpg',
+    objects: [
+      { id:'phare',    label:'Le phare',        x:72, y:18, r:8, thumb:'images/cherche/thumb_plage_phare.jpg' },
+      { id:'chateau',  label:'Le château de sable', x:48, y:48, r:8, thumb:'images/cherche/thumb_plage_chateau.jpg' },
+      { id:'velo',     label:'Le vélo',         x:78, y:72, r:8, thumb:'images/cherche/thumb_plage_velo.jpg' },
+      { id:'bouee',    label:'La bouée canard',  x:18, y:82, r:8, thumb:'images/cherche/thumb_plage_bouee.jpg' },
+      { id:'crabe',    label:'Le crabe',        x:55, y:76, r:7, thumb:'images/cherche/thumb_plage_crabe.jpg' },
+      { id:'chien',    label:'Le chien caché !', x:89.1, y:91.9, r:6, thumb:'images/cherche/thumb_plage_chien.jpg', bonus:true },
+    ]
+  }
+};
+
+let currentScene = null;
+let found = 0;
+let total = 0;
+
+function toast(msg, duration){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(()=> t.classList.remove('show'), duration || 1300);
+}
+
+function burstConfetti(x, y){
+  const colors = ['#ff6f9c','#ffd166','#8fd694','#6fc3ff','#c98fff'];
+  for(let i=0;i<16;i++){
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    const size = 6 + Math.random()*6;
+    p.style.width = size+'px'; p.style.height = size+'px';
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.left = x+'px'; p.style.top = y+'px';
+    document.body.appendChild(p);
+    const dx = (Math.random()-0.5)*260;
+    const dy = -(100+Math.random()*180);
+    p.style.transition = 'transform .9s cubic-bezier(.2,.8,.3,1), opacity .9s';
+    requestAnimationFrame(()=>{
+      p.style.transform = `translate(${dx}px, ${dy}px) rotate(${Math.random()*360}deg)`;
+      p.style.opacity = '0';
+    });
+    setTimeout(()=> p.remove(), 950);
+  }
+}
+
+/* =============== Picker =============== */
+function buildPicker(){
+  const grid = document.getElementById('sceneGrid');
+  grid.innerHTML = '';
+  Object.keys(SCENES).forEach(key=>{
+    const s = SCENES[key];
+    const card = document.createElement('div');
+    card.className = 'scene-card';
+    card.innerHTML = `<img src="${s.bg}" alt="${s.label}"><div class="sc-label">${s.label}</div>`;
+    card.onclick = ()=> openScene(key);
+    grid.appendChild(card);
+  });
+}
+
+function goTo(id){
+  document.querySelectorAll('.screen').forEach(sc=>sc.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function backToPicker(){
+  goTo('picker');
+}
+
+/* =============== Scene =============== */
+function openScene(key){
+  currentScene = key;
+  const s = SCENES[key];
+  found = 0;
+  total = s.objects.length;
+  document.getElementById('scoreCount').textContent = 0;
+  document.getElementById('scoreTotal').textContent = total;
+  document.getElementById('sceneBg').src = s.bg;
+  document.getElementById('endBanner').classList.remove('show');
+
+  const frame = document.getElementById('sceneFrame');
+  frame.querySelectorAll('.hotspot').forEach(h=>h.remove());
+  s.objects.forEach(obj=>{
+    const hs = document.createElement('div');
+    hs.className = 'hotspot';
+    hs.style.left = obj.x+'%';
+    hs.style.top = obj.y+'%';
+    hs.style.width = (obj.r*2)+'%';
+    hs.style.height = (obj.r*2*1024/1536*1.5)+'%';
+    hs.dataset.id = obj.id;
+    hs.innerHTML = '<div class="pulse"></div><div class="ring"></div><div class="check">⭐</div>';
+    hs.addEventListener('click', (ev)=> onFind(obj, hs, ev));
+    frame.appendChild(hs);
+  });
+
+  const tray = document.getElementById('objTray');
+  tray.innerHTML = '';
+  s.objects.forEach(obj=>{
+    const th = document.createElement('div');
+    th.className = 'obj-thumb';
+    th.id = 'tray-'+obj.id;
+    th.innerHTML = `<img src="${obj.thumb}" alt="${obj.label}">`;
+    tray.appendChild(th);
+  });
+
+  document.getElementById('playScreen').querySelector('.scene-view').classList.add('active');
+  goTo('playScreen');
+}
+
+function onFind(obj, hs, ev){
+  if(hs.classList.contains('found')) return;
+  hs.classList.add('found');
+  const trayEl = document.getElementById('tray-'+obj.id);
+  if(trayEl) trayEl.classList.add('found');
+  found++;
+  document.getElementById('scoreCount').textContent = found;
+  tone(obj.bonus ? 880 : 650, .16, 'triangle', .15);
+  toast((obj.bonus ? '🌟 ' : '🎉 ') + obj.label + ' trouvé' + (obj.bonus ? ' ! Bravo !' : ' !'));
+  const rect = hs.getBoundingClientRect();
+  burstConfetti(rect.left+rect.width/2, rect.top+rect.height/2);
+
+  if(found >= total){
+    setTimeout(()=>{
+      tone(880,.2,'triangle',.15);
+      happyChord();
+      document.getElementById('endBanner').classList.add('show');
+    }, 500);
+  }
+}
+
+document.getElementById('againBtn').addEventListener('click', ()=>{
+  document.getElementById('endBanner').classList.remove('show');
+  openScene(currentScene);
+});
+
+buildPicker();
+</script>
+</body>
+</html>
