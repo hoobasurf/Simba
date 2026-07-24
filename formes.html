@@ -37,8 +37,8 @@
 
   /* ---- menu des modes ---- */
   #modePicker{
-    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
-    gap:0; padding:0 5vw calc(30px + env(safe-area-inset-bottom));
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    gap:0; padding:calc(70px + env(safe-area-inset-top)) 5vw 0;
     position:relative;
   }
   #modePicker::before{
@@ -54,10 +54,10 @@
     box-shadow:0 8px 16px rgba(90,60,20,.25);
   }
   .menu-panel{
-    position:relative; z-index:1; width:100%; max-width:230px;
+    position:relative; z-index:1; width:100%; max-width:480px;
     padding:0;
   }
-  #modeGrid{ display:grid; grid-template-columns:1fr 1fr; gap:18px; width:100%; }
+  #modeGrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; width:100%; }
   .mode-card{
     --accent:#ffd166; --accent-dark:#d99a1f;
     background:#fff2dd;
@@ -71,12 +71,7 @@
   .mode-card .mode-img{
     position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block;
   }
-  .mode-card .mode-pill{
-    position:absolute; left:50%; bottom:10px; z-index:1; transform:translateX(-50%);
-    background:var(--accent-dark); color:#fff; font-weight:800; font-size:15.5px;
-    letter-spacing:.2px; padding:8px 22px; border-radius:30px; white-space:nowrap;
-    box-shadow:0 4px 8px rgba(0,0,0,.35); border:2px solid rgba(255,255,255,.85);
-  }
+  .mode-card .mode-pill{ display:none; }
   .mode-card.soon{ cursor:default; }
   .mode-card.soon .mode-img{ filter:grayscale(.25) brightness(.85); }
   .mode-card.soon:active{ transform:none; }
@@ -247,14 +242,14 @@
           <img class="mode-img" src="images/menu_robot.png" alt="Robot">
           <div class="mode-pill">Robot</div>
         </div>
+        <div class="mode-card" id="cardSousmarin" style="--accent:#4dd0ff; --accent-dark:#1f9fd9;">
+          <img class="mode-img" src="images/menu_sousmarin.png" alt="Sous-marin">
+          <div class="mode-pill">Sous-marin</div>
+        </div>
         <div class="mode-card soon" style="--accent:#ffb84d; --accent-dark:#d9861f;">
           <img class="mode-img" src="images/menu_tableau.png" alt="Tableau">
           <div class="mode-pill">Tableau</div>
           <div class="mode-tag">Bientôt</div>
-        </div>
-        <div class="mode-card" id="cardSousmarin" style="--accent:#4dd0ff; --accent-dark:#1f9fd9;">
-          <img class="mode-img" src="images/menu_sousmarin.png" alt="Sous-marin">
-          <div class="mode-pill">Sous-marin</div>
         </div>
       </div>
     </div>
