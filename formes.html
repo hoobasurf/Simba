@@ -16,7 +16,7 @@
   ::selection{background:transparent;}
   #wrap{
     position:relative; width:100vw; height:100vh; overflow:hidden;
-    background:linear-gradient(180deg,#bfe9ff 0%,#eaf6ff 45%,#fff3d6 100%);
+    background:url('images/menu_room_bg.png') center top/cover no-repeat, linear-gradient(180deg,#bfe9ff 0%,#eaf6ff 45%,#fff3d6 100%);
     display:flex; flex-direction:column;
   }
 
@@ -39,7 +39,6 @@
   #modePicker{
     flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
     gap:0; padding:0 5vw calc(30px + env(safe-area-inset-bottom));
-    background:url('images/menu_room_bg.png') center/cover no-repeat;
     position:relative;
   }
   #modePicker::before{
@@ -56,9 +55,7 @@
   }
   .menu-panel{
     position:relative; z-index:1; width:100%; max-width:460px;
-    background:rgba(255,255,255,.32); -webkit-backdrop-filter:blur(7px); backdrop-filter:blur(7px);
-    border-radius:34px; padding:20px 16px; box-shadow:0 10px 26px rgba(60,40,10,.2);
-    border:2px solid rgba(255,255,255,.6);
+    padding:0;
   }
   #modeGrid{ display:grid; grid-template-columns:1fr 1fr; gap:18px; width:100%; }
   .mode-card{
