@@ -94,7 +94,7 @@
   #pizzaStage, #robotStage, #sousmarinStage{ position:relative; width:100%; flex:1; overflow:hidden; }
   #pizzaImg, #robotImg, #sousmarinImg{ position:fixed; inset:0; width:100vw; height:100vh; object-fit:cover; object-position:center 38%; z-index:0; }
   #robotImg{ object-position:center center; }
-  #pizzaImg{ object-fit:contain; object-position:center center; background:#eaf6ff; }
+  #pizzaImg{ object-fit:cover; object-position:50% 55%; }
   #sousmarinImg{ object-fit:contain; object-position:center center; }
   #pizzaBoard, #robotBoard, #sousmarinBoard{ position:fixed; z-index:1; }
 
@@ -405,7 +405,7 @@ function makeFitter(imgEl, boardEl, objectPositionY, containMode){
 /* ================= Pizza : positionnement ================= */
 const pizzaImg = document.getElementById('pizzaImg');
 const pizzaBoard = document.getElementById('pizzaBoard');
-const fitPizzaBoard = makeFitter(pizzaImg, pizzaBoard, 0.38, true);
+const fitPizzaBoard = makeFitter(pizzaImg, pizzaBoard, 0.55);
 if(pizzaImg.complete) fitPizzaBoard();
 pizzaImg.addEventListener('load', fitPizzaBoard);
 window.addEventListener('resize', fitPizzaBoard);
